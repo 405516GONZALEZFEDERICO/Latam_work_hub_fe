@@ -9,16 +9,20 @@ export interface User {
     idToken?: string;
     refreshToken?: string;
     role?: string;           // Agregamos el campo para el rol
-    permissions?: string[];  // Agregamos el campo para los permisos
-  }
+    expiresIn?: string;     // Agregamos el campo para la expiración del token
+}
 
 export interface AuthResponseGoogleDto {
-        idToken: string;
-        refreshToken: string;
-        expiresIn: string;
-        email: string;
-        localId: string;
-        role: string;
-        permissions?: string[];
-        googleAuth: boolean;
+  idToken: string;
+  email: string;
+  localId: string;
+  role: string;
+  name: string;
+  photoUrl: string;
+  refreshToken: string;
+  expiresIn: string;
+}
+
+export interface IRoute {
+  requiredRole: string;
 }

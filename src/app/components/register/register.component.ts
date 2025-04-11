@@ -2,8 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { ViewLoginComponent } from "../../views/view-login/view-login.component";
 import { AuthService } from '../../services/auth.service'; // Importar el servicio
+import { ViewLoginComponent } from '../../views/view-login/view-login.component';
 
 @Component({
   selector: 'app-register',
@@ -92,36 +92,22 @@ export class RegisterComponent implements OnInit {
     });
   }
 
-  registerWithGoogle() {
+  async registerWithGoogle() {
     this.isLoading = true;
     this.errorMessage = null;
     this.showError = false;
     
     console.log('Iniciando registro con Google...');
     
-    this.authService.registerWithGoogle().subscribe({
-      next: (response) => {
-        console.log('Usuario registrado con Google:', response);
-        this.successMessage = '¡Registro con Google exitoso!';
-        
-        const role = response.role;
-        setTimeout(() => {
-          if (role === 'ADMIN') {
-            this.router.navigate(['/admin/dashboard']);
-          } else if (role === 'PROVEEDOR') {
-            this.router.navigate(['/proveedor/espacios']);
-          } else {
-            this.router.navigate(['/dashboard']);
-          }
-        }, 1500);
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Error al registrar con Google:', error);
-        this.errorMessage = error.message || 'Error al registrar con Google';
-        this.showError = true;
-        this.isLoading = false;
-      }
-    });
+    try {
+      await this.authService.registerWithGoogle();
+      // No necesitamos hacer nada más aquí porque la redirección
+      // se manejará en el AuthService
+    } catch (error) {
+      console.error('Error al registrar con Google:', error);
+      this.errorMessage = error instanceof Error ? error.message : 'Error al registrar con Google';
+      this.showError = true;
+      this.isLoading = false;
+    }
   }
 }
