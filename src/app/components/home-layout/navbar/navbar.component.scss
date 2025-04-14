@@ -1,0 +1,93 @@
+/* Estilos del navbar */
+
+.navbar {
+  background-color: #ffffff;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #efefef;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  height: 60px;
+}
+
+.app-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-left: 0.8rem;
+  color: #003366;
+  letter-spacing: -0.5px;
+}
+
+.menu-button {
+  color: #444;
+}
+
+.menu-icon {
+  font-size: 24px;
+}
+
+.notification-button {
+  color: #555;
+}
+
+.notification-icon {
+  font-size: 22px;
+}
+
+.user-mini-profile {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.avatar-small {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 500;
+  color: white;
+  font-size: 16px;
+  
+  &.client {
+    background-color: #30B0C7;
+  }
+  
+  &.provider {
+    background-color: #30B0C7;
+  }
+  
+  &.admin {
+    background-color: #003366;
+  }
+}
+
+@media (max-width: 576px) {
+  .app-title {
+    font-size: 1rem;
+  }
+}
+
+.cliente {
+  background-color: #007bff;
+}
+
+.proveedor {
+  background-color: #28a745;
+}
+
+.admin {
+  background-color: #dc3545;
+}
+
+/* Mejorar visibilidad del icono de hamburguesa */
+.mat-icon-button {
+  color: #333333 !important;
+}
+
+.mat-icon {
+  color: #333333;
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+} 

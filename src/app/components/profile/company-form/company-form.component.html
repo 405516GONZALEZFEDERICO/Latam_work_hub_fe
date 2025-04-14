@@ -1,0 +1,170 @@
+<div class="company-form-container">
+  <div class="header-section">
+    <div class="header-row">
+      <button class="back-button" (click)="goBack()">
+        <mat-icon>arrow_back_ios</mat-icon>
+        Volver
+      </button>
+    </div>
+    <h2 class="form-title">Información de Empresa</h2>
+    <p class="form-subtitle">Completa los datos para establecer tu perfil de empresa</p>
+  </div>
+
+  <form [formGroup]="companyForm" (ngSubmit)="onSubmit()" class="form-fields">
+    <!-- Fila 1: Nombre comercial y Razón social -->
+    <div class="form-flex-row">
+      <div class="form-flex-col">
+        <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
+          <mat-label>Nombre comercial</mat-label>
+          <input 
+            matInput 
+            formControlName="name" 
+            placeholder="Nombre comercial">
+          <mat-error *ngIf="formControls['name'].errors?.['required']">
+            Obligatorio
+          </mat-error>
+        </mat-form-field>
+      </div>
+      
+      <div class="form-flex-col">
+        <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
+          <mat-label>Razón social</mat-label>
+          <input 
+            matInput 
+            formControlName="legalName" 
+            placeholder="Razón social">
+          <mat-error *ngIf="formControls['legalName'].errors?.['required']">
+            Obligatorio
+          </mat-error>
+        </mat-form-field>
+      </div>
+    </div>
+    
+    <!-- Fila 2: RFC y Teléfono -->
+    <div class="form-flex-row">
+      <div class="form-flex-col">
+        <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
+          <mat-label>Identificación fiscal</mat-label>
+          <input 
+            matInput 
+            formControlName="taxId" 
+            placeholder="RFC / RUT / NIT">
+          <mat-error *ngIf="formControls['taxId'].errors?.['required']">
+            Obligatorio
+          </mat-error>
+        </mat-form-field>
+      </div>
+      
+      <div class="form-flex-col">
+        <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
+          <mat-label>Teléfono</mat-label>
+          <input 
+            matInput 
+            formControlName="phone" 
+            type="tel" 
+            placeholder="+1 234 567 8900">
+          <mat-error *ngIf="formControls['phone'].errors?.['required']">
+            Obligatorio
+          </mat-error>
+        </mat-form-field>
+      </div>
+    </div>
+    
+    <!-- Fila 3: Email y Sitio web -->
+    <div class="form-flex-row">
+      <div class="form-flex-col">
+        <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
+          <mat-label>Email</mat-label>
+          <input 
+            matInput 
+            formControlName="email" 
+            type="email" 
+            placeholder="empresa@ejemplo.com">
+          <mat-error *ngIf="formControls['email'].errors?.['required']">
+            Obligatorio
+          </mat-error>
+        </mat-form-field>
+      </div>
+      
+      <div class="form-flex-col">
+        <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
+          <mat-label>Sitio web</mat-label>
+          <input 
+            matInput 
+            formControlName="website" 
+            placeholder="www.ejemplo.com">
+        </mat-form-field>
+      </div>
+    </div>
+
+    <!-- Fila 4: Persona de contacto y País de operación principal -->
+    <div class="form-flex-row">
+      <div class="form-flex-col">
+        <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
+          <mat-label>Persona de contacto</mat-label>
+          <input 
+            matInput 
+            formControlName="contactPerson" 
+            placeholder="Nombre del contacto principal">
+        </mat-form-field>
+      </div>
+      
+      <div class="form-flex-col">
+        <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
+          <mat-label>País</mat-label>
+          <mat-select formControlName="country">
+            <mat-option *ngFor="let country of countries" [value]="country.code">
+              {{country.name}}
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="formControls['country'].errors?.['required']">
+            Obligatorio
+          </mat-error>
+        </mat-form-field>
+      </div>
+    </div>
+    
+    <!-- Fila 5: Países de operación -->
+    <div class="form-flex-row">
+      <div class="form-flex-col w-100">
+        <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
+          <mat-label>Países de operación</mat-label>
+          <mat-select multiple formControlName="operatingCountries">
+            <mat-option *ngFor="let country of countries" [value]="country.code">
+              {{country.name}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+    
+    <!-- Fila 6: Descripción -->
+    <div class="form-flex-row">
+      <div class="form-flex-col w-100">
+        <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
+          <mat-label>Descripción de la empresa</mat-label>
+          <textarea 
+            matInput 
+            formControlName="description" 
+            placeholder="Describe brevemente a qué se dedica tu empresa"
+            rows="4">
+          </textarea>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <!-- Botón de guardar -->
+    <div class="form-actions">
+      <button 
+        type="submit" 
+        [disabled]="isSubmitting" 
+        class="btn-primary full-width">
+        <span *ngIf="!isSubmitting">Guardar información</span>
+        <span *ngIf="isSubmitting">
+          <mat-spinner diameter="20" class="spinner-in-button"></mat-spinner>
+          Guardando...
+        </span>
+      </button>
+    </div>
+  </form>
+</div> 

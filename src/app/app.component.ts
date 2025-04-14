@@ -1,36 +1,16 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
-import { AuthService } from './services/auth.service';
-import { Router } from '@angular/router';
+import { Subject } from 'rxjs';
+import { throttleTime, takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet],
-  template: '<router-outlet></router-outlet>'
+  imports: [CommonModule, RouterOutlet],
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css']
 })
-export class AppComponent implements OnInit {
-  title = 'latam-work-hub';
+export class AppComponent   {
 
-  constructor(
-    private authService: AuthService,
-    private router: Router
-  ) {}
-
-  ngOnInit() {
-    // Ejecutar handleRedirectResult después de que la aplicación se haya inicializado completamente
-    setTimeout(async () => {
-      console.log('Verificando redirección de Google...');
-      try {
-        const user = await this.authService.handleRedirectResult();
-        if (user) {
-          console.log('Usuario autenticado correctamente, redirigiendo...');
-          await this.router.navigate(['/default-section']);
-        }
-      } catch (error) {
-        console.error('Error en la autenticación:', error);
-        await this.router.navigate(['/login']);
-      }
-    }, 100);
-  }
 }

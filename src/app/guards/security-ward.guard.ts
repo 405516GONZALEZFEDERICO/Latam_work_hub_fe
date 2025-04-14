@@ -1,56 +1,56 @@
-import { inject } from '@angular/core';
-import { CanActivateFn, Router, UrlTree } from '@angular/router';
-import { AuthService } from '../services/auth.service';
-import { Observable, map, take } from 'rxjs';
-import { IRoute } from '../models/user';
+import { Injectable } from '@angular/core';
+import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, Router } from '@angular/router';
+import { Observable, map } from 'rxjs';
+import { AuthService } from '../services/auth-service/auth.service';
+import { User, UserRole } from '../models/user';
 
-export const securityWardGuard: CanActivateFn = (route, state): Observable<boolean | UrlTree> => {
-  const authService = inject(AuthService);
-  const router = inject(Router);
+interface IRoute {
+  allowedRoles?: UserRole[];
+  [key: string]: any;
+}
 
-  const requiredRole = (route.data as IRoute)?.requiredRole;
-  console.log('Guard - Rol requerido:', requiredRole);
+@Injectable({
+  providedIn: 'root'
+})
+export class SecurityWardGuard implements CanActivate {
+  constructor(private authService: AuthService, private router: Router) {}
 
-  return authService.currentUser$.pipe(
-    take(1),
-    map(user => {
-      console.log('Guard - Usuario actual:', user);
-      
-      if (!user) {
-        console.log('No hay usuario autenticado. Redirigiendo a login...');
-        return router.createUrlTree(['/login']);
-      }
-
-      console.log('Guard - Usuario autenticado con rol:', user.role);
-
-      // Si no se requiere rol específico y el usuario está autenticado, permitir acceso
-      if (!requiredRole) {
-        console.log('No se requiere rol específico, permitiendo acceso');
-        return true;
-      }
-
-      const userRole = user.role;
-      console.log('Guard - Comparando roles:', { userRole, requiredRole });
-
-      // Si el usuario tiene rol DEFAULT y está intentando acceder a select-role, permitir
-      if (userRole === 'DEFAULT' && requiredRole === 'DEFAULT') {
-        console.log('Usuario DEFAULT accediendo a select-role, permitiendo acceso');
-        return true;
-      }
-
-      // Si el rol del usuario no coincide con el requerido
-      if (userRole !== requiredRole) {
-        console.log(`Rol incorrecto. Requiere: ${requiredRole}, pero tiene: ${userRole}`);
-        if (userRole === 'DEFAULT') {
-          console.log('Usuario DEFAULT, redirigiendo a select-role');
-          return router.createUrlTree(['/select-role']);
-        }
-        console.log('Redirigiendo a acceso denegado');
-        return router.createUrlTree(['/acceso-denegado']);
-      }
-
-      console.log('Acceso permitido');
+  canActivate(
+    route: ActivatedRouteSnapshot,
+    state: RouterStateSnapshot
+  ): Observable<boolean> | Promise<boolean> | boolean {
+    const routeData = route.data as IRoute;
+    const allowedRoles = routeData?.allowedRoles;
+    
+    // Si no hay restricciones de roles, permitir acceso
+    if (!allowedRoles || allowedRoles.length === 0) {
       return true;
-    })
-  );
-};
+    }
+
+    return this.authService.getCurrentUser().pipe(
+      map(user => {
+        // Si no hay usuario, redirigir al login
+        if (!user) {
+          this.router.navigate(['/login']);
+          return false;
+        }
+
+        // Si DEFAULT está en los roles permitidos, cualquier usuario puede acceder
+        if (allowedRoles.includes('DEFAULT')) {
+          return true;
+        }
+        
+        // Verificar si el rol del usuario está en la lista de permitidos
+        if (allowedRoles.includes(user.role)) {
+          return true;
+        }
+
+        // Si el usuario tiene DEFAULT pero se requiere otro rol, puede ir a home
+        if (user.role === 'DEFAULT') {
+          this.router.navigate(['/login']);
+        } 
+        return false;
+      })
+    );
+  }
+}

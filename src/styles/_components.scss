@@ -1,0 +1,140 @@
+/* Importar variables */
+@use 'variables' as *;
+
+/* Estilos para Provider Type Selection */
+.provider-type-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: $spacing-lg;
+  border-radius: $border-radius;
+  font-family: $font-family;
+  background-color: white;
+  box-shadow: $box-shadow;
+}
+
+.provider-type-title {
+  font-size: $font-size-large;
+  font-weight: 600;
+  margin-bottom: $spacing-sm;
+  color: var(--color-text-dark);
+  text-align: center;
+}
+
+.provider-type-description {
+  font-size: $font-size-normal;
+  color: var(--color-text-light);
+  margin-bottom: $spacing-xl;
+  text-align: center;
+}
+
+.provider-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: $spacing-lg;
+  margin-bottom: $spacing-xxl;
+}
+
+.provider-card {
+  background-color: #FFFFFF;
+  border-radius: $border-radius;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+  }
+  
+  &.selected {
+    border: 2px solid var(--color-primary);
+    background-color: rgba(51, 51, 51, 0.02);
+  }
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  padding: $spacing-lg;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-right: $spacing-lg;
+  
+  &.individual {
+    background-color: rgba(var(--color-individual), 0.1);
+  }
+  
+  &.company {
+    background-color: rgba(var(--color-company), 0.1);
+  }
+  
+  mat-icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+    color: var(--color-primary);
+  }
+}
+
+.card-content {
+  padding: $spacing-lg;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-description {
+  font-size: $font-size-normal;
+  color: var(--color-text-light);
+  margin-bottom: $spacing-lg;
+  line-height: 1.4;
+}
+
+.selection-indicator {
+  position: absolute;
+  top: $spacing-md;
+  right: $spacing-md;
+  
+  mat-icon {
+    color: var(--color-primary);
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: space-between;
+  padding-top: $spacing-sm;
+}
+
+/* Estilos para profile cards */
+.profile-card {
+  background-color: white;
+  border-radius: $border-radius;
+  box-shadow: $box-shadow;
+  margin-bottom: $spacing-lg;
+  overflow: hidden;
+}
+
+/* Media queries */
+@media (max-width: 768px) {
+  .provider-cards {
+    grid-template-columns: 1fr;
+  }
+} 

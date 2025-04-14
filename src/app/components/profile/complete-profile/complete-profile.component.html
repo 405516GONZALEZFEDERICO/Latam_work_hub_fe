@@ -1,0 +1,56 @@
+<!-- Tarjeta de Completar Perfil -->
+<div class="outer-container">
+  <div class="profile-wrapper">
+    <mat-card class="profile-card">
+      <mat-card-content>
+        <!-- Tabs -->
+        <mat-tab-group mat-align-tabs="center" [(selectedIndex)]="activeTab" (selectedIndexChange)="setActiveTab($event)" animationDuration="0ms">
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <div class="d-flex align-items-center">
+                <mat-icon class="me-2">person</mat-icon>
+                <span>Datos personales</span>
+              </div>
+            </ng-template>
+            
+            <div class="tab-content">
+              <app-personal-data-form
+                [initialData]="userData"
+                (profileUpdated)="userData = $event">
+              </app-personal-data-form>
+            </div>
+          </mat-tab>
+          
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <div class="d-flex align-items-center">
+                <mat-icon class="me-2">business</mat-icon>
+                <span>Tipo de Proveedor</span>
+              </div>
+            </ng-template>
+            
+            <div class="tab-content">
+              <!-- Formulario de tipo de proveedor -->
+              <div *ngIf="isProviderRole() && showProviderSelection">
+                <app-provider-type-selection
+                  [initialType]="providerType === 'INDIVIDUAL' ? 'individual' : providerType === 'COMPANY' ? 'company' : undefined"
+                  [showBackButton]="showBackButton"
+                  (typeSelected)="handleProviderTypeSelection($event)"
+                  (saved)="handleProviderTypeSaved($event)"
+                  (back)="backToProviderSelection()">
+                </app-provider-type-selection>
+              </div>
+              
+              <!-- Formulario de empresa -->
+              <div *ngIf="isProviderRole() && providerType === 'COMPANY' && !showProviderSelection">
+                <app-company-form
+                  (back)="backToProviderSelection()">
+                </app-company-form>
+              </div>
+            </div>
+          </mat-tab>
+        </mat-tab-group>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

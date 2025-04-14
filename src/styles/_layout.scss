@@ -1,0 +1,126 @@
+/* Importar variables */
+@use 'variables' as *;
+
+/* Utilidades de layout */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-left: -$spacing-md;
+  margin-right: -$spacing-md;
+}
+
+.col, .col-1, .col-2, .col-3, .col-4, .col-5, .col-6, .col-7, .col-8, .col-9, .col-10, .col-11, .col-12,
+.col-md-1, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-md-10, .col-md-11, .col-md-12 {
+  position: relative;
+  width: 100%;
+  padding-right: $spacing-md;
+  padding-left: $spacing-md;
+  box-sizing: border-box;
+}
+
+.col-12 {
+  flex: 0 0 100%;
+  max-width: 100%;
+}
+
+.col-6 {
+  flex: 0 0 50%;
+  max-width: 50%;
+}
+
+@media (min-width: 768px) {
+  .col-md-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+  
+  .col-md-4 {
+    flex: 0 0 33.333333%;
+    max-width: 33.333333%;
+  }
+}
+
+/* Utilidades de margen */
+.mb-3 {
+  margin-bottom: $spacing-md;
+}
+
+.mb-4 {
+  margin-bottom: $spacing-lg;
+}
+
+/* Utilidades de ancho */
+.w-100 {
+  width: 100%;
+}
+
+/* Utilidades de alineación */
+.d-flex {
+  display: flex;
+}
+
+.align-items-center {
+  align-items: center;
+}
+
+.justify-content-center {
+  justify-content: center;
+}
+
+.justify-content-between {
+  justify-content: space-between;
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* Contenedor principal */
+body {
+  background-color: var(--color-background);
+  margin: 0;
+  padding: 0;
+  color: var(--color-text-dark);
+  font-family: $font-family;
+}
+
+/* Barra lateral */
+.ios-sidebar {
+  background-color: white;
+  box-shadow: $box-shadow;
+  
+  .sidebar-nav a {
+    display: flex;
+    align-items: center;
+    padding: $spacing-md $spacing-lg;
+    color: var(--color-text-dark);
+    text-decoration: none;
+    border-radius: $border-radius;
+    margin-bottom: $spacing-sm;
+    transition: background-color 0.2s;
+    
+    &:hover {
+      background-color: rgba(0,0,0,0.05);
+    }
+    
+    &.active {
+      background-color: rgba(var(--color-primary), 0.1);
+    }
+    
+    mat-icon {
+      margin-right: $spacing-md;
+      color: var(--color-text-light);
+    }
+    
+    &.active mat-icon {
+      color: var(--color-primary);
+    }
+  }
+}
+
+@media (max-width: 767px) {
+  .ios-sidebar {
+    width: 100%;
+    margin-bottom: $spacing-lg;
+  }
+} 

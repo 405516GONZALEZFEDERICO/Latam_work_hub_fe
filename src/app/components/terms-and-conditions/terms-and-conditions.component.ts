@@ -1,13 +1,27 @@
 import { Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatCardModule } from '@angular/material/card';
+import { MatDividerModule } from '@angular/material/divider';
 
 @Component({
   selector: 'app-terms-and-conditions',
-  imports: [],
+  standalone: true,
+  imports: [
+    CommonModule, 
+    RouterLink, 
+    MatButtonModule, 
+    MatIconModule, 
+    MatCardModule, 
+    MatDividerModule
+  ],
   templateUrl: './terms-and-conditions.component.html',
-  styleUrl: './terms-and-conditions.component.css'
+  styleUrls: ['./terms-and-conditions.component.scss']
 })
 export class TermsAndConditionsComponent {
-acceptTerms: any;
+  acceptTerms: any;
   goBack() {
     window.history.back();
   }

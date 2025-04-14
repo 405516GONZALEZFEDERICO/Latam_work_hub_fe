@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { ViewSelectRolComponent } from './view-select-rol.component';
+import { RoleSelectionComponent } from './view-select-rol.component';
 
-describe('ViewSelectRolComponent', () => {
-  let component: ViewSelectRolComponent;
-  let fixture: ComponentFixture<ViewSelectRolComponent>;
+describe('RoleSelectionComponent', () => {
+  let component: RoleSelectionComponent;
+  let fixture: ComponentFixture<RoleSelectionComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ViewSelectRolComponent]
+      imports: [RoleSelectionComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(ViewSelectRolComponent);
+    fixture = TestBed.createComponent(RoleSelectionComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

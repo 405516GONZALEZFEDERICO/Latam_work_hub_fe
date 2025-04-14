@@ -1,100 +1,82 @@
-import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpErrorResponse } from '@angular/common/http';
+import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpEvent, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { AuthService } from '../app/services/auth.service'; // Update path as needed
-import { catchError, switchMap, throwError } from 'rxjs';
-import { CookieService } from 'ngx-cookie-service';
-import { Router } from '@angular/router';
+import { Observable, from, throwError, of } from 'rxjs';
+import { catchError, switchMap, mergeMap } from 'rxjs/operators';
+import { AuthService } from './../app/services/auth-service/auth.service';
 
-export const authInterceptor: HttpInterceptorFn = <T>(req: HttpRequest<T>, next: HttpHandlerFn) => {
+export const authInterceptor: HttpInterceptorFn = (
+  request: HttpRequest<unknown>, 
+  next: HttpHandlerFn
+): Observable<HttpEvent<unknown>> => {
   const authService = inject(AuthService);
-  const cookieService = inject(CookieService);
-  const router = inject(Router);
-  
-  // Skip interceptor for auth endpoints or refresh token
-  if (req.url.includes('/login') || req.url.includes('/register') || 
-      req.url.includes('/google') || req.url.includes('/refresh')) {
-    return next(req);
-  }
-  
-  // Get token and role from cookies
-  const idToken = cookieService.get('idToken');
-  const userRole = cookieService.get('role'); // Cambiado de 'roles' a 'role'
-  
-  console.log('Token actual:', idToken);
-  console.log('Rol del usuario:', userRole);
-  
-  if (idToken && !authService.isTokenExpired(idToken)) {
-    req = req.clone({
-      setHeaders: {
-        'Authorization': `Bearer ${idToken}`
-      }
-    });
-    return next(req).pipe(
-      catchError((error: HttpErrorResponse) => {
-        if (error.status === 401) {
-          authService.logout();
-          cookieService.delete('idToken', '/');
-          cookieService.delete('role', '/'); // Cambiado de 'roles' a 'role'
-          router.navigate(['/login']);
-        }
-        if (error.status === 403) {
-          console.log('Error 403: Usuario no tiene permisos necesarios');
-          router.navigate(['/unauthorized']);
-        }
-        return throwError(() => error);
-      })
-    );
-  } else if (idToken && authService.isTokenExpired(idToken)) {
-    // Token exists but is expired, try to refresh
-    return authService.refreshToken().pipe(
-      switchMap(() => {
-        // After refresh, get the new token and add it to request
-        const newToken = authService.getIdToken();
-        if (!newToken) {
-          throw new Error('No se pudo obtener un nuevo token');
-        }
-        
-        const clonedReq = req.clone({
-          setHeaders: {
-            'Authorization': `Bearer ${newToken}`
-          }
-        });
 
-        // Establecer las cookies con el tiempo de expiración correcto
-        const expirationDays = 30; // o el valor que prefieras
-        cookieService.set('idToken', newToken, expirationDays, '/');
-        if (userRole) {
-          cookieService.set('role', userRole, expirationDays, '/');
-        }
-
-        return next(clonedReq);
-      }),
-      catchError(error => {
-        console.error('Token refresh failed in interceptor:', error);
-        // If refresh fails, log out
-        authService.logout();
-        cookieService.delete('idToken', '/');
-        cookieService.delete('role', '/'); // Cambiado de 'roles' a 'role'
-        router.navigate(['/login']);
-        return throwError(() => error);
-      })
-    );
-  }
-  
-  // No token available
-  return next(req).pipe(
-    catchError((error: HttpErrorResponse) => {
-      if (error.status === 401) {
-        authService.logout();
-        cookieService.delete('idToken', '/');
-        cookieService.delete('role', '/'); // Cambiado de 'roles' a 'role'
-        router.navigate(['/login']);
+  // Comprobar primero si el token está por expirar
+  return from(authService.checkTokenExpiration()).pipe(
+    mergeMap((isExpiring) => {
+      // Si el token está por expirar, renovarlo primero
+      if (isExpiring) {
+        return authService.refreshToken().pipe(
+          switchMap((token) => addTokenAndContinue(token, request, next, authService))
+        );
       }
-      if (error.status === 403) {
-        console.log('Error 403: Usuario no tiene permisos necesarios');
-        router.navigate(['/unauthorized']);
-      }
-      return throwError(() => error);
+      
+      // Si no está por expirar, continuar normalmente
+      return from(authService.getIdToken()).pipe(
+        switchMap(token => addTokenAndContinue(token, request, next, authService))
+      );
     })
   );
 };
+
+// Función auxiliar para añadir el token y continuar con la solicitud
+function addTokenAndContinue(
+  token: string | null, 
+  request: HttpRequest<unknown>, 
+  next: HttpHandlerFn,
+  authService: AuthService
+): Observable<HttpEvent<unknown>> {
+  // Si tenemos un token, lo agregamos a la solicitud
+  if (token) {
+    request = request.clone({
+      setHeaders: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+  }
+
+  // Continuar con la solicitud y manejar posibles errores 401/403
+  return next(request).pipe(
+    catchError((error: HttpErrorResponse) => {
+      // Si recibimos un error 401 (No autorizado) o 403 (Prohibido)
+      if (error.status === 401 || error.status === 403) {
+        // Intentar renovar el token y reintentar la solicitud
+        return authService.refreshToken().pipe(
+          switchMap(newToken => {
+            if (newToken) {
+              // Tenemos un nuevo token, reintentar la solicitud
+              const retryRequest = request.clone({
+                setHeaders: {
+                  'Authorization': `Bearer ${newToken}`
+                }
+              });
+              return next(retryRequest);
+            } else {
+              // No pudimos renovar el token, la sesión ha expirado
+              // Redirigir al login
+              authService.logout();
+              return throwError(() => new Error('La sesión ha expirado. Por favor, inicie sesión nuevamente.'));
+            }
+          }),
+          catchError(refreshError => {
+            // Error al renovar el token
+            authService.logout();
+            return throwError(() => refreshError);
+          })
+        );
+      }
+      
+      // Para otros errores, simplemente propagar
+      return throwError(() => error);
+    })
+  );
+}

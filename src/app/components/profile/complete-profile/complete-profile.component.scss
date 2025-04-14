@@ -1,0 +1,183 @@
+/* Usar variables globales */
+@use '../../../../styles/variables' as *;
+
+/* Ajustes para contenedor principal */
+:host {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-height: calc(100vh - 120px) !important;
+  background-color: transparent !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}
+
+/* Contenedor exterior con mejor estructura */
+.outer-container {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  max-width: 860px !important;
+  margin: 0 auto !important;
+  height: auto !important;
+  max-height: calc(100vh - 120px) !important;
+  overflow: visible !important;
+}
+
+/* Contenedor para centrar la tarjeta */
+.profile-wrapper {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  margin: 0 auto !important;
+  height: auto !important;
+  max-height: calc(100vh - 130px) !important;
+}
+
+/* Tarjeta principal con altura automática */
+.profile-card {
+  width: 100% !important;
+  height: auto !important;
+  max-height: calc(100vh - 140px) !important; 
+  border-radius: $border-radius !important;
+  box-shadow: $box-shadow !important;
+  background-color: white !important;
+  position: relative !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  margin-bottom: 0 !important;
+  transform: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Contenido de la tarjeta */
+.mat-card-content {
+  padding: 0 !important;
+  overflow: visible !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+}
+
+/* Contenido de las pestañas */
+.tab-content {
+  padding: 0 !important;
+  background-color: white !important;
+  border-radius: $border-radius-small !important;
+  height: auto !important;
+  overflow: visible !important;
+  position: relative !important;
+}
+
+/* Estilos para las pestañas */
+:host ::ng-deep {
+  .mat-mdc-tab-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .mat-mdc-tab {
+    height: 48px;
+    
+    .mat-mdc-tab-label-content {
+      font-weight: 500;
+    }
+  }
+  
+  .mat-mdc-tab-body-content {
+    overflow: visible !important; /* Crucial para evitar scroll horizontal */
+  }
+  
+  .mat-mdc-tab-body-wrapper {
+    overflow: visible !important; /* Crucial para evitar scroll horizontal */
+  }
+}
+
+/* Media queries para dispositivos móviles */
+@media (max-width: 768px) {
+  .profile-card {
+    border-radius: 0;
+    margin-bottom: 0;
+    height: calc(100vh - 60px);
+    overflow-y: auto !important; /* Permite scroll vertical en mobile */
+  }
+  
+  .tab-content {
+    min-height: auto;
+    padding: 15px;
+  }
+  
+  /* Ajustes para que el scroll funcione en mobile */
+  :host ::ng-deep {
+    .mat-mdc-tab-body-content {
+      overflow-y: auto !important;
+    }
+  }
+}
+
+/* Eliminar espaciador inferior extra */
+.bottom-spacer {
+  display: none !important;
+}
+
+/* Ajustar estilos para la card de selección de empresa */
+.company-selection-card {
+  border: 1px solid #e5e5ea !important;
+  border-radius: $spacing-sm !important;
+  padding: $spacing-sm !important;
+  margin-bottom: $spacing-md !important;
+  
+  h3 {
+    font-size: $font-size-normal !important;
+    font-weight: 600 !important;
+    margin-bottom: $spacing-sm !important;
+    color: $text-color-dark !important;
+  }
+  
+  .d-flex {
+    gap: $spacing-sm !important;
+  }
+  
+  button {
+    font-size: $font-size-small !important;
+    font-weight: 500 !important;
+    height: 32px !important;
+    padding: 0 10px !important;
+    border-radius: $spacing-xs + 2 !important;
+  }
+}
+
+/* Estilos para los botones de selección */
+.active-selection {
+  background-color: var(--color-primary) !important;
+  color: white !important;
+}
+
+/* Mejorar apariencia del botón Continuar */
+.save-button {
+  background-color: var(--color-primary) !important;
+  color: white !important;
+  height: 36px !important;
+  font-size: $font-size-small !important;
+  font-weight: 500 !important;
+  padding: 0 14px !important;
+  border-radius: $spacing-xs + 2 !important;
+  margin-top: $spacing-md - 2 !important;
+}
+
+/* Mejorar botón de volver */
+.backlink button {
+  font-size: $font-size-small !important;
+  padding: 0 10px !important;
+  height: 32px !important;
+  color: var(--color-primary) !important;
+  margin-bottom: $spacing-sm !important;
+} 

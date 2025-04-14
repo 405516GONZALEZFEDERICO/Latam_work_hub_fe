@@ -1,105 +1,65 @@
-<div class="min-h-screen flex items-center justify-center bg-flex-gray-30 p-4">
-  <div class="w-full max-w-4xl mx-auto px-4">
-    <div class="text-center mb-10">
-      <h1 class="text-3xl font-bold text-flex-darkpurple mb-3">¡Bienvenido a FlexRent!</h1>
-      <p class="text-flex-darkgray max-w-2xl mx-auto">
-        La plataforma que conecta empresas emergentes con espacios de trabajo flexibles.
-        Selecciona el tipo de usuario para continuar.
-      </p>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-      <!-- Card para Busco espacios -->
-      <div class="card w-full cursor-pointer transition-all duration-300 bg-white rounded-xl"
-           [class.border-flex-purple]="selectedType === 'FREELANCER'"
-           [class.shadow-lg]="selectedType === 'FREELANCER'"
-           [class.border-2]="selectedType === 'FREELANCER'"
-           [class.hover:shadow-md]="selectedType !== 'FREELANCER'"
-           [class.border-gray-200]="selectedType !== 'FREELANCER'"
-           (click)="selectUserType('FREELANCER')">
-        <div class="p-4">
-          <div class="flex flex-col items-center">
-            <div class="p-3 rounded-full mb-3 flex items-center justify-center"
-                 [class.bg-flex-purple]="selectedType === 'FREELANCER'"
-                 [class.text-white]="selectedType === 'FREELANCER'"
-                 [class.bg-flex-gray]="selectedType !== 'FREELANCER'">
-              <i class="material-icons" style="font-size: 24px;">person</i>
-            </div>
-            <h3 class="text-xl font-medium mb-2">Busco espacios</h3>
-            <p class="text-sm text-muted-foreground text-center">
-              Encuentra los mejores espacios para tu empresa o proyecto. Reserva salas de reuniones, oficinas y más.
-            </p>
+<!-- Component Template (HTML) --> 
+<div class="ios-style">
+  <div class="content-container">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>¡Bienvenido a Latam WorkHub!</mat-card-title>
+        <mat-card-subtitle>La plataforma que conecta empresas y profesionales con rapidez en su trabajo. Selecciona el tipo de cuenta para continuar.</mat-card-subtitle>
+      </mat-card-header>
+      
+      <div class="space-y-6">
+        <button [class]="'flex items-center ' + (selectedRole === 'CLIENTE' ? 'border-primary' : '')" (click)="selectRole('CLIENTE')">
+          <div class="flex-shrink-0">
+            <mat-icon>person</mat-icon>
           </div>
-        </div>
-      </div>
-
-      <!-- Card para Ofrezco espacios -->
-      <div class="card w-full cursor-pointer transition-all duration-300 bg-white rounded-xl"
-           [class.border-flex-purple]="selectedType === 'EMPLOYER'"
-           [class.shadow-lg]="selectedType === 'EMPLOYER'"
-           [class.border-2]="selectedType === 'EMPLOYER'"
-           [class.hover:shadow-md]="selectedType !== 'EMPLOYER'"
-           [class.border-gray-200]="selectedType !== 'EMPLOYER'"
-           (click)="selectUserType('EMPLOYER')">
-        <div class="p-4">
-          <div class="flex flex-col items-center">
-            <div class="p-3 rounded-full mb-3 flex items-center justify-center"
-                 [class.bg-flex-purple]="selectedType === 'EMPLOYER'"
-                 [class.text-white]="selectedType === 'EMPLOYER'"
-                 [class.bg-flex-gray]="selectedType !== 'EMPLOYER'">
-              <i class="material-icons" style="font-size: 24px;">business</i>
-            </div>
-            <h3 class="text-xl font-medium mb-2">Ofrezco espacios</h3>
-            <p class="text-sm text-muted-foreground text-center">
-              Alquila tus espacios disponibles y genera ingresos adicionales para tu negocio.
-            </p>
+          <div class="ml-4">
+            <h3>Cliente</h3>
+            <p>Busca y contrata servicios profesionales</p>
           </div>
-        </div>
+        </button>
+        
+        <button [class]="'flex items-center ' + (selectedRole === 'PROVEEDOR' ? 'border-primary' : '')" (click)="selectRole('PROVEEDOR')">
+          <div class="flex-shrink-0">
+            <mat-icon>business</mat-icon>
+          </div>
+          <div class="ml-4">
+            <h3>Proveedor</h3>
+            <p>Ofrece tus servicios profesionales</p>
+          </div>
+        </button>
+        
+        <button mat-raised-button color="primary" [disabled]="!selectedRole" (click)="continue()">
+          Continuar
+          <mat-icon>arrow_forward</mat-icon>
+        </button>
       </div>
-    </div>
-
-    <div class="flex justify-center">
-      <button class="bg-flex-purple hover:bg-flex-darkpurple text-white w-full max-w-xs py-3 px-6 rounded-lg transition-all text-base font-medium focus:outline-none"
-              [class.opacity-50]="!selectedType || isLoading"
-              [disabled]="!selectedType || isLoading"
-              (click)="confirmSelection()">
-        {{ getButtonText() }}
-      </button>
-    </div>
-
-    <div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
-      <!-- Búsqueda simplificada -->
-      <div class="flex flex-col items-center text-center">
-        <div class="bg-flex-purple/10 p-3 rounded-full mb-3 flex items-center justify-center">
-          <i class="material-icons text-flex-purple" style="font-size: 24px;">search</i>
+    </mat-card>
+    
+    <!-- Feature Cards Section -->
+    <div class="feature-cards">
+      <mat-card class="feature-card">
+        <div class="icon-container">
+          <mat-icon>search</mat-icon>
         </div>
-        <h3 class="font-medium mb-2">Búsqueda simplificada</h3>
-        <p class="text-sm text-muted-foreground">
-          Encuentra el espacio perfecto con nuestras herramientas de búsqueda avanzada
-        </p>
-      </div>
-
-      <!-- Reservas flexibles -->
-      <div class="flex flex-col items-center text-center">
-        <div class="bg-flex-purple/10 p-3 rounded-full mb-3 flex items-center justify-center">
-          <i class="material-icons text-flex-purple" style="font-size: 24px;">calendar_month</i>
+        <h3>Búsqueda simplificada</h3>
+        <p>Encuentra el trabajo perfecto con nuestro algoritmo de búsqueda avanzada</p>
+      </mat-card>
+      
+      <mat-card class="feature-card">
+        <div class="icon-container">
+          <mat-icon>event</mat-icon>
         </div>
-        <h3 class="font-medium mb-2">Reservas flexibles</h3>
-        <p class="text-sm text-muted-foreground">
-          Reserva por hora, día o mes según tus necesidades
-        </p>
-      </div>
-
-      <!-- Acceso seguro -->
-      <div class="flex flex-col items-center text-center">
-        <div class="bg-flex-purple/10 p-3 rounded-full mb-3 flex items-center justify-center">
-          <i class="material-icons text-flex-purple" style="font-size: 24px;">key</i>
+        <h3>Reservas flexibles</h3>
+        <p>Reserva por hora, día o mes según tus necesidades</p>
+      </mat-card>
+      
+      <mat-card class="feature-card">
+        <div class="icon-container">
+          <mat-icon>lock</mat-icon>
         </div>
-        <h3 class="font-medium mb-2">Acceso seguro</h3>
-        <p class="text-sm text-muted-foreground">
-          Gestiona el acceso a tus espacios de forma segura y sin complicaciones
-        </p>
-      </div>
+        <h3>Acceso seguro</h3>
+        <p>Garantiza el acceso a tus espacios de forma segura y sin complicaciones</p>
+      </mat-card>
     </div>
   </div>
 </div>

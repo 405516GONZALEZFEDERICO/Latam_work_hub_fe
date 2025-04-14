@@ -1,0 +1,161 @@
+@use 'sass:color';
+/* Importar variables globales */
+@use 'variables' as *;
+
+/* Estilos específicos para company-form */
+.company-form-container {
+  width: 100%;
+  padding: 20px;
+  background-color: white;
+  border-radius: $border-radius;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.header-section {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.header-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  color: $primary-color;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 16px 8px 0;
+  cursor: pointer;
+  
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-right: 4px;
+  }
+  
+  &:hover {
+    color: color.adjust($primary-color, $lightness: -10%);
+  }
+}
+
+.form-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  text-align: center;
+  color: $text-color-dark;
+}
+
+.form-subtitle {
+  font-size: 14px;
+  text-align: center;
+  margin-bottom: 16px;
+  color: $text-color-light;
+}
+
+.form-fields {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-flex-row {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  margin-bottom: 12px;
+  gap: 16px;
+}
+
+.form-flex-col {
+  flex: 1 1 calc(50% - 8px);
+  min-width: 0;
+  
+  &.w-100 {
+    flex-basis: 100%;
+    width: 100%;
+  }
+}
+
+.form-actions {
+  width: 100%;
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  
+  .btn-primary {
+    min-width: 200px;
+    
+    @media (max-width: 576px) {
+      width: 100%;
+    }
+  }
+}
+
+/* Estilos específicos para campos de Material */
+:host ::ng-deep {
+  .mat-mdc-form-field {
+    display: block;
+    width: 100%;
+  }
+  
+  .ios-input {
+    margin-bottom: 0 !important;
+    
+    .mat-mdc-form-field-flex {
+      border-radius: $border-radius-small !important;
+      min-height: 44px !important;
+      padding: 0 16px !important;
+    }
+    
+    .mat-mdc-form-field-infix {
+      width: 100% !important;
+      padding: 12px 0 !important;
+    }
+    
+    textarea.mat-mdc-input-element {
+      min-height: 100px !important;
+      padding: 12px 0 !important;
+    }
+  }
+  
+  .mat-mdc-form-field-subscript-wrapper {
+    height: 18px !important;
+  }
+}
+
+/* Media query para dispositivos móviles */
+@media (max-width: 768px) {
+  .company-form-container {
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+    padding: 15px !important;
+  }
+  
+  .form-flex-row {
+    flex-direction: column;
+    gap: 0;
+  }
+  
+  .form-flex-col {
+    flex: 1 1 100%;
+    width: 100%;
+    margin-bottom: 8px;
+  }
+}

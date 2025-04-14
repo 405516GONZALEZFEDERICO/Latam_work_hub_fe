@@ -1,0 +1,55 @@
+<div class="provider-type-container">
+  <div class="header-row" *ngIf="showBackButton">
+    <button class="back-button" (click)="goBack()">
+      <mat-icon>arrow_back_ios</mat-icon>
+      Volver
+    </button>
+  </div>
+  
+  <h2 class="provider-type-title">Selecciona tu perfil</h2>
+  <p class="provider-type-description">Elige el tipo de cuenta que mejor se adapte a ti</p>
+  
+  <div class="card-container">
+    <div 
+      class="card" 
+      [class.selected]="selectedType === 'individual'"
+      (click)="selectType('individual')"
+    >
+      <div class="card-icon">
+        <mat-icon>person</mat-icon>
+      </div>
+      <h3>Profesional Independiente</h3>
+      <p>Para freelancers y profesionales que trabajan por cuenta propia.</p>
+      <div class="selection-indicator" *ngIf="selectedType === 'individual'">
+        <mat-icon>check_circle</mat-icon>
+      </div>
+    </div>
+    
+    <div 
+      class="card" 
+      [class.selected]="selectedType === 'company'"
+      (click)="selectType('company')"
+    >
+      <div class="card-icon">
+        <mat-icon>business</mat-icon>
+      </div>
+      <h3>Empresa</h3>
+      <p>Para negocios, agencias y compañías que ofrecen servicios profesionales.</p>
+      <div class="selection-indicator" *ngIf="selectedType === 'company'">
+        <mat-icon>check_circle</mat-icon>
+      </div>
+    </div>
+  </div>
+  
+  <div class="button-container">
+    <button 
+      class="continue-button" 
+      mat-raised-button 
+      [disabled]="!selectedType || isLoading"
+      (click)="continue()"
+    >
+      <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+      Continuar
+    </button>
+  </div>
+</div>

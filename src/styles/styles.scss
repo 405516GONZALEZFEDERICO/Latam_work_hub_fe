@@ -1,0 +1,74 @@
+/* 
+  Archivo principal de estilos
+  Importa todos los módulos en un solo lugar
+*/
+
+/* Usar variables primero para que estén disponibles */
+@use 'variables' as *;
+
+/* Usar estilos base y componentes */
+@use 'buttons' as *;
+@use 'forms' as *;
+@use 'components' as *;
+@use 'layout' as *;
+
+/* Estilos adicionales específicos para la aplicación */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: var(--font-family);
+  color: var(--color-text-dark);
+  font-size: 14px;
+  line-height: 1.5;
+  background-color: var(--color-background);
+}
+
+/* Estilos para scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Override para el componente provider-type-selection */
+app-provider-type-selection {
+  width: 100%;
+  display: block;
+}
+
+/* Estilos específicos para las vistas de autenticación */
+.auth-styles {
+  .login-container {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    
+    .mat-mdc-form-field {
+      width: 100%;
+      margin-bottom: $spacing-md;
+    }
+    
+    .remember-forgot-container {
+      margin-bottom: $spacing-lg;
+    }
+    
+    .ios-button {
+      width: 100%;
+      margin-bottom: $spacing-lg;
+    }
+  }
+} 
