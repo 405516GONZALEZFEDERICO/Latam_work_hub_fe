@@ -17,11 +17,14 @@ export class LoginGuard implements CanActivate {
       map(user => {
         // Si el usuario ya está autenticado, redirigir según su rol
         if (user) {
+          console.log('Usuario autenticado:', user);
           if (!user.role || user.role === 'DEFAULT') {
             // Si no tiene un rol asignado, redirigir a selección de rol
+            console.log('Redirigiendo a select-role');
             this.router.navigate(['/select-role']);
           } else {
             // Si tiene rol, redirigir a la página principal correspondiente
+            console.log('Redirigiendo a home con rol:', user.role);
             this.router.navigate(['/home']);
           }
           return false; // No permitir acceso a la página de login

@@ -1,0 +1,34 @@
+<div class="welcome-container">
+  <div class="welcome-header">
+    <p class="subtitle">Bienvenido a Latam Work Hub</p>
+    <p *ngIf="currentUser" class="user-greeting">Hola, {{ currentUser.displayName || currentUser.email }}</p>
+  </div>
+  
+  <div class="welcome-message">
+    <h2>Tu espacio de trabajo en Latam Work Hub</h2>
+    <p>Conectando profesionales y espacios en toda Latinoamérica</p>
+    
+    <div class="role-specific-features">
+      <!-- Contenido específico para Proveedores -->
+      <div *ngIf="currentUser && currentUser.role === 'PROVEEDOR'" class="feature-card">
+        <h3>Tus espacios para alquilar</h3>
+        <p>Administra y publica espacios para que empresas los alquilen.</p>
+        <button class="action-btn">Registrar nuevo espacio</button>
+      </div>
+      
+      <!-- Contenido específico para Clientes -->
+      <div *ngIf="currentUser && currentUser.role === 'CLIENTE'" class="feature-card">
+        <h3>Encuentra espacios</h3>
+        <p>Busca espacios disponibles para tu empresa o eventos.</p>
+        <button class="action-btn">Buscar espacios</button>
+      </div>
+      
+      <!-- Contenido para todos los usuarios -->
+      <div class="feature-card">
+        <h3>Gestiona tu Perfil</h3>
+        <p>Mantén tu información actualizada para maximizar tus oportunidades.</p>
+        <a [routerLink]="['/home/profile/personal']" class="action-btn">Ver mi perfil</a>
+      </div>
+    </div>
+  </div>
+</div> 

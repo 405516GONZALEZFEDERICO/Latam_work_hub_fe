@@ -45,10 +45,14 @@ export class SecurityWardGuard implements CanActivate {
           return true;
         }
 
-        // Si el usuario tiene DEFAULT pero se requiere otro rol, puede ir a home
+        // Si el usuario tiene DEFAULT pero se requiere otro rol
         if (user.role === 'DEFAULT') {
-          this.router.navigate(['/login']);
+          this.router.navigate(['/select-role']);
+          return false;
         } 
+        
+        // Para cualquier otro caso, enviar a unauthorized o a home dependiendo de la situación
+        this.router.navigate(['/unauthorized']);
         return false;
       })
     );

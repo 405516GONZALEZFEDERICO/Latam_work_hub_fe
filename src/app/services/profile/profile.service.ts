@@ -1,112 +1,266 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
-import { catchError, delay } from 'rxjs/operators';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable, of, throwError, from } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { UserRole } from '../../models/user';
 import { environment } from '../../../environment/environment';
-
-export interface ProfileData {
-  displayName?: string;
-  fullName?: string;
-  email: string;
-  photoUrl?: string;
-  birthDate?: Date;
-  documentType?: string;
-  documentNumber?: string;
-  jobTitle?: string;
-  department?: string;
-  role: UserRole;
-  profileCompletion: number;
-  companyData?: CompanyData;
-  providerType?: 'INDIVIDUAL' | 'COMPANY';
-}
-
-export interface CompanyData {
-  name: string;
-  legalName: string;
-  taxId: string;
-  phone: string;
-  email: string;
-  website?: string;
-  description?: string;
-  contactPerson?: string;
-  country?: any;
-  operatingCountries?: string[];
-  logo?: string;
-  address?: string; // Mantener por compatibilidad con código existente
-}
+import { Address } from '../../models/address.model';
+import { ProfileData, CompanyData } from '../../models/profile';
+import { PersonalDataUserDto } from '../../models/personal-data-user-dto';
+import { AuthService } from '../auth-service/auth.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProfileService {
-  private apiUrl = `${environment.apiUrl}/profile`;
+  private apiUrl = `${environment.apiUrl}`;
+  private _currentProfile: ProfileData | null = null;
 
-  constructor(private http: HttpClient) { 
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) { 
     console.log('ProfileService initialized');
   }
 
-  // Obtener todos los datos del perfil, incluyendo datos de empresa si existen
+  // Obtener los datos del perfil
   getProfileData(): Observable<ProfileData> {
-    // Solo para desarrollo, usar datos mock
-    console.log('Getting profile data');
-    return of({
-      displayName: 'Usuario de Prueba',
-      fullName: 'Usuario de Prueba',
-      email: 'usuario@example.com',
-      role: 'PROVIDER' as UserRole,
-      profileCompletion: 30,
-      providerType: undefined
-    }).pipe(delay(300));
+    console.log('Obteniendo datos del perfil');
+    
+    // Si ya tenemos los datos del perfil en caché, los devolvemos
+    if (this._currentProfile) {
+      return of(this._currentProfile);
+    }
+    
+    return from(this.authService.getIdToken()).pipe(
+      switchMap(token => {
+        if (!token) {
+          return throwError(() => new Error('No se pudo obtener el token de autenticación'));
+        }
+        
+        const headers = new HttpHeaders({
+          'Authorization': `Bearer ${token}`
+        });
+        
+        // Aquí deberías usar el endpoint real para obtener los datos del perfil
+        return this.http.get<ProfileData>(
+          `${this.apiUrl}/users/profile`, 
+          { headers }
+        ).pipe(
+          map(profile => {
+            this._currentProfile = profile;
+            return profile;
+          }),
+          catchError(error => {
+            console.error('Error al obtener datos del perfil:', error);
+            
+            // Si hay un error, devolver un perfil con datos mínimos
+            const defaultProfile: ProfileData = {
+              email: this.authService.getCurrentUserSync()?.email || '',
+              role: this.authService.getUserRole() || 'DEFAULT' as UserRole
+            };
+            
+            return of(defaultProfile);
+          })
+        );
+      })
+    );
   }
 
-  // Guardar los datos personales del perfil
-  savePersonalData(profileData: Partial<ProfileData>): Observable<ProfileData> {
-    console.log('Guardando datos personales:', profileData);
-    // Simulamos una respuesta exitosa para desarrollo
-    return of({
-      ...profileData,
-      profileCompletion: this.calculateProfileCompletion(profileData),
-    } as ProfileData).pipe(delay(500));
+  // Guardar los datos personales - Llamada directa al endpoint
+  savePersonalData(profileData: any): Observable<any> {
+    console.log('ProfileService: savePersonalData called with:', profileData);
+    
+    // Crear el objeto DTO para enviar a la API
+    const personalDataUserDto = {
+        name: profileData.fullName,
+        email: profileData.email,
+        birthDate: profileData.birthDate,
+        documentType: profileData.documentType,
+        documentNumber: profileData.documentNumber,
+        jobTitle: profileData.jobTitle,
+        department: profileData.department,
+    };
+    
+    console.log('ProfileService: Created DTO:', personalDataUserDto);
+    
+    // Get the current token directly
+    return from(this.authService.getIdToken()).pipe(
+        switchMap(token => {
+            console.log('ProfileService: Using existing token for API call');
+            
+            if (!token) {
+                console.error('ProfileService: No token available');
+                return throwError(() => new Error('No se pudo obtener el token de autenticación'));
+            }
+   
+            
+            console.log('ProfileService: Making API call to', `${this.apiUrl}/users/personal-data`);
+            
+            // Llamada directa a la API
+            return this.http.post<any>(
+                `${this.apiUrl}/users/personal-data`, 
+                personalDataUserDto
+            ).pipe(
+                catchError(error => {
+                    console.error('ProfileService: API error response:', error);
+                    return throwError(() => new Error(`Error al guardar los datos personales: ${error.message}`));
+                })
+            );
+        })
+    );
   }
 
   // Guardar los datos de la empresa
-  saveCompanyData(companyData: CompanyData): Observable<boolean> {
+  saveCompanyData(companyData: CompanyData): Observable<any> {
     console.log('Guardando datos de empresa:', companyData);
-    // Simulamos éxito
-    return of(true).pipe(delay(500));
+    
+    return from(this.authService.getIdToken()).pipe(
+      switchMap(token => {
+        if (!token) {
+          return throwError(() => new Error('No se pudo obtener el token de autenticación'));
+        }
+        
+        const headers = new HttpHeaders({
+          'Authorization': `Bearer ${token}`
+        });
+        
+        // Aquí deberías usar el endpoint real para guardar datos de la empresa
+        return this.http.post<any>(
+          `${this.apiUrl}/api/companies`, 
+          companyData,
+          { headers }
+        ).pipe(
+          catchError(error => {
+            console.error('Error al guardar datos de la empresa:', error);
+            return throwError(() => new Error('Error al guardar los datos de la empresa'));
+          })
+        );
+      })
+    );
+  }
+
+  // Guardar la dirección
+  saveAddress(address: Address): Observable<any> {
+    console.log('Guardando dirección:', address);
+    
+    return from(this.authService.getIdToken()).pipe(
+      switchMap(token => {
+        if (!token) {
+          return throwError(() => new Error('No se pudo obtener el token de autenticación'));
+        }
+        
+        const headers = new HttpHeaders({
+          'Authorization': `Bearer ${token}`
+        });
+        
+        // Aquí deberías usar el endpoint real para guardar la dirección
+        return this.http.post<any>(
+          `${this.apiUrl}/api/addresses`, 
+          address,
+          { headers }
+        ).pipe(
+          catchError(error => {
+            console.error('Error al guardar dirección:', error);
+            return throwError(() => new Error('Error al guardar la dirección'));
+          })
+        );
+      })
+    );
   }
 
   // Actualizar el tipo de proveedor
-  updateProviderType(type: 'INDIVIDUAL' | 'COMPANY'): Observable<boolean> {
+  updateProviderType(type: 'INDIVIDUAL' | 'COMPANY'): Observable<any> {
     console.log('Actualizando tipo de proveedor a:', type);
-    // Simulamos éxito
-    return of(true).pipe(delay(500));
+    
+    return from(this.authService.getIdToken()).pipe(
+      switchMap(token => {
+        if (!token) {
+          return throwError(() => new Error('No se pudo obtener el token de autenticación'));
+        }
+        
+        const headers = new HttpHeaders({
+          'Authorization': `Bearer ${token}`
+        });
+        
+        // Aquí deberías usar el endpoint real para actualizar el tipo de proveedor
+        return this.http.post<any>(
+          `${this.apiUrl}/api/providers/type`, 
+          { type },
+          { headers }
+        ).pipe(
+          catchError(error => {
+            console.error('Error al actualizar tipo de proveedor:', error);
+            return throwError(() => new Error('Error al actualizar el tipo de proveedor'));
+          })
+        );
+      })
+    );
   }
 
   // Subir imagen de perfil
   uploadProfileImage(file: File): Observable<string> {
     console.log('Subiendo imagen de perfil:', file.name);
-    // Simulando una URL para la imagen subida
-    return of(`https://example.com/images/${file.name}`).pipe(
-      delay(1000)
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    return from(this.authService.getIdToken()).pipe(
+      switchMap(token => {
+        if (!token) {
+          return throwError(() => new Error('No se pudo obtener el token de autenticación'));
+        }
+        
+        const headers = new HttpHeaders({
+          'Authorization': `Bearer ${token}`
+        });
+        
+        // Aquí deberías usar el endpoint real para subir imágenes
+        return this.http.post<any>(
+          `${this.apiUrl}/api/uploads/profile-image`, 
+          formData,
+          { headers }
+        ).pipe(
+          map(response => response.url),
+          catchError(error => {
+            console.error('Error al subir imagen:', error);
+            return throwError(() => new Error('Error al subir la imagen'));
+          })
+        );
+      })
     );
   }
 
   // Subir logo de empresa
   uploadCompanyLogo(file: File): Observable<string> {
     console.log('Subiendo logo de empresa:', file.name);
-    // Simulando una URL para el logo subido
-    return of(`https://example.com/logos/${file.name}`).pipe(
-      delay(1000)
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    return from(this.authService.getIdToken()).pipe(
+      switchMap(token => {
+        if (!token) {
+          return throwError(() => new Error('No se pudo obtener el token de autenticación'));
+        }
+        
+        const headers = new HttpHeaders({
+          'Authorization': `Bearer ${token}`
+        });
+        
+        // Aquí deberías usar el endpoint real para subir logos
+        return this.http.post<any>(
+          `${this.apiUrl}/api/uploads/company-logo`, 
+          formData,
+          { headers }
+        ).pipe(
+          map(response => response.url),
+          catchError(error => {
+            console.error('Error al subir logo:', error);
+            return throwError(() => new Error('Error al subir el logo'));
+          })
+        );
+      })
     );
   }
-
-  // Calcular el porcentaje de completado del perfil
-  private calculateProfileCompletion(profile: Partial<ProfileData>): number {
-    const fields = ['fullName', 'email', 'photoUrl', 'birthDate', 'documentType', 'documentNumber'];
-    const completedFields = fields.filter(field => !!profile[field as keyof Partial<ProfileData>]);
-    
-    return Math.min(100, Math.round((completedFields.length / fields.length) * 100));
-  }
-} 
+}

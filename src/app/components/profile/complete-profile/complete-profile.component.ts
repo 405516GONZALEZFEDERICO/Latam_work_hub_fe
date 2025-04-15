@@ -5,13 +5,16 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { ProfileData, ProfileService } from '../../../services/profile/profile.service';
+import { ProfileService } from '../../../services/profile/profile.service';
+import { ProfileData } from '../../../models/profile';
 import { PersonalDataFormComponent } from '../personal-data-form/personal-data-form.component';
 import { CompanyFormComponent } from '../company-form/company-form.component';
 import { ProviderTypeSelectionComponent } from '../provider-type-selection/provider-type-selection.component';
+import { AddressStepperComponent } from '../address-stepper/address-stepper.component';
 import { UserRole } from '../../../models/user';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Address } from '../../../models/address.model';
 
 enum ProfileTab {
   PERSONAL = 0,
@@ -30,7 +33,8 @@ enum ProfileTab {
     MatFormFieldModule,
     PersonalDataFormComponent,
     CompanyFormComponent,
-    ProviderTypeSelectionComponent
+    ProviderTypeSelectionComponent,
+    AddressStepperComponent
   ],
   templateUrl: './complete-profile.component.html',
   styleUrls: ['./complete-profile.component.scss']
@@ -46,6 +50,10 @@ export class CompleteProfileComponent implements OnInit {
   isAssociatedWithCompany = false;
   showProviderSelection = true;
   providerType?: 'INDIVIDUAL' | 'COMPANY';
+  
+  // Para el stepper de dirección
+  showAddressStepper = false;
+  addressData?: Address;
   
   // Controla si se muestra el botón volver en el selector de tipo de proveedor
   showBackButton = false;
@@ -138,12 +146,32 @@ export class CompleteProfileComponent implements OnInit {
     }
   }
   
+  handleFormSubmitted(data: any): void {
+    // Manejar la emisión del evento formSubmitted de los componentes hijo
+    console.log('Datos del formulario recibidos:', data);
+    
+    // Opcional: Redirigir o mostrar mensaje de éxito
+    this.showMessage('Datos guardados correctamente');
+  }
+  
   backToProviderSelection(): void {
     this.showProviderSelection = true;
   }
   
   setActiveTab(index: number): void {
     this.activeTab = index;
+  }
+  
+  // Manejo del formulario de dirección
+  toggleAddressStepper(): void {
+    this.showAddressStepper = !this.showAddressStepper;
+  }
+  
+  handleAddressSaved(address: Address): void {
+    console.log('Dirección guardada:', address);
+    this.addressData = address;
+    this.showAddressStepper = false;
+    this.showMessage('Dirección guardada correctamente');
   }
   
   private showMessage(message: string): void {

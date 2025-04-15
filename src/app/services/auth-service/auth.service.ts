@@ -14,8 +14,8 @@ export class AuthService {
   private router = inject(Router);
   private firestore = inject(Firestore);
 
-  // Usa environment para la URL base - crea este archivo si no existe
-  private API_BASE_URL = environment.apiUrl || 'http://localhost:8080/api/auth';
+  // Usa environment para la URL base con el segmento /auth
+  private API_BASE_URL = `${environment.apiUrl}/auth`;
   
   // Track user auth state using BehaviorSubject
   private currentUserData: User | null = null;
@@ -58,10 +58,12 @@ export class AuthService {
       this.currentUserData = initialUserData;
       this.userSubject.next(initialUserData);
       this.authStateSubject.next(true);
+      console.log('Auth initialized with cached data:', initialUserData);
     }
     
     // Escuchar cambios en el estado de autenticación de Firebase
     onAuthStateChanged(this.auth, (user) => {
+      console.log('Auth state changed, user:', user ? `${user.email} (${user.uid})` : 'null');
       if (user) {
         // Intentar recuperar datos de localStorage primero
         const cachedUser = this.getUserFromLocalStorage();
@@ -71,17 +73,7 @@ export class AuthService {
           this.currentUserData = cachedUser;
           this.userSubject.next(cachedUser);
           this.authStateSubject.next(true);
-          
-          // Si el rol es DEFAULT, redirigir a select-role, sino al home o a la ruta específica
-          if (cachedUser.role === 'DEFAULT') {
-            this.router.navigate(['/select-role']);
-          } else {
-            // Solo redirigir si no estamos ya en una ruta protegida
-            const currentUrl = window.location.pathname;
-            if (currentUrl === '/' || currentUrl === '/login' || currentUrl === '/register') {
-              this.router.navigate(['/home']);
-            }
-          }
+          console.log('Using cached user data, role:', cachedUser.role);
           
           // Verificamos el rol en segundo plano (sin bloquear navegación)
           setTimeout(() => {
@@ -91,6 +83,7 @@ export class AuthService {
           }, 2000);
         } else {
           // Si no tenemos datos en caché, obtenemos el token y verificamos el rol
+          console.log('No cached data, getting token and verifying role');
           user.getIdToken().then(idToken => {
             this.verifyUserRole(idToken);
           }).catch(error => {
@@ -99,12 +92,12 @@ export class AuthService {
           });
         }
       } else {
+        console.log('User signed out, clearing data');
         this.currentUserData = null;
         this.userSubject.next(null);
         this.authStateSubject.next(false);
         localStorage.removeItem('currentUserData');
         localStorage.removeItem('userDataTimestamp');
-        this.router.navigate(['/login']);
       }
     });
   }
@@ -145,13 +138,16 @@ export class AuthService {
 
   // Obtener información del rol desde el backend
   private verifyUserRole(idToken: string, shouldNavigate: boolean = true): void {
+    console.log('Verifying user role from backend');
     this.http.get<any>(`${this.API_BASE_URL}/verificar-rol`, {
       params: { idToken },
       headers: { 'Content-Type': 'application/json' }
     }).subscribe({
       next: (response) => {
+        console.log('Role verification response:', response);
         if (response && this.auth.currentUser) {
           const role = response.role || 'DEFAULT';
+          console.log('Role from backend:', role);
           
           this.currentUserData = {
             uid: this.auth.currentUser.uid,
@@ -169,19 +165,6 @@ export class AuthService {
           // Guardar en localStorage para futuras recargas
           localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
           localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
-          
-          // Solo redirigir si se especifica
-          if (shouldNavigate) {
-            // Redireccionar según el rol
-            if (role === 'DEFAULT') {
-              this.router.navigate(['/select-role']);
-            } else {
-              const currentUrl = window.location.pathname;
-              if (currentUrl === '/' || currentUrl === '/login' || currentUrl === '/register') {
-                this.router.navigate(['/home']);
-              }
-            }
-          }
         }
       },
       error: (error) => {
@@ -204,11 +187,6 @@ export class AuthService {
           // Guardar en localStorage para futuras recargas
           localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
           localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
-          
-          if (shouldNavigate) {
-            // Si hay error, siempre redirigir a select-role porque el rol será DEFAULT
-            this.router.navigate(['/select-role']);
-          }
         } else {
           this.authStateSubject.next(false);
         }
@@ -422,9 +400,11 @@ export class AuthService {
   }
 
   loginWithEmail(email: string, password: string, rememberMe: boolean = false): Observable<any> {
+    console.log(`Attempting login with email: ${email}, rememberMe: ${rememberMe}`);
     return new Observable((observer) => {
       signInWithEmailAndPassword(this.auth, email, password)
         .then((result) => {
+          console.log('Firebase login successful');
           if (rememberMe) {
             localStorage.setItem('rememberMe', 'true');
           } else {
@@ -432,22 +412,58 @@ export class AuthService {
           }
           
           result.user.getIdToken().then(idToken => {
-            this.currentUserData = {
-              uid: result.user.uid,
-              email: result.user.email!,
-              emailVerified: result.user.emailVerified,
-              role: result.user.uid === 'DEFAULT' ? 'DEFAULT' as UserRole : 'USER' as UserRole,
-              idToken: idToken,
-              refreshToken: result.user.refreshToken
-            };
-             
-            // Guardar en localStorage para futuras recargas
-            localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
-            localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
-            
-            this.router.navigate(['/select-rol']); 
-            observer.next(result);
-            observer.complete();
+            console.log('Retrieved token, verifying user role');
+            // Verificar el rol del usuario
+            this.http.get<any>(`${this.API_BASE_URL}/verificar-rol`, {
+              params: { idToken },
+              headers: { 'Content-Type': 'application/json' }
+            }).subscribe({
+              next: (response) => {
+                const role = response?.role || 'DEFAULT';
+                console.log('Login role verification result:', role);
+                
+                this.currentUserData = {
+                  uid: result.user.uid,
+                  email: result.user.email!,
+                  emailVerified: result.user.emailVerified,
+                  role: role,
+                  idToken: idToken,
+                  refreshToken: result.user.refreshToken
+                };
+                 
+                // Guardar en localStorage para futuras recargas
+                localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
+                localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
+                
+                // Actualizar el subject con los datos actualizados
+                this.userSubject.next(this.currentUserData);
+                
+                observer.next(result);
+                observer.complete();
+              },
+              error: (error) => {
+                console.error('Error verifying role on login:', error);
+                // En caso de error, usar DEFAULT
+                this.currentUserData = {
+                  uid: result.user.uid,
+                  email: result.user.email!,
+                  emailVerified: result.user.emailVerified,
+                  role: 'DEFAULT',
+                  idToken: idToken,
+                  refreshToken: result.user.refreshToken
+                };
+                
+                // Guardar en localStorage
+                localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
+                localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
+                
+                // Actualizar el subject
+                this.userSubject.next(this.currentUserData);
+                
+                observer.next(result);
+                observer.complete();
+              }
+            });
           }).catch((error: any) => {
             console.error('Get ID token error:', error);
             observer.error(this.handleAuthError(error));
@@ -468,7 +484,6 @@ export class AuthService {
       this.authStateSubject.next(false);
       localStorage.removeItem('currentUserData');
       localStorage.removeItem('userDataTimestamp');
-      this.router.navigate(['/login']);
     } catch (error) {
       console.error('Error cerrando sesión:', error);
       throw error;
@@ -485,36 +500,44 @@ export class AuthService {
 
   // Método para renovar el token si está por expirar o ha expirado
   refreshToken(): Observable<string | null> {
-    return new Observable<string | null>((subscriber) => {
-      const user = this.auth.currentUser;
-      if (!user) {
-        subscriber.next(null);
-        subscriber.complete();
-        return;
-      }
+    console.log('AuthService: refreshToken called');
+    // Check if there's a current user
+    const user = this.auth.currentUser;
+    if (!user) {
+      console.error('AuthService: No user logged in');
+      return of(null);
+    }
 
-      // Forzar la actualización del token (true fuerza la renovación)
+    return from(
+      // Force token refresh
       user.getIdToken(true)
-        .then(newToken => {
-          // Actualizar el token en los datos del usuario
+        .then(freshToken => {
+          console.log('AuthService: Token successfully refreshed');
+          
+          // Update stored token in currentUserData
           if (this.currentUserData) {
-            this.currentUserData.idToken = newToken;
+            this.currentUserData.idToken = freshToken;
             
-            // Actualizar también en localStorage
+            // Update storage
             localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
             localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
+            
+            // Update BehaviorSubject
+            this.userSubject.next(this.currentUserData);
           }
-          subscriber.next(newToken);
+          
+          return freshToken;
         })
         .catch(error => {
-          console.error('Error al renovar el token:', error);
-          // Si hay un error al renovar, puede que la sesión haya expirado
-          subscriber.next(null);
+          console.error('AuthService: Failed to refresh token:', error);
+          throw error;
         })
-        .finally(() => {
-          subscriber.complete();
-        });
-    });
+    ).pipe(
+      catchError(error => {
+        console.error('AuthService: Token refresh observable error:', error);
+        return throwError(() => new Error('Failed to refresh authentication token'));
+      })
+    );
   }
 
   // Verificar si el token está a punto de expirar (para uso proactivo)
@@ -607,5 +630,9 @@ export class AuthService {
   
   getCurrentUserSync(): User | null {
     return this.currentUserData;
+  }
+
+  getUserRole(): UserRole | null {
+    return this.currentUserData?.role || null;
   }
 }

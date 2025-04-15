@@ -12,17 +12,20 @@ export const routes: Routes = [
     path: 'login',
     loadComponent: () =>
       import('./components/login/login.component').then(m => m.LoginComponent),
-    canActivate: [LoginGuard]
+    canActivate: [LoginGuard],
+    data: { title: 'Iniciar Sesión' }
   },
   {
     path: 'register',
     loadComponent: () =>
-      import('./components/register/register.component').then(m => m.RegisterComponent)
+      import('./components/register/register.component').then(m => m.RegisterComponent),
+    data: { title: 'Registro' }
   },
   {
     path: 'terms-and-conditions',
     loadComponent: () =>
-      import('./components/terms-and-conditions/terms-and-conditions.component').then(m => m.TermsAndConditionsComponent)
+      import('./components/terms-and-conditions/terms-and-conditions.component').then(m => m.TermsAndConditionsComponent),
+    data: { title: 'Términos y Condiciones' }
   },
   {
     path: 'select-role',
@@ -30,26 +33,9 @@ export const routes: Routes = [
       import('./views/view-select-rol/view-select-rol.component').then(m => m.RoleSelectionComponent),
     canActivate: [SecurityWardGuard],
     data: { 
-      allowedRoles: ['DEFAULT'] // Solo usuarios con rol DEFAULT pueden seleccionar rol
+      allowedRoles: ['DEFAULT'],
+      title: 'Seleccionar Rol'
     }
-  },
-  {
-    path: 'profile',
-    canActivate: [SecurityWardGuard],
-    children: [
-      {
-        path: 'personal',
-        loadComponent: () =>
-          import('./components/profile/complete-profile/complete-profile.component').then(m => m.CompleteProfileComponent),
-        data: { activeTab: 'personal', allowedRoles: ['CLIENTE', 'PROVEEDOR', 'ADMIN'] }
-      },
-      {
-        path: 'company',
-        loadComponent: () =>
-          import('./components/profile/complete-profile/complete-profile.component').then(m => m.CompleteProfileComponent),
-        data: { activeTab: 'company', allowedRoles: ['PROVEEDOR'] }
-      }
-    ]
   },
   {
     path: 'home',
@@ -57,14 +43,45 @@ export const routes: Routes = [
       import('./views/home-layout/home-layout.component').then(h => h.HomeLayoutComponent),
     canActivate: [SecurityWardGuard],
     data: { 
-      allowedRoles: ['PROVEEDOR', 'CLIENTE', 'ADMIN'] // Home no es accesible para usuarios DEFAULT
-    }
+      allowedRoles: ['PROVEEDOR', 'CLIENTE', 'ADMIN'],
+      title: 'Inicio'
+    },
+    children: [
+      {
+        path: '',
+        redirectTo: 'welcome',
+        pathMatch: 'full'
+      },
+      {
+        path: 'welcome',
+        loadComponent: () =>
+          import('./components/home-layout/welcome/welcome.component').then(m => m.WelcomeComponent),
+        data: { title: 'Bienvenido' }
+      },
+      {
+        path: 'profile',
+        children: [
+          {
+            path: 'personal',
+            loadComponent: () =>
+              import('./components/profile/complete-profile/complete-profile.component').then(m => m.CompleteProfileComponent),
+            data: { activeTab: 'personal', title: 'Perfil Personal' }
+          },
+          {
+            path: 'company',
+            loadComponent: () =>
+              import('./components/profile/complete-profile/complete-profile.component').then(m => m.CompleteProfileComponent),
+            data: { activeTab: 'company', title: 'Perfil de Empresa' }
+          }
+        ]
+      }
+    ]
   },
   {
     path: 'unauthorized',
     loadComponent: () =>
-      import('./components/login/login.component').then(m => m.LoginComponent), // Usar login temporalmente
-    data: { message: 'No tienes permiso para acceder a esta página' }
+      import('./components/login/login.component').then(m => m.LoginComponent), 
+    data: { message: 'No tienes permiso para acceder a esta página', title: 'No Autorizado' }
   },
   {
     path: '**',

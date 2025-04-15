@@ -75,6 +75,7 @@ export class CompanyFormComponent implements OnInit {
     this.initForm();
   }
   
+  
   private initForm(): void {
     this.companyForm = this.fb.group({
       name: [this.initialData.name || '', Validators.required],

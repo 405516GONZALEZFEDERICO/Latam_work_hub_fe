@@ -73,7 +73,19 @@ export class LoginComponent implements OnInit {
     this.authService.loginWithEmail(email, password, rememberMe).subscribe({
       next: (response) => {
         this.isLoading = false;
-        this.router.navigate(['/select-rol']);
+        
+        // Conseguir el rol actual del usuario
+        this.authService.getCurrentUser().subscribe(user => {
+          console.log('Current user after login:', user);
+          
+          if (user && user.role && user.role !== 'DEFAULT') {
+            console.log('Navegando a home con rol:', user.role);
+            this.router.navigate(['/home']);
+          } else {
+            console.log('Navegando a select-role');
+            this.router.navigate(['/select-role']);
+          }
+        });
       },
       error: (error) => {
         this.isLoading = false;

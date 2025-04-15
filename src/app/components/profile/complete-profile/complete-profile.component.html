@@ -14,10 +14,52 @@
             </ng-template>
             
             <div class="tab-content">
-              <app-personal-data-form
-                [initialData]="userData"
-                (profileUpdated)="userData = $event">
-              </app-personal-data-form>
+              <!-- Mostrar el stepper de dirección o formulario de datos personales -->
+              <div *ngIf="!showAddressStepper">
+                <app-personal-data-form
+                  [initialData]="userData"
+                  (formSubmitted)="handleFormSubmitted($event)">
+                </app-personal-data-form>
+                
+                <!-- Sección de dirección con un botón para abrir el stepper -->
+                <div class="address-section">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="address-title">Dirección</h3>
+                    <button mat-stroked-button color="primary" (click)="toggleAddressStepper()">
+                      <mat-icon>add</mat-icon> Agregar dirección
+                    </button>
+                  </div>
+                  
+                  <!-- Mostrar la dirección guardada si existe -->
+                  <div *ngIf="addressData" class="address-card">
+                    <div class="address-info">
+                      <p><strong>{{addressData.city.country.name}}, {{addressData.city.name}}</strong></p>
+                      <p>{{addressData.streetName}} {{addressData.streetNumber}}</p>
+                      <p *ngIf="addressData.floor || addressData.apartment">
+                        Piso: {{addressData.floor || '-'}}, Depto: {{addressData.apartment || '-'}}
+                      </p>
+                      <p>CP: {{addressData.postalCode}}</p>
+                    </div>
+                    <button mat-icon-button color="primary" (click)="toggleAddressStepper()">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Stepper de dirección -->
+              <div *ngIf="showAddressStepper">
+                <div class="address-stepper-header">
+                  <button mat-icon-button (click)="toggleAddressStepper()">
+                    <mat-icon>arrow_back</mat-icon>
+                  </button>
+                  <h2>Dirección</h2>
+                </div>
+                <app-address-stepper 
+                  [initialData]="addressData"
+                  (addressSaved)="handleAddressSaved($event)">
+                </app-address-stepper>
+              </div>
             </div>
           </mat-tab>
           
