@@ -4,7 +4,7 @@ import { Component, OnInit, OnDestroy, Renderer2 } from '@angular/core';
   selector: 'app-view-login',
   standalone:true,
   templateUrl: './view-login.component.html',
-  styleUrl: './view-login.component.scss'
+  styleUrl: './view-login.component.css'
 })
 export class ViewLoginComponent implements OnInit, OnDestroy {
   constructor(private renderer: Renderer2) {}

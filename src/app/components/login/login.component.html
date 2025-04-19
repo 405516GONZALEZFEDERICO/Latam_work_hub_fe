@@ -10,21 +10,17 @@
     
     <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
       <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Email</mat-label>
         <input 
           matInput 
           type="email" 
           formControlName="email" 
         >
         <mat-icon matPrefix>email</mat-icon>
-        <mat-error *ngIf="loginForm.get('email')?.errors?.['required']">
-          El correo electrónico es obligatorio
-        </mat-error>
-        <mat-error *ngIf="loginForm.get('email')?.errors?.['email']">
-          Ingrese un correo electrónico válido
-        </mat-error>
       </mat-form-field>
       
       <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Contraseña</mat-label>
         <input 
           matInput 
           [type]="hidePassword ? 'password' : 'text'" 
@@ -41,16 +37,31 @@
         >
           <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
         </button>
-        <mat-error *ngIf="loginForm.get('password')?.errors?.['required']">
-          La contraseña es obligatoria
-        </mat-error>
-        <mat-error *ngIf="loginForm.get('password')?.errors?.['minlength']">
-          La contraseña debe tener al menos 6 caracteres
-        </mat-error>
       </mat-form-field>
       
-      <div class="remember-forgot-container">
-        <div class="remember-me">
+      <!-- Sección de validaciones -->
+      <div class="validation-errors">
+        <div *ngIf="loginForm.get('email')?.invalid && (loginForm.get('email')?.touched || loginForm.get('email')?.dirty)">
+          <p class="error-message" *ngIf="loginForm.get('email')?.errors?.['required']">
+            <mat-icon>error_outline</mat-icon> El correo electrónico es obligatorio
+          </p>
+          <p class="error-message" *ngIf="loginForm.get('email')?.errors?.['email']">
+            <mat-icon>error_outline</mat-icon> Ingrese un correo electrónico válido
+          </p>
+        </div>
+        
+        <div *ngIf="loginForm.get('password')?.invalid && (loginForm.get('password')?.touched || loginForm.get('password')?.dirty)">
+          <p class="error-message" *ngIf="loginForm.get('password')?.errors?.['required']">
+            <mat-icon>error_outline</mat-icon> La contraseña es obligatoria
+          </p>
+          <p class="error-message" *ngIf="loginForm.get('password')?.errors?.['minlength']">
+            <mat-icon>error_outline</mat-icon> La contraseña debe tener al menos 6 caracteres
+          </p>
+        </div>
+      </div>
+      
+      <div class="recordar-contrasena">
+        <div class="recordar-contrasena-checkbox">
           <mat-checkbox formControlName="rememberMe" color="primary">Recuérdame</mat-checkbox>
         </div>
         
@@ -63,7 +74,6 @@
         type="submit" 
         mat-raised-button 
         color="primary" 
-        class="ios-button primary w-100" 
         [disabled]="loginForm.invalid || isLoading"
       >
         <div class="spinner" *ngIf="isLoading"></div>

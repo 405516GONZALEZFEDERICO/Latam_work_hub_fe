@@ -1,42 +1,39 @@
-/* Importar variables */
-@use 'variables' as *;
-
 /* Estilos para Provider Type Selection */
 .provider-type-container {
   max-width: 900px;
   margin: 0 auto;
-  padding: $spacing-lg;
-  border-radius: $border-radius;
-  font-family: $font-family;
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius);
+  font-family: var(--font-family);
   background-color: white;
-  box-shadow: $box-shadow;
+  box-shadow: var(--box-shadow);
 }
 
 .provider-type-title {
-  font-size: $font-size-large;
+  font-size: var(--font-size-large);
   font-weight: 600;
-  margin-bottom: $spacing-sm;
+  margin-bottom: var(--spacing-sm);
   color: var(--color-text-dark);
   text-align: center;
 }
 
 .provider-type-description {
-  font-size: $font-size-normal;
+  font-size: var(--font-size-normal);
   color: var(--color-text-light);
-  margin-bottom: $spacing-xl;
+  margin-bottom: var(--spacing-xl);
   text-align: center;
 }
 
 .provider-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: $spacing-lg;
-  margin-bottom: $spacing-xxl;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xxl);
 }
 
 .provider-card {
   background-color: #FFFFFF;
-  border-radius: $border-radius;
+  border-radius: var(--border-radius);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   overflow: hidden;
   transition: all 0.3s ease;
@@ -46,22 +43,22 @@
   display: flex;
   flex-direction: column;
   cursor: pointer;
-  
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
-  }
-  
-  &.selected {
-    border: 2px solid var(--color-primary);
-    background-color: rgba(51, 51, 51, 0.02);
-  }
+}
+
+.provider-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+}
+
+.provider-card.selected {
+  border: 2px solid var(--color-primary);
+  background-color: rgba(51, 51, 51, 0.02);
 }
 
 .card-header {
   display: flex;
   align-items: center;
-  padding: $spacing-lg;
+  padding: var(--spacing-lg);
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
@@ -72,63 +69,63 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-right: $spacing-lg;
-  
-  &.individual {
-    background-color: rgba(var(--color-individual), 0.1);
-  }
-  
-  &.company {
-    background-color: rgba(var(--color-company), 0.1);
-  }
-  
-  mat-icon {
-    font-size: 24px;
-    width: 24px;
-    height: 24px;
-    color: var(--color-primary);
-  }
+  margin-right: var(--spacing-lg);
+}
+
+.card-icon.individual {
+  background-color: rgba(var(--color-individual), 0.1);
+}
+
+.card-icon.company {
+  background-color: rgba(var(--color-company), 0.1);
+}
+
+.card-icon mat-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+  color: var(--color-primary);
 }
 
 .card-content {
-  padding: $spacing-lg;
+  padding: var(--spacing-lg);
   flex-grow: 1;
   display: flex;
   flex-direction: column;
 }
 
 .card-description {
-  font-size: $font-size-normal;
+  font-size: var(--font-size-normal);
   color: var(--color-text-light);
-  margin-bottom: $spacing-lg;
+  margin-bottom: var(--spacing-lg);
   line-height: 1.4;
 }
 
 .selection-indicator {
   position: absolute;
-  top: $spacing-md;
-  right: $spacing-md;
-  
-  mat-icon {
-    color: var(--color-primary);
-    font-size: 20px;
-    width: 20px;
-    height: 20px;
-  }
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+}
+
+.selection-indicator mat-icon {
+  color: var(--color-primary);
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
 }
 
 .action-buttons {
   display: flex;
   justify-content: space-between;
-  padding-top: $spacing-sm;
+  padding-top: var(--spacing-sm);
 }
 
 /* Estilos para profile cards */
 .profile-card {
   background-color: white;
-  border-radius: $border-radius;
-  box-shadow: $box-shadow;
-  margin-bottom: $spacing-lg;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  margin-bottom: var(--spacing-lg);
   overflow: hidden;
 }
 

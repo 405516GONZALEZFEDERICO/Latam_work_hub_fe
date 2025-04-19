@@ -1,25 +1,18 @@
 // Unified Role Type
 export type UserRole = 'DEFAULT' | 'PROVEEDOR' | 'CLIENTE' | 'ADMIN';
 
-// Main User Interface
+// GOOGLE LOGIN
 export interface User {
-  // Core properties
   uid: string;
   email: string;
   emailVerified: boolean;
-  
-  // Authentication tokens
   idToken: string;
   refreshToken: string;
   expiresIn?: string;
-  
-  // User information
   displayName?: string;
   photoURL?: string;
   role: UserRole;
   numericId?: number;
-  
-  // Timestamps
   createdAt?: Date;
   updatedAt?: Date;
   lastLoginAt?: Date;

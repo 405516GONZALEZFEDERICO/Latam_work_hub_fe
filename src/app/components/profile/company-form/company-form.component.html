@@ -1,9 +1,9 @@
 <div class="company-form-container">
   <div class="header-section">
     <div class="header-row">
-      <button class="back-button" (click)="goBack()">
+      <button *ngIf="canShowBackButton()" class="back-button" (click)="goBack()">
         <mat-icon>arrow_back_ios</mat-icon>
-        Volver
+        <span>Volver</span>
       </button>
     </div>
     <h2 class="form-title">Información de Empresa</h2>
@@ -123,20 +123,7 @@
         </mat-form-field>
       </div>
     </div>
-    
-    <!-- Fila 5: Países de operación -->
-    <div class="form-flex-row">
-      <div class="form-flex-col w-100">
-        <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
-          <mat-label>Países de operación</mat-label>
-          <mat-select multiple formControlName="operatingCountries">
-            <mat-option *ngFor="let country of countries" [value]="country.code">
-              {{country.name}}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-      </div>
-    </div>
+
     
 
     <!-- Botón de guardar -->
@@ -144,7 +131,7 @@
       <button 
         type="submit" 
         [disabled]="isSubmitting" 
-        class="btn-primary full-width">
+        class="continue-button full-width">
         <span *ngIf="!isSubmitting">Guardar información</span>
         <span *ngIf="isSubmitting">
           <mat-spinner diameter="20" class="spinner-in-button"></mat-spinner>

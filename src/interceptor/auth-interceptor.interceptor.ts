@@ -1,82 +1,143 @@
 import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpEvent, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Observable, from, throwError, of } from 'rxjs';
-import { catchError, switchMap, mergeMap } from 'rxjs/operators';
+import { catchError, switchMap, retryWhen, delayWhen, take } from 'rxjs/operators';
 import { AuthService } from './../app/services/auth-service/auth.service';
+import { Router } from '@angular/router';
 
 export const authInterceptor: HttpInterceptorFn = (
   request: HttpRequest<unknown>, 
   next: HttpHandlerFn
 ): Observable<HttpEvent<unknown>> => {
   const authService = inject(AuthService);
-
-  // Comprobar primero si el token está por expirar
-  return from(authService.checkTokenExpiration()).pipe(
-    mergeMap((isExpiring) => {
-      // Si el token está por expirar, renovarlo primero
-      if (isExpiring) {
-        return authService.refreshToken().pipe(
-          switchMap((token) => addTokenAndContinue(token, request, next, authService))
-        );
+  const router = inject(Router);
+  
+  // Verificar si la ruta requiere autenticación
+  // No añadir token a rutas públicas como login/register
+  if (request.url.includes('/auth/login') || 
+      request.url.includes('/auth/register') || 
+      request.url.includes('/auth/google')) {
+    return next(request);
+  }
+  
+  // Obtener el token directamente de Firebase Authentication
+  return from(authService.getIdToken()).pipe(
+    switchMap(token => {
+      if (!token) {
+        // Si no hay token, intentar recuperarlo desde localStorage
+        const cachedUser = authService.getCurrentUserSync();
+        if (cachedUser && cachedUser.idToken) {
+          // Usar el token guardado en localStorage mientras se refresca
+          request = request.clone({
+            setHeaders: {
+              'Authorization': `Bearer ${cachedUser.idToken}`
+            }
+          });
+          return next(request).pipe(
+            catchError((error: HttpErrorResponse) => {
+              if (error.status === 401 || error.status === 403) {
+                // Si hay error de autenticación, intentar refrescar el token
+                return from(authService.refreshToken()).pipe(
+                  switchMap(newToken => {
+                    if (newToken) {
+                      // Reintentar la solicitud con el nuevo token
+                      const newRequest = request.clone({
+                        setHeaders: {
+                          'Authorization': `Bearer ${newToken}`
+                        }
+                      });
+                      return next(newRequest);
+                    } else {
+                      // Si no se pudo obtener un nuevo token, redirigir al login
+                      console.log('No se pudo refrescar el token, redirigiendo al login');
+                      authService.logout().then(() => {
+                        router.navigate(['/login']);
+                      });
+                      return throwError(() => error);
+                    }
+                  })
+                );
+              }
+              return throwError(() => error);
+            })
+          );
+        } else {
+          // Si no hay token en caché, proceder sin token (posiblemente fallará)
+          console.log('No hay token disponible, intentando solicitud sin autenticación');
+          return next(request).pipe(
+            catchError((error: HttpErrorResponse) => {
+              if (error.status === 401 || error.status === 403) {
+                console.log('Error de autenticación sin token disponible');
+                // Comprobar si realmente hay un usuario autenticado antes de cerrar sesión
+                if (authService.isAuthenticated()) {
+                  // Intentar una última vez obtener un token fresco
+                  return from(authService.refreshToken()).pipe(
+                    switchMap(refreshedToken => {
+                      if (refreshedToken) {
+                        // Reintentar la solicitud con el token refrescado
+                        const newRequest = request.clone({
+                          setHeaders: {
+                            'Authorization': `Bearer ${refreshedToken}`
+                          }
+                        });
+                        return next(newRequest);
+                      } else {
+                        // Si definitivamente no hay token, redirigir al login
+                        authService.logout().then(() => {
+                          router.navigate(['/login']);
+                        });
+                        return throwError(() => error);
+                      }
+                    })
+                  );
+                } else {
+                  // Si no hay usuario autenticado, simplemente redirigir
+                  router.navigate(['/login']);
+                }
+              }
+              return throwError(() => error);
+            })
+          );
+        }
       }
       
-      // Si no está por expirar, continuar normalmente
-      return from(authService.getIdToken()).pipe(
-        switchMap(token => addTokenAndContinue(token, request, next, authService))
+      // Si hay token disponible, añadirlo a la solicitud
+      request = request.clone({
+        setHeaders: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      // Procesar la solicitud con el token
+      return next(request).pipe(
+        catchError((error: HttpErrorResponse) => {
+          // Si hay errores de autenticación (401/403)
+          if (error.status === 401 || error.status === 403) {
+            console.log('Error de autenticación:', error);
+            // Intentar refrescar el token antes de cerrar sesión
+            return from(authService.refreshToken()).pipe(
+              switchMap(newToken => {
+                if (newToken) {
+                  // Reintentar la solicitud con el nuevo token
+                  const newRequest = request.clone({
+                    setHeaders: {
+                      'Authorization': `Bearer ${newToken}`
+                    }
+                  });
+                  return next(newRequest);
+                } else {
+                  // Si no se pudo refrescar, cerrar sesión
+                  authService.logout().then(() => {
+                    router.navigate(['/login']);
+                  });
+                  return throwError(() => error);
+                }
+              })
+            );
+          }
+          return throwError(() => error);
+        })
       );
     })
   );
 };
-
-// Función auxiliar para añadir el token y continuar con la solicitud
-function addTokenAndContinue(
-  token: string | null, 
-  request: HttpRequest<unknown>, 
-  next: HttpHandlerFn,
-  authService: AuthService
-): Observable<HttpEvent<unknown>> {
-  // Si tenemos un token, lo agregamos a la solicitud
-  if (token) {
-    request = request.clone({
-      setHeaders: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-  }
-
-  // Continuar con la solicitud y manejar posibles errores 401/403
-  return next(request).pipe(
-    catchError((error: HttpErrorResponse) => {
-      // Si recibimos un error 401 (No autorizado) o 403 (Prohibido)
-      if (error.status === 401 || error.status === 403) {
-        // Intentar renovar el token y reintentar la solicitud
-        return authService.refreshToken().pipe(
-          switchMap(newToken => {
-            if (newToken) {
-              // Tenemos un nuevo token, reintentar la solicitud
-              const retryRequest = request.clone({
-                setHeaders: {
-                  'Authorization': `Bearer ${newToken}`
-                }
-              });
-              return next(retryRequest);
-            } else {
-              // No pudimos renovar el token, la sesión ha expirado
-              // Redirigir al login
-              authService.logout();
-              return throwError(() => new Error('La sesión ha expirado. Por favor, inicie sesión nuevamente.'));
-            }
-          }),
-          catchError(refreshError => {
-            // Error al renovar el token
-            authService.logout();
-            return throwError(() => refreshError);
-          })
-        );
-      }
-      
-      // Para otros errores, simplemente propagar
-      return throwError(() => error);
-    })
-  );
-}

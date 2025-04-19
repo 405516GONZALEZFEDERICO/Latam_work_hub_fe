@@ -1,0 +1,228 @@
+/* Clases para formularios estilo iOS */
+.form-container {
+  background-color: white;
+  border-radius: var(--border-radius);
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.form-title {
+  font-size: var(--font-size-large);
+  font-weight: 600;
+  color: var(--color-text-dark);
+  margin-bottom: var(--spacing-sm);
+  text-align: center;
+}
+
+.form-subtitle {
+  color: var(--color-text-light);
+  text-align: center;
+  margin-bottom: var(--spacing-sm);
+  font-size: var(--font-size-small);
+}
+
+.form-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.form-flex-row {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  flex-direction: row;
+}
+
+.form-flex-col {
+  flex: 1;
+  min-width: 0; /* Evita que el contenido desborde */
+}
+
+/* Keyframes para la animación del spinner */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Angular Material Form Field básico sin forzar estilos */
+.mat-mdc-form-field {
+  font-family: var(--font-family);
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+/* Estilos para formularios del perfil y empresa */
+.personal-form-container,
+.company-form-container {
+  height: auto;
+  min-height: auto;
+  max-height: calc(100vh - 220px);
+  padding: 20px;
+  border-radius: var(--border-radius);
+  background-color: white;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 auto;
+  overflow: visible;
+  transform: none;
+  position: static;
+  display: flex;
+  flex-direction: column;
+}
+
+.header-section {
+  margin-bottom: var(--spacing-sm);
+}
+
+/* Estilo mínimo para los inputs */
+.ios-input {
+  margin-bottom: var(--spacing-md);
+}
+
+/* Estilos para mensajes de error */
+.mat-mdc-form-field-error-wrapper {
+  padding: 0 !important;
+  position: static !important;
+  margin-top: 4px !important;
+  min-height: 20px !important;
+  display: block !important;
+  clear: both !important;
+}
+
+.mat-mdc-form-field-error {
+  color: var(--color-error) !important;
+  font-size: 12px !important;
+  margin: 0 !important;
+  font-weight: 500 !important;
+  display: block !important;
+  padding-left: 36px !important;
+}
+
+/* Error en campo de formulario */
+.mat-form-field-invalid .mat-mdc-text-field-wrapper {
+  border-color: var(--color-error) !important;
+}
+
+.mat-form-field-invalid .mat-mdc-form-field-label {
+  color: var(--color-error) !important;
+}
+
+.mat-form-field-invalid .mat-mdc-form-field-ripple,
+.mat-form-field-invalid .mat-mdc-form-field-ripple.mat-accent {
+  background-color: var(--color-error) !important;
+}
+
+.mat-error {
+  color: var(--color-error) !important;
+  font-size: 12px !important;
+  margin-top: 4px !important;
+  display: block !important;
+  padding-left: 36px !important; /* Alinea con el icono del campo */
+  position: static !important;
+  clear: both !important;
+}
+
+/* Estilo para el input inválido */
+.mat-mdc-form-field.mat-form-field-invalid .mat-mdc-form-field-flex {
+  border-color: var(--color-error) !important;
+  border-width: 1px !important;
+}
+
+.mat-mdc-form-field.mat-form-field-invalid .mat-icon {
+  color: var(--color-error) !important;
+}
+
+.mat-mdc-form-field.mat-form-field-invalid .mat-mdc-form-field-infix {
+  padding-bottom: 0 !important;
+}
+
+/* Correcciones para campos en formularios de login/registro */
+.login-container .mat-mdc-form-field,
+.register-container .mat-mdc-form-field {
+  margin-bottom: 30px !important;
+  position: relative !important;
+}
+
+.login-container .mat-mdc-form-field-subscript-wrapper,
+.register-container .mat-mdc-form-field-subscript-wrapper {
+  height: auto !important;
+  position: absolute !important;
+  padding: 0 !important;
+  margin-top: 2px !important;
+  display: block !important;
+  overflow: visible !important;
+  top: 100% !important;
+  left: 0 !important;
+  width: 100% !important;
+}
+
+.login-container .mat-mdc-form-field-error,
+.register-container .mat-mdc-form-field-error {
+  position: static !important;
+  font-size: 12px !important;
+  margin-top: 3px !important;
+  padding-left: 36px !important;
+  display: block !important;
+  line-height: 1.2 !important;
+  white-space: normal !important;
+  overflow: visible !important;
+}
+
+/* Ajuste específico para los mensajes de error */
+.mat-mdc-form-field.mat-form-field-invalid {
+  margin-bottom: 30px !important;
+}
+
+/* Ajustes para el W-100 que podría estar causando problemas */
+.w-100 {
+  width: 100% !important;
+  margin-bottom: 0 !important;
+}
+
+/* Ajustes específicos para campos con errores */
+.form-field-with-error {
+  margin-bottom: 30px !important;
+}
+
+/* Fix específico para errores en los formularios de Angular Material */
+:root .mat-mdc-form-field .mdc-text-field--invalid + .mdc-text-field-helper-line {
+  position: static !important;
+  display: block !important;
+  padding-top: 0 !important;
+  margin-top: 2px !important;
+  clear: both !important;
+}
+
+/* Solución para el error de términos y condiciones */
+.terms-error {
+  color: var(--color-error) !important;
+  font-size: 12px !important;
+  margin-top: 5px !important;
+  display: block !important;
+  padding-left: 36px !important;
+  position: static !important;
+}
+
+/* Fix crítico para forzar la correcta visualización de errores en todos los componentes */
+.mat-mdc-form-field {
+  margin-bottom: 30px !important;
+}
+
+/* Estilo de alta prioridad para el contenedor de errores */
+.mdc-text-field--invalid + .mdc-text-field-helper-line,
+.mat-mdc-form-field-subscript-wrapper {
+  height: auto !important;
+  position: absolute !important;
+  top: 100% !important;
+  left: 0 !important;
+  width: 100% !important;
+  z-index: 10 !important;
+  background-color: transparent !important;
+  display: block !important;
+  overflow: visible !important;
+}
+
+/* Forza el espaciado correcto entre campos con errores */
+.mat-mdc-form-field + .mat-mdc-form-field {
+  margin-top: 10px !important;
+} 

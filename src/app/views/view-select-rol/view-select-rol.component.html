@@ -8,7 +8,9 @@
       </mat-card-header>
       
       <div class="space-y-6">
-        <button [class]="'flex items-center ' + (selectedRole === 'CLIENTE' ? 'border-primary' : '')" (click)="selectRole('CLIENTE')">
+        <button [class]="'flex items-center ' + (isRoleSelected('CLIENTE') ? 'border-primary' : '')" 
+                (click)="selectRole('CLIENTE')" 
+                [disabled]="isLoading">
           <div class="flex-shrink-0">
             <mat-icon>person</mat-icon>
           </div>
@@ -18,7 +20,9 @@
           </div>
         </button>
         
-        <button [class]="'flex items-center ' + (selectedRole === 'PROVEEDOR' ? 'border-primary' : '')" (click)="selectRole('PROVEEDOR')">
+        <button [class]="'flex items-center ' + (isRoleSelected('PROVEEDOR') ? 'border-primary' : '')" 
+                (click)="selectRole('PROVEEDOR')" 
+                [disabled]="isLoading">
           <div class="flex-shrink-0">
             <mat-icon>business</mat-icon>
           </div>
@@ -28,9 +32,19 @@
           </div>
         </button>
         
-        <button mat-raised-button color="primary" [disabled]="!selectedRole" (click)="continue()">
-          Continuar
-          <mat-icon>arrow_forward</mat-icon>
+        <!-- Mensaje de error -->
+        <div *ngIf="errorMessage" class="error-message">
+          <mat-icon>error_outline</mat-icon>
+          {{ errorMessage }}
+        </div>
+        
+        <button mat-raised-button color="primary" [disabled]="!selectedRole || isLoading" (click)="continue()">
+          <span *ngIf="!isLoading">Continuar</span>
+          <span *ngIf="isLoading" class="loading-spinner-container">
+            <mat-spinner diameter="20" class="spinner-in-button"></mat-spinner>
+            Procesando...
+          </span>
+          <mat-icon *ngIf="!isLoading">arrow_forward</mat-icon>
         </button>
       </div>
     </mat-card>

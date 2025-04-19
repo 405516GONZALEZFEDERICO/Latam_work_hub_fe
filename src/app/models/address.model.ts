@@ -1,13 +1,14 @@
 export interface Country {
   id?: number;
   name: string;
+  code?: string;
 }
 
 export interface City {
   id?: number;
   name: string;
   divisionName: string;
-  divisionType: string;
+  divisionType: 'PROVINCE' | 'STATE' | 'DEPARTMENT' | 'REGION';
   country: Country;
 }
 

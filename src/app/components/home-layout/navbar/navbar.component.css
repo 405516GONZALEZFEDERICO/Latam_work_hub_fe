@@ -48,18 +48,18 @@
   font-weight: 500;
   color: white;
   font-size: 16px;
-  
-  &.client {
-    background-color: #30B0C7;
-  }
-  
-  &.provider {
-    background-color: #30B0C7;
-  }
-  
-  &.admin {
-    background-color: #003366;
-  }
+}
+
+.avatar-small.client {
+  background-color: #30B0C7;
+}
+
+.avatar-small.provider {
+  background-color: #30B0C7;
+}
+
+.avatar-small.admin {
+  background-color: #003366;
 }
 
 @media (max-width: 576px) {

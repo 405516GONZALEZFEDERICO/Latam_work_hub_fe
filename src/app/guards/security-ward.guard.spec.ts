@@ -14,7 +14,6 @@ describe('SecurityWardGuard', () => {
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
     TestBed.configureTestingModule({
-      imports: [RouterTestingModule],
       providers: [
         SecurityWardGuard,
         { provide: AuthService, useValue: authServiceSpy },

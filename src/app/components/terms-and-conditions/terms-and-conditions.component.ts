@@ -18,7 +18,7 @@ import { MatDividerModule } from '@angular/material/divider';
     MatDividerModule
   ],
   templateUrl: './terms-and-conditions.component.html',
-  styleUrls: ['./terms-and-conditions.component.scss']
+  styleUrls: ['./terms-and-conditions.component.css']
 })
 export class TermsAndConditionsComponent {
   acceptTerms: any;

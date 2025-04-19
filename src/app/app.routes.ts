@@ -62,6 +62,11 @@ export const routes: Routes = [
         path: 'profile',
         children: [
           {
+            path: '',
+            redirectTo: 'personal',
+            pathMatch: 'full'
+          },
+          {
             path: 'personal',
             loadComponent: () =>
               import('./components/profile/complete-profile/complete-profile.component').then(m => m.CompleteProfileComponent),
@@ -72,6 +77,12 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./components/profile/complete-profile/complete-profile.component').then(m => m.CompleteProfileComponent),
             data: { activeTab: 'company', title: 'Perfil de Empresa' }
+          },
+          {
+            path: 'provider-type',
+            loadComponent: () =>
+              import('./components/profile/complete-profile/complete-profile.component').then(m => m.CompleteProfileComponent),
+            data: { activeTab: 'provider-type', title: 'Tipo de Proveedor' }
           }
         ]
       }

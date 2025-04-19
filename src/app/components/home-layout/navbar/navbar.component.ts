@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
@@ -15,41 +15,29 @@ import { MatSnackBar } from '@angular/material/snack-bar';
     MatButtonModule
   ],
   templateUrl: './navbar.component.html',
-  styleUrls: ['./navbar.component.scss']
+  styleUrls: ['./navbar.component.css']
 })
 export class NavbarComponent {
-  @Input() isSidebarOpen = false;
-  @Input() displayName = '';
-  @Input() userRole = '';
+  @Input() isSidebarOpen: boolean = false;
+  @Input() displayName: string = 'Usuario';
+  @Input() userRole: string = '';
   @Output() toggleSidebar = new EventEmitter<void>();
   
-  constructor(private snackBar: MatSnackBar) {}
+  private snackBar=inject(MatSnackBar);
   
   get userInitial(): string {
     return this.displayName ? this.displayName.charAt(0).toUpperCase() : '?';
   }
   
-  getUserClass(): string {
-    return this.userRole.toLowerCase();
+  getRoleClass(): string {
+    return this.userRole ? this.userRole.toLowerCase() : 'default';
   }
   
   toggleSidebarEvent(): void {
     this.toggleSidebar.emit();
   }
   
-  showNotifications(): void {
-    this.snackBar.open('Las notificaciones estarán disponibles próximamente', 'Cerrar', {
-      duration: 3000,
-      horizontalPosition: 'end',
-      verticalPosition: 'top'
-    });
-  }
-  
   openUserMenu(): void {
-    this.snackBar.open(`Perfil de ${this.displayName}`, 'Cerrar', {
-      duration: 3000,
-      horizontalPosition: 'end',
-      verticalPosition: 'top'
-    });
+    console.log('Abrir menú de usuario');
   }
 } 

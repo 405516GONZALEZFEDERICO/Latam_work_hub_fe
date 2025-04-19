@@ -11,7 +11,7 @@ import { ProfileData } from '../../../models/profile';
   standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './welcome.component.html',
-  styleUrls: ['./welcome.component.scss']
+  styleUrls: ['./welcome.component.css']
 })
 export class WelcomeComponent implements OnInit {
   currentUser: User | null = null;
@@ -23,28 +23,11 @@ export class WelcomeComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Obtener el usuario actual
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
-      
-      // Si tenemos un usuario, cargar su perfil
-      if (user) {
-        this.loadUserProfile();
-      }
     });
   }
   
-  loadUserProfile(): void {
-    this.profileService.getProfileData().subscribe({
-      next: (profile: ProfileData) => {
-        console.log('Profile loaded in welcome component:', profile);
-        this.profileData = profile;
-      },
-      error: (error: any) => {
-        console.error('Error al cargar el perfil en welcome:', error);
-      }
-    });
-  }
   
   getUserRoleDisplay(): string {
     if (!this.currentUser || !this.currentUser.role) {

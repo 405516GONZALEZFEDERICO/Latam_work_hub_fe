@@ -12,6 +12,7 @@ import { trigger, state, style, animate, transition } from '@angular/animations'
 
 // Importamos los componentes
 import { NavbarComponent } from '../../components/home-layout/navbar/navbar.component';
+import { NavigationEnd } from '@angular/router';
 
 @Component({
   selector: 'app-home-layout',
@@ -26,7 +27,7 @@ import { NavbarComponent } from '../../components/home-layout/navbar/navbar.comp
     RouterModule
   ],
   templateUrl: './home-layout.component.html',
-  styleUrls: ['./home-layout.component.scss'],
+  styleUrls: ['./home-layout.component.css'],
   animations: [
     trigger('confettiAnimation', [
       state('hidden', style({
@@ -83,10 +84,21 @@ export class HomeLayoutComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.loadUserProfile();
+    // this.loadUserProfile();
     
     // En pantallas grandes, el sidebar comienza abierto
     this.isSidebarOpen = window.innerWidth >= 992;
+    
+    // Agregar logs para depuración
+    console.log('HomeLayoutComponent inicializado');
+    console.log('Ruta actual:', this.router.url);
+    
+    // Suscribirse a eventos de navegación
+    this.router.events.subscribe(event => {
+      if (event instanceof NavigationEnd) {
+        console.log('Navegación completada:', event.url);
+      }
+    });
   }
 
   // Detector de cambio de tamaño de ventana
@@ -102,23 +114,23 @@ export class HomeLayoutComponent implements OnInit, OnDestroy {
     this.isSidebarOpen = !this.isSidebarOpen;
   }
 
-  loadUserProfile(): void {
-    this.profileService.getProfileData().subscribe({
-      next: (profile: ProfileData) => {
-        console.log('Profile loaded:', profile);
-        this.userData = profile;
-      },
-      error: (error: any) => {
-        console.error('Error al cargar el perfil:', error);
-        // Usar datos por defecto
-        this.userData = {
-          displayName: 'Usuario de Prueba',
-          email: 'usuario@example.com',
-          role: 'PROVIDER' as UserRole
-        } as ProfileData;
-      }
-    });
-  }
+  // loadUserProfile(): void {
+  //   this.profileService.getProfileData().subscribe({
+  //     next: (profile: ProfileData) => {
+  //       console.log('Profile loaded:', profile);
+  //       this.userData = profile;
+  //     },
+  //     error: (error: any) => {
+  //       console.error('Error al cargar el perfil:', error);
+  //       // Usar datos por defecto
+  //       this.userData = {
+  //         displayName: 'Usuario de Prueba',
+  //         email: 'usuario@example.com',
+  //         role: 'PROVEEDOR' as UserRole
+  //       } as ProfileData;
+  //     }
+  //   });
+  // }
 
   logout(): void {
     this.authService.logout().then(() => {
@@ -132,8 +144,8 @@ export class HomeLayoutComponent implements OnInit, OnDestroy {
 
   getRoleDisplayName(): string {
     const roleMap: Record<string, string> = {
-      'CLIENT': 'Cliente',
-      'PROVIDER': 'Proveedor',
+      'CLIENTE': 'Cliente',
+      'PROVEEDOR': 'Proveedor',
       'ADMIN': 'Administrador',
       'DEFAULT': 'Usuario'
     };

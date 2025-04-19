@@ -4,98 +4,102 @@
     <p class="form-subtitle">Completa tus datos personales para continuar</p>
   </div>
   
-  <div class="form-fields">
-    <!-- Foto de perfil centrada con botón a la derecha -->
-    <div class="form-flex-row" style="justify-content: center; align-items: center; margin-bottom: 16px;">
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <div class="profile-image">
-          <img *ngIf="profilePicture" [src]="profilePicture" alt="Profile picture" style="width: 100%; height: 100%; object-fit: cover;">
-          <div *ngIf="!profilePicture" style="color: #666; font-size: 13px;">Foto</div>
-        </div>
-        <button type="button" style="height: 32px; border-radius: 20px; font-size: 13px; font-weight: 500; padding: 0 16px; background-color: #f2f2f7; color: #0071e3; border: none; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" (click)="fileInput.click()">
-          Cambiar foto
-        </button>
+  <div class="form-flex-row" style="justify-content: center; align-items: center; margin-bottom: 16px;">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+      <div class="profile-image">
+        <img *ngIf="profilePicture" [src]="profilePicture" alt="Profile picture" style="width: 100%; height: 100%; object-fit: cover;">
+        <div *ngIf="!profilePicture" style="color: #666; font-size: 13px;">Foto</div>
       </div>
-      <input #fileInput type="file" (change)="onFileSelected($event)" accept="image/*" style="display: none;">
+      <button type="button" class="button-img" (click)="fileInput.click()">
+        Cambiar foto
+      </button>
+    </div>
+    <input #fileInput type="file" (change)="onFileSelected($event)" accept="image/*" style="display: none;">
+  </div>
+
+  <form [formGroup]="personalDataForm" (ngSubmit)="onSubmit()" style="overflow: visible;">
+    <!-- Nombre completo -->
+    <div class="form-flex-row">
+      <div class="form-flex-col w-100">
+        <mat-form-field appearance="outline" class="ios-input w-100 custom-field" [class.field-invalid]="isFieldInvalid('fullName')">
+          <mat-label>Nombre completo</mat-label>
+          <input matInput formControlName="fullName" placeholder="Ingresa tu nombre completo">
+        </mat-form-field>
+      </div>
     </div>
 
-    <form [formGroup]="personalDataForm" (ngSubmit)="onSubmit()" class="form-fields">
-      <!-- Nombre completo -->
-      <div class="form-flex-row">
-        <div class="form-flex-col w-100">
-          <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
-            <mat-label>Nombre completo</mat-label>
-            <input matInput formControlName="fullName" placeholder="Ingresa tu nombre completo">
-            <mat-error *ngIf="isFieldInvalid('fullName')">El nombre completo es requerido</mat-error>
-          </mat-form-field>
-        </div>
+    <!-- Email y Fecha de nacimiento -->
+    <div class="form-flex-row">
+      <div class="form-flex-col">
+        <mat-form-field appearance="outline" class="ios-input w-100 custom-field" [class.field-invalid]="isFieldInvalid('email')">
+          <mat-label>Correo electrónico</mat-label>
+          <input matInput formControlName="email" type="email" placeholder="email@ejemplo.com">
+        </mat-form-field>
       </div>
+      <div class="form-flex-col">
+        <mat-form-field appearance="outline" class="ios-input w-100 custom-field" [class.field-invalid]="isFieldInvalid('birthDate')">
+          <mat-label>Fecha de nacimiento</mat-label>
+          <input matInput [matDatepicker]="birthDatePicker" formControlName="birthDate" placeholder="DD/MM/AAAA">
+          <mat-datepicker-toggle matSuffix [for]="birthDatePicker"></mat-datepicker-toggle>
+          <mat-datepicker #birthDatePicker></mat-datepicker>
+        </mat-form-field>
+      </div>
+    </div>
+    
+    <!-- Tipo de documento y Número de documento -->
+    <div class="form-flex-row">
+      <div class="form-flex-col">
+        <mat-form-field appearance="outline" class="ios-input w-100 custom-field" [class.field-invalid]="isFieldInvalid('documentType')">
+          <mat-label>Tipo de documento</mat-label>
+          <mat-select formControlName="documentType">
+            <mat-option *ngFor="let type of documentTypes" [value]="type.value">
+              {{type.label}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div class="form-flex-col">
+        <mat-form-field appearance="outline" class="ios-input w-100 custom-field" [class.field-invalid]="isFieldInvalid('documentNumber')">
+          <mat-label>Número de documento</mat-label>
+          <input matInput formControlName="documentNumber" placeholder="Número de documento">
+        </mat-form-field>
+      </div>
+    </div>
+    
+    <!-- Cargo y Departamento -->
+    <div class="form-flex-row">
+      <div class="form-flex-col">
+        <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
+          <mat-label>Cargo</mat-label>
+          <input matInput formControlName="jobTitle" placeholder="Ej: Gerente, Desarrollador, Analista">
+        </mat-form-field>
+      </div>
+      <div class="form-flex-col">
+        <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
+          <mat-label>Departamento</mat-label>
+          <input matInput formControlName="department" placeholder="Ej: Marketing, TI, Finanzas">
+        </mat-form-field>
+      </div>
+    </div>
 
-      <!-- Email y Fecha de nacimiento -->
-      <div class="form-flex-row">
-        <div class="form-flex-col">
-          <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
-            <mat-label>Correo electrónico</mat-label>
-            <input matInput formControlName="email" type="email" placeholder="email@ejemplo.com">
-            <mat-error *ngIf="isFieldInvalid('email')">Ingresa un correo electrónico válido</mat-error>
-          </mat-form-field>
-        </div>
-        <div class="form-flex-col">
-          <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
-            <mat-label>Fecha de nacimiento</mat-label>
-            <input matInput [matDatepicker]="birthDatePicker" formControlName="birthDate" placeholder="DD/MM/AAAA">
-            <mat-datepicker-toggle matSuffix [for]="birthDatePicker"></mat-datepicker-toggle>
-            <mat-datepicker #birthDatePicker></mat-datepicker>
-            <mat-error *ngIf="isFieldInvalid('birthDate')">La fecha de nacimiento es requerida</mat-error>
-          </mat-form-field>
-        </div>
-      </div>
-      
-      <!-- Tipo de documento y Número de documento -->
-      <div class="form-flex-row">
-        <div class="form-flex-col">
-          <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
-            <mat-label>Tipo de documento</mat-label>
-            <mat-select formControlName="documentType">
-              <mat-option *ngFor="let type of documentTypes" [value]="type.value">
-                {{type.label}}
-              </mat-option>
-            </mat-select>
-            <mat-error *ngIf="isFieldInvalid('documentType')">Selecciona un tipo de documento</mat-error>
-          </mat-form-field>
-        </div>
-        <div class="form-flex-col">
-          <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
-            <mat-label>Número de documento</mat-label>
-            <input matInput formControlName="documentNumber" placeholder="Número de documento">
-            <mat-error *ngIf="isFieldInvalid('documentNumber')">Ingresa tu número de documento</mat-error>
-          </mat-form-field>
-        </div>
-      </div>
-      
-      <!-- Cargo y Departamento -->
-      <div class="form-flex-row">
-        <div class="form-flex-col">
-          <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
-            <mat-label>Cargo</mat-label>
-            <input matInput formControlName="jobTitle" placeholder="Ej: Gerente, Desarrollador, Analista">
-          </mat-form-field>
-        </div>
-        <div class="form-flex-col">
-          <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
-            <mat-label>Departamento</mat-label>
-            <input matInput formControlName="department" placeholder="Ej: Marketing, TI, Finanzas">
-          </mat-form-field>
-        </div>
-      </div>
+    <div style="text-align: center;">
+      <button 
+        type="submit" 
+        [disabled]="isLoading || personalDataForm.invalid" 
+        class="continue-button">
+        <span *ngIf="!isLoading">Guardar información</span>
+        <span *ngIf="isLoading" class="loading-content">
+          <mat-spinner diameter="20" color="accent"></mat-spinner>
+          <span>Guardando...</span>
+        </span>
+      </button>
+    </div>
+  </form>
 
-      <!-- Botón de guardar -->
-      <div class="form-actions">
-        <button type="submit" [disabled]="isLoading" class="btn-primary full-width">
-          <span *ngIf="!isLoading">Guardar información</span>
-          <span *ngIf="isLoading">Guardando...</span>
-        </button>
-      </div>
-    </form>
+  <div style="margin-top: -10px; overflow: visible;">
+    <app-address-stepper 
+      *ngIf="showAddressStepper"
+      (addressSaved)="onAddressSaved($event)">
+    </app-address-stepper>
   </div>
 </div>

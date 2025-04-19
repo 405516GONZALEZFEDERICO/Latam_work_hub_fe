@@ -1,0 +1,351 @@
+/* Contenedor principal del stepper */
+.address-stepper-container {
+  background-color: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  padding: 24px;
+  max-width: 500px;
+  width: 100%;
+  margin: 0 auto;
+  font-family: var(--font-family);
+  position: relative;
+}
+
+/* Encabezado del stepper */
+.stepper-header {
+  margin-bottom: 16px;
+}
+
+/* Indicadores de pasos */
+.stepper-indicators {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  margin: 0 auto;
+  max-width: 300px;
+}
+
+/* Línea de progreso */
+.stepper-indicators::before {
+  content: '';
+  position: absolute;
+  top: 16px;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background-color: #e0e0e0;
+  z-index: 1;
+}
+
+/* Línea de progreso completada */
+.stepper-indicators::after {
+  content: '';
+  position: absolute;
+  top: 16px;
+  left: 10%;
+  height: 2px;
+  background-color: #0B3C5D; /* Azul marino */
+  z-index: 2;
+  transition: width 0.3s ease;
+  width: calc((100% - 20%) * var(--progress-percentage, 0));
+}
+
+/* Indicador de paso individual */
+.step-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 3;
+  width: 70px;
+}
+
+/* Círculo indicador */
+.step-indicator .indicator-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  border: 2px solid #e0e0e0;
+  color: #666;
+  font-weight: 500;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.step-indicator .indicator-circle mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+/* Etiqueta del paso */
+.step-indicator .indicator-label {
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+  max-width: 70px;
+  line-height: 1.2;
+}
+
+/* Estilo para paso activo */
+.step-indicator.active .indicator-circle {
+  border-color: #0B3C5D; /* Azul marino */
+  background-color: #0B3C5D; /* Azul marino */
+  color: white;
+}
+
+.step-indicator.active .indicator-label {
+  color: #333;
+  font-weight: 500;
+}
+
+/* Estilo para paso completado */
+.step-indicator.completed .indicator-circle {
+  border-color: #0B3C5D; /* Azul marino */
+  background-color: #0B3C5D; /* Azul marino */
+  color: white;
+}
+
+/* Contenido del paso */
+.step-content {
+  padding: 10px 0;
+}
+
+/* Título del paso */
+.step-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #000000;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
+}
+
+/* Descripción del paso */
+.step-description {
+  font-size: 14px;
+  color: #8e8e93;
+  margin: 0 0 20px 0;
+  line-height: 1.5;
+}
+
+/* Contenedor del formulario */
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Fila del formulario (para elementos en horizontal) */
+.form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.form-row .ios-input {
+  flex: 1;
+}
+
+/* Estilos de inputs al estilo iOS */
+.ios-input {
+  width: 100%;
+}
+
+.ios-input .mat-form-field-subscript-wrapper {
+  padding: 0;
+}
+
+.ios-input .mat-form-field-infix {
+  padding: 10px 0;
+  min-height: 42px;
+}
+
+.ios-input .mat-text-field-wrapper {
+  background-color: #f5f5f7;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.ios-input .mat-form-field-flex {
+  padding: 0 12px;
+}
+
+.ios-input .mdc-floating-label {
+  font-size: 14px;
+}
+
+.ios-input .mat-select-value {
+  font-size: 14px;
+}
+
+.ios-input input.mat-input-element {
+  font-size: 14px;
+  padding: 4px 0;
+}
+
+.ios-input .mat-form-field-focus-overlay {
+  background-color: rgba(11, 60, 93, 0.05); /* Azul marino con opacidad */
+}
+
+.ios-input .mdc-text-field--focused .mdc-notched-outline__leading,
+.ios-input .mdc-text-field--focused .mdc-notched-outline__notch,
+.ios-input .mdc-text-field--focused .mdc-notched-outline__trailing {
+  border-color: #0B3C5D; /* Azul marino */
+}
+
+.ios-input .mat-form-field-error-wrapper {
+  padding: 4px 0 0;
+}
+
+/* Campo inválido - solo resaltar el borde */
+.field-invalid .mdc-notched-outline__leading,
+.field-invalid .mdc-notched-outline__notch,
+.field-invalid .mdc-notched-outline__trailing {
+  border-color: #f44336 !important;
+  border-width: 2px !important;
+}
+
+/* Ancho completo */
+.w-100 {
+  width: 100%;
+}
+
+/* Botones de navegación */
+.step-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 24px;
+}
+
+/* Botón siguiente */
+.btn-next {
+  background-color: #0B3C5D; /* Azul marino */
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  margin-left: auto;
+  box-shadow: 0 4px 12px rgba(11, 60, 93, 0.25); /* Azul marino con opacidad */
+  transition: all 0.2s;
+  letter-spacing: -0.2px;
+}
+
+.btn-next:hover {
+  background-color: #0A2C43; /* Versión más oscura */
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(11, 60, 93, 0.35); /* Azul marino con opacidad */
+}
+
+/* Botón atrás */
+.btn-back {
+  background-color: transparent;
+  color: #0B3C5D; /* Azul marino */
+  border: 1px solid #0B3C5D; /* Azul marino */
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: -0.2px;
+}
+
+.btn-back:hover {
+  background-color: rgba(11, 60, 93, 0.05); /* Azul marino con opacidad */
+}
+
+/* Botón de guardar */
+.btn-submit {
+  background-color: #0B3C5D; /* Azul marino */
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  margin-left: auto;
+  box-shadow: 0 4px 12px rgba(11, 60, 93, 0.25); /* Azul marino con opacidad */
+  transition: all 0.2s;
+  letter-spacing: -0.2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-submit:hover {
+  background-color: #0A2C43; /* Versión más oscura */
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(11, 60, 93, 0.35); /* Azul marino con opacidad */
+}
+
+.btn-submit:disabled {
+  background-color: #cccccc;
+  color: #666666;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Host styles based on step */
+:host {
+  display: block;
+  --progress-percentage: 0.5;
+}
+
+:host.step-0 {
+  --progress-percentage: 0;
+}
+
+:host.step-1 {
+  --progress-percentage: 1;
+}
+
+/* Responsive styles */
+@media (max-width: 576px) {
+  :host {
+    width: 100%;
+  }
+  
+  .address-stepper-container {
+    max-width: 100%;
+    border-radius: 12px;
+    padding: 16px;
+  }
+  
+  .form-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .step-actions {
+    margin-top: 16px;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .step-actions button {
+    width: 100%;
+    margin: 0;
+  }
+  
+  .stepper-indicators::before, 
+  .stepper-indicators::after {
+    left: 12%;
+    right: 12%;
+  }
+  
+  .step-title {
+    font-size: 18px;
+  }
+  
+  .step-description {
+    font-size: 13px;
+  }
+} 

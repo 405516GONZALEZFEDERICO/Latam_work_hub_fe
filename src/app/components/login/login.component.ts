@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -25,7 +25,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
     MatCheckboxModule
   ],
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.scss']
+  styleUrls: ['./login.component.css']
 })
 export class LoginComponent implements OnInit {
   hidePassword = true;
@@ -43,12 +43,11 @@ export class LoginComponent implements OnInit {
   isLoading = false;
   showError = false;
   errorMessage = 'Error al iniciar sesión. Verifique sus credenciales.';
-
-  constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router
-  ) {
+  private fb=inject(FormBuilder);
+  private authService=inject(AuthService);
+  private router = inject(Router);
+  
+  constructor() {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
@@ -57,7 +56,6 @@ export class LoginComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Additional initialization logic if needed
   }
 
   onLogin(): void {
@@ -73,11 +71,7 @@ export class LoginComponent implements OnInit {
     this.authService.loginWithEmail(email, password, rememberMe).subscribe({
       next: (response) => {
         this.isLoading = false;
-        
-        // Conseguir el rol actual del usuario
         this.authService.getCurrentUser().subscribe(user => {
-          console.log('Current user after login:', user);
-          
           if (user && user.role && user.role !== 'DEFAULT') {
             console.log('Navegando a home con rol:', user.role);
             this.router.navigate(['/home']);

@@ -1,11 +1,15 @@
+/* Usar variables */
+@use '../../../styles/variables' as *;
+@use "sass:color";
+
 .register-container {
   display: flex;
   flex-direction: column;
-  padding: 20px;
+  padding: $spacing-lg;
   max-width: 450px;
   width: 100%;
   margin: 0 auto;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  font-family: $font-family;
   background-color: transparent;
 }
 
@@ -20,268 +24,202 @@
 }
 
 h1 {
-  font-size: 24px;
-  font-weight: 600;
-  margin-bottom: 20px;
-  color: #000;
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-semibold;
+  margin-bottom: $spacing-xl;
+  color: $text-color-dark;
   text-align: center;
 }
 
+/* Alerts */
 .alert-danger, .alert-success {
-  padding: 10px;
-  border-radius: 6px;
-  margin-bottom: 16px;
-  font-size: 13px;
+  padding: $spacing-md;
+  border-radius: $border-radius-small;
+  margin-bottom: $spacing-lg;
+  font-size: $font-size-sm;
+  display: flex;
+  align-items: center;
 }
 
 .alert-danger {
-  background-color: rgba(255, 59, 48, 0.1);
-  border-left: 4px solid #FF3B30;
-  color: #FF3B30;
+  background-color: rgba($error-color, 0.1);
+  border-left: 4px solid $error-color;
+  color: $error-color;
 }
 
 .alert-success {
-  background-color: rgba(52, 199, 89, 0.1);
-  border-left: 4px solid #34C759;
-  color: #34C759;
+  background-color: rgba($success-color, 0.1);
+  border-left: 4px solid $success-color;
+  color: $success-color;
 }
 
+/* Fix para campos de formulario */
 .w-100 {
   width: 100%;
-  margin-bottom: 12px !important;
+  margin-bottom: 25px !important; /* Mayor espacio para asegurar que los errores no se solapen */
 }
 
-/* iOS style form fields */
+/* Términos y condiciones */
+.recordar-contrasena {
+  margin-bottom: 25px !important;
+  display: flex;
+  flex-direction: column;
+  
+  .recordar-contrasena-checkbox {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px; /* Espacio para el mensaje de error */
+    
+    a {
+      color: $primary-color;
+      text-decoration: none;
+      
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+.terms-error {
+  color: $error-color;
+  font-size: 11px;
+  line-height: 1;
+  margin-left: 24px; /* Alineado con el texto del checkbox */
+  display: block;
+}
+
+/* Anulaciones específicas para este componente */
 :host ::ng-deep {
-  .mat-mdc-form-field-appearance-outline .mdc-notched-outline__leading,
-  .mat-mdc-form-field-appearance-outline .mdc-notched-outline__notch,
-  .mat-mdc-form-field-appearance-outline .mdc-notched-outline__trailing {
-    border-color: #d1d1d6 !important;
-    border-width: 1px !important;
-    background-color: #f5f5f7 !important;
+  /* Estilos para mat-form-field */
+  .mat-mdc-form-field {
+    display: block;
+    width: 100%;
   }
-
-  .mat-mdc-form-field-appearance-outline .mdc-text-field--outlined {
-    --mdc-outlined-text-field-container-shape: 8px !important;
-    background-color: #f5f5f7 !important;
-  }
-
+  
+  /* Arreglo para bordes y fondos */
   .mat-mdc-form-field-appearance-outline .mat-mdc-form-field-flex {
-    background-color: #f5f5f7 !important;
-    border-radius: 8px !important;
-    padding: 0 12px !important;
+    background-color: rgba($background-color, 0.7) !important;
+    border-radius: $border-radius-small !important;
+    padding: 0 $spacing-md !important;
     height: 44px !important;
-    border: 1px solid #d1d1d6 !important;
+    border: 1px solid rgba($text-color-light, 0.3) !important;
   }
-
-  .mat-mdc-form-field-appearance-outline.mat-focused .mat-mdc-form-field-flex {
-    border-color: #0071e3 !important;
-    box-shadow: 0 0 0 2px rgba(0, 113, 227, 0.2) !important;
-  }
-
+  
+  /* Arreglo para etiquetas */
   .mat-mdc-form-field .mat-mdc-floating-label {
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    pointer-events: none !important;
+    padding-left: 36px !important; /* Para alinear con los íconos */
   }
   
-  .mat-mdc-form-field.mat-mdc-form-field-has-icon {
-    .mat-mdc-text-field-wrapper {
-      position: relative !important;
-    }
-    
-    .mat-mdc-form-field-icon-prefix {
-      position: absolute !important;
-      left: 12px !important;
-      top: 50% !important;
-      transform: translateY(-50%) !important;
-      z-index: 1 !important;
-    }
-    
-    .mat-mdc-form-field-infix {
-      padding-left: 36px !important;
-    }
-  }
-
-  .mat-mdc-form-field .mat-mdc-form-field-label-wrapper {
-    height: 100% !important;
-    top: 0 !important;
-    padding: 0 !important;
-  }
-
-  .mat-mdc-form-field.mat-form-field-invalid .mat-mdc-form-field-label {
-    color: #666 !important;
-  }
-
-  .mat-mdc-form-field .mat-mdc-floating-label.mdc-floating-label {
-    color: #666 !important;
-    font-size: 14px !important;
-  }
-
-  .mat-mdc-form-field.mat-focused .mat-mdc-floating-label.mdc-floating-label {
-    color: #0071e3 !important;
-    opacity: 1 !important;
-    transform: translateY(-100%) scale(0.75) !important;
+  .mat-mdc-form-field-has-icon .mat-mdc-floating-label.mdc-floating-label--float-above {
+    padding-left: 0 !important;
   }
   
-  .mat-mdc-form-field-label {
-    transform-origin: left top !important;
-    transition: transform 0.2s ease, color 0.2s ease !important;
-  }
-  
-  .mat-mdc-form-field.mat-mdc-form-field-has-value .mat-mdc-form-field-label {
-    display: block !important;
-    transform: translateY(-100%) scale(0.75) !important;
-  }
-
-  .mat-mdc-text-field-wrapper {
-    background-color: transparent !important;
-    padding: 0 !important;
-  }
-
-  .mat-mdc-form-field-infix {
-    padding-top: 8px !important;
-    padding-bottom: 8px !important;
-    min-height: auto !important;
-  }
-
-  .mat-mdc-input-element {
-    color: #333 !important;
-    font-weight: 400 !important;
-    font-size: 14px !important;
-    caret-color: #0071e3 !important;
-  }
-
-  /* Arreglo para mensajes de error con menor espaciado */
+  /* Solución directa para errores - anula todo lo anterior */
   .mat-mdc-form-field-subscript-wrapper {
-    position: static !important;
-    height: auto !important;
-    padding: 0 !important;
-    margin: 0 !important;
     display: block !important;
-    margin-top: 2px !important;
+    height: 0 !important;
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
   }
-
+  
   .mat-mdc-form-field-error-wrapper {
-    position: static !important;
     padding: 0 !important;
+    position: static !important;
   }
-
+  
   .mat-mdc-form-field-error {
-    color: #ff3b30 !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
     font-size: 11px !important;
-    margin-top: 1px !important;
-    position: static !important;
-    display: block !important;
-    padding: 0 !important;
-    font-weight: 400 !important;
-    line-height: 1.2 !important;
+    line-height: 1 !important;
+    margin-top: 1px !important; /* Solo 1px de margen como solicitado */
+    padding-left: 2px !important;
   }
-
-  .mat-mdc-form-field .mat-icon {
-    color: #8e8e93 !important;
-    font-size: 18px !important;
-    width: 18px !important;
-    height: 18px !important;
-  }
-
-  .mat-mdc-form-field.mat-focused .mat-icon {
-    color: #0071e3 !important;
-  }
-
-  /* Eliminate background and notch */
-  .mat-mdc-form-field-appearance-outline .mdc-notched-outline {
-    display: none !important;
-  }
-
-  /* Terms and conditions */
+  
+  /* Checkbox styles */
   .mat-mdc-checkbox {
-    margin: 0 !important;
+    margin-right: $spacing-sm !important;
+  }
+}
+
+/* Botón de registro */
+button[type="submit"] {
+  margin-bottom: $spacing-lg;
+}
+
+/* Alternative login */
+.alternative-login {
+  text-align: center;
+  margin-bottom: $spacing-lg;
+  
+  p {
+    color: $text-color-light;
+    font-size: $font-size-sm;
+    margin-bottom: $spacing-md;
+    position: relative;
     
-    .mdc-checkbox {
-      padding: 0 !important;
-      margin: 0 !important;
+    &::before, &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 30%;
+      height: 1px;
+      background-color: rgba($text-color-light, 0.3);
     }
     
-    .mat-mdc-checkbox-touch-target {
-      width: 24px !important;
-      height: 24px !important;
+    &::before {
+      left: 0;
     }
     
-    .mdc-checkbox .mdc-checkbox__background {
-      width: 16px !important;
-      height: 16px !important;
-      border-radius: 3px !important;
-      border-color: #8e8e93 !important;
+    &::after {
+      right: 0;
+    }
+  }
+  
+  .google-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 44px;
+    border-radius: $border-radius-small;
+    border: 1px solid rgba($text-color-light, 0.3);
+    background-color: white;
+    font-family: $font-family;
+    font-size: $font-size-normal;
+    color: $text-color-dark;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    
+    img {
+      height: 20px;
+      margin-right: $spacing-sm;
     }
     
-    .mdc-checkbox.mdc-checkbox--selected .mdc-checkbox__background {
-      background-color: #0071e3 !important;
-      border-color: #0071e3 !important;
-    }
-    
-    .mdc-form-field,
-    .mdc-form-field label {
-      margin: 0 !important;
-      font-size: 13px !important;
-      display: flex !important;
-      align-items: center !important;
-    }
-    
-    .mdc-checkbox__ripple {
-      width: 20px !important;
-      height: 20px !important;
-    }
-    
-    .mdc-label {
-      margin-left: 4px !important;
+    &:hover {
+      background-color: darken(white, 5%);
     }
   }
 }
 
-.terms-checkbox {
-  margin-bottom: 12px !important;
-  margin-top: 4px !important;
-  display: flex !important;
-  align-items: flex-start !important;
-  position: relative !important;
-  height: auto !important;
-  min-height: 24px !important;
+/* Sign up prompt */
+.signup-prompt {
+  text-align: center;
+  font-size: $font-size-sm;
+  color: $text-color-dark;
   
   a {
-    color: #0071e3;
+    color: $primary-color;
     text-decoration: none;
+    font-weight: $font-weight-medium;
     
     &:hover {
       text-decoration: underline;
     }
-  }
-  
-  :host ::ng-deep .mat-mdc-checkbox {
-    margin-top: 0 !important;
-    margin-right: 8px !important;
-  }
-  
-  :host ::ng-deep .mdc-checkbox {
-    margin-top: 0 !important;
-  }
-  
-  :host ::ng-deep .mdc-form-field {
-    align-items: flex-start !important;
-    margin-top: 0 !important;
-  }
-  
-  :host ::ng-deep .mdc-form-field > label {
-    margin-top: -2px !important;
-  }
-  
-  mat-error {
-    margin-top: 4px;
-    display: block;
-    font-size: 11px !important;
-    color: #FF3B30 !important;
-    position: static !important;
-    margin-left: 28px !important;
   }
 }
 
@@ -302,82 +240,6 @@ h1 {
   }
 }
 
-.alternative-login {
-  margin-top: 20px;
-  margin-bottom: 20px;
-  
-  p {
-    text-align: center;
-    font-size: 13px;
-    color: #8e8e93;
-    position: relative;
-    margin-bottom: 16px;
-    
-    &::before,
-    &::after {
-      content: "";
-      position: absolute;
-      top: 50%;
-      width: calc(50% - 90px);
-      height: 1px;
-      background-color: #d1d1d6;
-    }
-    
-    &::before {
-      left: 0;
-    }
-    
-    &::after {
-      right: 0;
-    }
-  }
-}
-
-.google-btn {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 10px 16px;
-  background-color: white;
-  border: 1px solid #d1d1d6;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #333;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  width: 100%;
-  margin-bottom: 16px;
-  
-  &:hover {
-    background-color: #f5f5f7;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  }
-  
-  img {
-    width: 18px;
-    height: 18px;
-    margin-right: 8px;
-  }
-}
-
-.signup-prompt {
-  text-align: center;
-  margin-top: 24px;
-  font-size: 14px;
-  color: #666;
-  
-  a {
-    color: #0071e3;
-    text-decoration: none;
-    font-weight: 500;
-    
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-}
-
 .ios-button {
   display: flex;
   justify-content: center;
@@ -391,56 +253,19 @@ h1 {
   transition: all 0.2s ease;
   border: none;
   margin-bottom: 16px;
-  background-color: #0071e3;
-  color: white;
   
   &.primary {
-    background-color: #0071e3;
+    background-color: $primary-color;
     color: white;
     
     &:hover:not(:disabled) {
-      background-color: #0077ed;
-      box-shadow: 0 2px 8px rgba(0, 113, 227, 0.3);
-      transform: translateY(-1px);
+      background-color: darken($primary-color, 5%);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
     
     &:disabled {
-      background-color: #76baff;
+      opacity: 0.7;
       cursor: not-allowed;
     }
-  }
-}
-
-/* Arreglo para mensajes de error con menor espaciado */
-:host ::ng-deep {
-  .mat-mdc-form-field-subscript-wrapper {
-    position: static !important;
-    height: auto !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    display: block !important;
-    margin-top: 2px !important;
-  }
-
-  .mat-mdc-form-field-error-wrapper {
-    position: static !important;
-    padding: 0 !important;
-  }
-
-  .mat-mdc-form-field-error {
-    color: #ff3b30 !important;
-    font-size: 11px !important;
-    margin-top: 1px !important;
-    position: static !important;
-    display: block !important;
-    padding: 0 !important;
-    font-weight: 400 !important;
-    line-height: 1.2 !important;
-  }
-  
-  .mdc-checkbox .mdc-label {
-    font-size: 13px !important;
-    line-height: 1.4 !important;
-    margin-top: -2px !important;
   }
 } 

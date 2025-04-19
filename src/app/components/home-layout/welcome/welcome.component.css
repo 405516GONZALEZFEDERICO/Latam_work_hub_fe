@@ -54,7 +54,7 @@ h1 {
   font-size: 16px;
 }
 
-// Estilos para la barra de progreso
+/* Estilos para la barra de progreso */
 .profile-status {
   background-color: #f9f9f9;
   padding: 20px;
@@ -77,15 +77,15 @@ h1 {
   border-radius: 5px;
   position: relative;
   transition: width 0.3s ease;
-  
-  span {
-    position: absolute;
-    right: 5px;
-    color: white;
-    font-size: 10px;
-    font-weight: bold;
-    top: -3px;
-  }
+}
+
+.progress-bar span {
+  position: absolute;
+  right: 5px;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  top: -3px;
 }
 
 .progress-text {
@@ -103,10 +103,10 @@ h1 {
   border-radius: 5px;
   font-size: 14px;
   transition: background-color 0.3s ease;
-  
-  &:hover {
-    background-color: #3367d6;
-  }
+}
+
+.profile-action-btn:hover {
+  background-color: #3367d6;
 }
 
 .role-specific-features {
@@ -158,10 +158,10 @@ h1 {
   cursor: pointer;
   transition: background-color 0.3s ease;
   text-decoration: none;
-  
-  &:hover {
-    background-color: #3367d6;
-  }
+}
+
+.action-btn:hover {
+  background-color: #3367d6;
 }
 
 @media (max-width: 768px) {

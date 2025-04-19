@@ -1,0 +1,113 @@
+/* Estilos para la vista de login con imagen a pantalla completa */ 
+:host {
+  display: block;
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* Eliminar estos estilos obsoletos que pueden causar problemas */
+:host ::ng-deep .mat-mdc-form-field-subscript-wrapper,
+:host ::ng-deep .mat-mdc-form-field-error-wrapper,
+:host ::ng-deep .mat-mdc-form-field-error {
+  display: none !important; /* Ya no usamos estos elementos */
+}
+
+/* Contenedor principal a pantalla completa */
+.login-page-wrapper {
+  width: 100%;
+  min-height: 100vh;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Imagen de fondo a pantalla completa */
+.background-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('/assets/images/office-background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: -1;
+  filter: brightness(0.8);
+}
+
+/* Capa de overlay para mejor legibilidad */
+.background-image::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
+}
+
+/* Contenedor del contenido */
+.content-container {
+  width: 100%;
+  max-width: 550px;
+  min-height: 600px;
+  margin: 0 auto;
+  padding: 30px;
+  box-sizing: border-box;
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+/* Contenido del login */
+.login-content {
+  width: 100%;
+  text-align: center;
+}
+
+/* Logo */
+.logo-container {
+  margin-bottom: 30px;
+}
+
+/* Contenedor del formulario */
+.form-container {
+  width: 100%;
+}
+
+/* Media queries para pantallas grandes */
+@media (min-width: 1200px) {
+  .content-container {
+    max-width: 600px;
+    min-height: 700px;
+  }
+}
+
+/* Media queries para pantallas pequeñas */
+@media (max-width: 767.98px) {
+  .content-container {
+    min-height: auto;
+    padding: 20px;
+    margin: 20px;
+    width: calc(100% - 40px);
+  }
+  
+  .logo-container svg {
+    width: 280px;
+    height: 80px;
+  }
+}
+
+/* Ajustes de los formularios */
+:host ::ng-deep .mat-mdc-form-field {
+  margin-bottom: 20px;
+} 

@@ -24,12 +24,6 @@
           formControlName="email" 
         >
         <mat-icon matPrefix>email</mat-icon>
-        <mat-error *ngIf="registerForm.get('email')?.errors?.['required']">
-          El correo electrónico es obligatorio
-        </mat-error>
-        <mat-error *ngIf="registerForm.get('email')?.errors?.['email']">
-          Ingrese un correo electrónico válido
-        </mat-error>
       </mat-form-field>
 
       <!-- Contraseña -->
@@ -51,12 +45,6 @@
         >
           <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
         </button>
-        <mat-error *ngIf="registerForm.get('password')?.errors?.['required']">
-          La contraseña es obligatoria
-        </mat-error>
-        <mat-error *ngIf="registerForm.get('password')?.errors?.['minlength']">
-          La contraseña debe tener al menos 6 caracteres
-        </mat-error>
       </mat-form-field>
 
       <!-- Confirmar Contraseña -->
@@ -66,6 +54,7 @@
           matInput 
           [type]="hideConfirmPassword ? 'password' : 'text'" 
           formControlName="confirmPassword" 
+          required
         >
         <mat-icon matPrefix>lock</mat-icon>
         <button 
@@ -78,29 +67,57 @@
         >
           <mat-icon>{{hideConfirmPassword ? 'visibility_off' : 'visibility'}}</mat-icon>
         </button>
-        <mat-error *ngIf="registerForm.get('confirmPassword')?.errors?.['required']">
-          Debe confirmar su contraseña
-        </mat-error>
-        <mat-error *ngIf="registerForm.get('confirmPassword')?.errors?.['mismatch']">
-          Las contraseñas no coinciden
-        </mat-error>
       </mat-form-field>
 
+      <!-- Sección de validaciones -->
+      <div class="validation-errors">
+        <!-- Validaciones de email -->
+        <div *ngIf="registerForm.get('email')?.invalid && (registerForm.get('email')?.touched || registerForm.get('email')?.dirty)">
+          <p class="error-message" *ngIf="registerForm.get('email')?.errors?.['required']">
+            <mat-icon>error_outline</mat-icon> El correo electrónico es obligatorio
+          </p>
+          <p class="error-message" *ngIf="registerForm.get('email')?.errors?.['email']">
+            <mat-icon>error_outline</mat-icon> Ingrese un correo electrónico válido
+          </p>
+        </div>
+        
+        <!-- Validaciones de contraseña -->
+        <div *ngIf="registerForm.get('password')?.invalid && (registerForm.get('password')?.touched || registerForm.get('password')?.dirty)">
+          <p class="error-message" *ngIf="registerForm.get('password')?.errors?.['required']">
+            <mat-icon>error_outline</mat-icon> La contraseña es obligatoria
+          </p>
+          <p class="error-message" *ngIf="registerForm.get('password')?.errors?.['minlength']">
+            <mat-icon>error_outline</mat-icon> La contraseña debe tener al menos 6 caracteres
+          </p>
+        </div>
+        
+        <!-- Validaciones de confirmar contraseña -->
+        <div *ngIf="registerForm.get('confirmPassword')?.invalid && (registerForm.get('confirmPassword')?.touched || registerForm.get('confirmPassword')?.dirty)">
+          <p class="error-message" *ngIf="registerForm.get('confirmPassword')?.errors?.['required']">
+            <mat-icon>error_outline</mat-icon> Debe confirmar su contraseña
+          </p>
+          <p class="error-message" *ngIf="registerForm.get('confirmPassword')?.errors?.['mismatch']">
+            <mat-icon>error_outline</mat-icon> Las contraseñas no coinciden
+          </p>
+        </div>
+      </div>
+
       <!-- Términos y condiciones -->
-      <div class="terms-checkbox">
-        <mat-checkbox formControlName="termsCheck" color="primary">
-          Acepto los <a routerLink="/terms-and-conditions">términos y condiciones</a>
-        </mat-checkbox>
-        <mat-error *ngIf="registerForm.get('termsCheck')?.touched && registerForm.get('termsCheck')?.invalid">
-          Debes aceptar los términos y condiciones
-        </mat-error>
+      <div class="recordar-contrasena">
+        <div class="recordar-contrasena-checkbox">
+          <mat-checkbox formControlName="termsCheck" color="primary">
+            Acepto los <a routerLink="/terms-and-conditions">términos y condiciones</a>
+          </mat-checkbox>
+        </div>
+        <p class="terms-error" *ngIf="registerForm.get('termsCheck')?.touched && registerForm.get('termsCheck')?.invalid">
+          <mat-icon>error_outline</mat-icon> Debes aceptar los términos y condiciones
+        </p>
       </div>
 
       <button 
         type="submit" 
         mat-raised-button 
         color="primary" 
-        class="ios-button primary w-100" 
         [disabled]="registerForm.invalid || isLoading"
       >
         <div class="spinner" *ngIf="isLoading"></div>

@@ -1,0 +1,102 @@
+.outer-container {
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.profile-wrapper {
+  width: 100%;
+}
+
+.profile-card {
+  width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background-color: white;
+  margin-bottom: 20px;
+}
+
+.tab-content {
+  padding: 20px;
+  background-color: white;
+}
+
+/* Estilos de la sección de dirección */
+.address-section {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.address-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.address-card {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.address-info {
+  flex: 1;
+}
+
+.address-info p {
+  margin: 5px 0;
+  color: #555;
+}
+
+.address-info strong {
+  color: #333;
+}
+
+.address-stepper-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.address-stepper-header h2 {
+  margin: 0 0 0 8px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Media queries para dispositivos móviles */
+@media (max-width: 768px) {
+  .outer-container {
+    padding: 10px;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .profile-card {
+    border-radius: 0;
+    margin-bottom: 0;
+  }
+  
+  .tab-content {
+    padding: 15px;
+  }
+  
+  .mat-tab-body-content {
+    height: auto;
+    overflow: visible;
+  }
+
+  /* Aseguramos que el contenido fluya correctamente en móvil */
+  .profile-wrapper {
+    min-height: min-content;
+  }
+}

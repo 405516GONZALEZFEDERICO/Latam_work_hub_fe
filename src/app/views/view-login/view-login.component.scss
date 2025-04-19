@@ -1,1 +1,44 @@
 /* Estilos para la vista de login */ 
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+  background-image: linear-gradient(to right bottom, rgba(248, 248, 248, 0.95), rgba(255, 255, 255, 0.95)), 
+                    url('/assets/images/bg-login.jpg');
+  background-size: cover;
+  background-position: center;
+  
+  /* Clase para forzar visualización correcta de errores */
+  ::ng-deep {
+    /* Fixes para errores en formularios */
+    .mat-mdc-form-field-subscript-wrapper {
+      display: block !important;
+      height: 0 !important;
+      position: static !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: visible !important;
+    }
+    
+    .mat-mdc-form-field-error-wrapper {
+      padding: 0 !important;
+      position: static !important;
+    }
+    
+    .mat-mdc-form-field-error {
+      position: absolute !important;
+      top: 100% !important;
+      left: 0 !important;
+      font-size: 11px !important;
+      line-height: 1 !important;
+      margin-top: 1px !important; /* Solo 1px de margen como solicitado */
+      padding-left: 2px !important;
+    }
+    
+    /* Ajusta el padding de los inputs para evitar que se sobrepongan */
+    .mat-mdc-form-field {
+      margin-bottom: 18px !important; /* Espacio suficiente para el mensaje de error */
+    }
+  }
+} 

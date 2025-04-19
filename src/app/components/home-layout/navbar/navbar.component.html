@@ -9,11 +9,8 @@
       </div>
       
       <div class="d-flex align-items-center">
-        <button mat-icon-button class="me-2 notification-button" (click)="showNotifications()">
-          <mat-icon class="notification-icon">notifications</mat-icon>
-        </button>
         <div class="user-mini-profile" (click)="openUserMenu()">
-          <div class="avatar-small" [ngClass]="userRole.toLowerCase()">
+          <div class="avatar-small" [ngClass]="getRoleClass()">
             {{ userInitial }}
           </div>
         </div>

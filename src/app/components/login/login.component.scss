@@ -24,9 +24,9 @@
 }
 
 h1 {
-  font-size: $font-size-xxlarge;
-  font-weight: 600;
-  margin-bottom: $spacing-lg;
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-semibold;
+  margin-bottom: $spacing-xl;
   color: $text-color-dark;
   text-align: center;
 }
@@ -38,31 +38,38 @@ h1 {
   padding: $spacing-md;
   border-radius: $border-radius-small;
   margin-bottom: $spacing-lg;
-  font-size: $font-size-small;
+  font-size: $font-size-sm;
+  display: flex;
+  align-items: center;
 }
 
 .w-100 {
   width: 100%;
-  margin-bottom: $spacing-md !important;
+  margin-bottom: 25px !important;
 }
 
 :host ::ng-deep {
-  // iOS style form fields
-  .mat-mdc-form-field-appearance-outline {
-    .mdc-notched-outline__leading,
-    .mdc-notched-outline__notch,
-    .mdc-notched-outline__trailing {
-      border-color: rgba($text-color-light, 0.3) !important;
-      border-width: 1px !important;
-      background-color: rgba($background-color, 0.7) !important;
-    }
+  /* Form field container */
+  .mat-mdc-form-field {
+    display: block;
+    width: 100%;
+    margin-bottom: $spacing-md;
+    font-family: $font-family;
     
+    &.mat-form-field-invalid {
+      margin-bottom: calc(#{$spacing-md} + 16px) !important;
+    }
+  }
+  
+  /* Form field outline */
+  .mat-mdc-form-field-appearance-outline {
     .mat-mdc-form-field-flex {
       background-color: rgba($background-color, 0.7) !important;
       border-radius: $border-radius-small !important;
       padding: 0 $spacing-md !important;
       height: 44px !important;
       border: 1px solid rgba($text-color-light, 0.3) !important;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
     
     &.mat-focused .mat-mdc-form-field-flex {
@@ -70,19 +77,34 @@ h1 {
       box-shadow: 0 0 0 2px rgba($primary-color, 0.2) !important;
     }
     
-    // Eliminate background and notch
+    /* Remove default outline */
     .mdc-notched-outline {
       display: none !important;
     }
   }
   
+  /* Label positioning */
   .mat-mdc-form-field {
     .mat-mdc-floating-label {
       top: 50% !important;
       transform: translateY(-50%) !important;
       pointer-events: none !important;
+      color: $text-color-light !important;
+      font-size: $font-size-normal !important;
+      padding-left: 36px !important;
     }
     
+    &.mat-focused .mat-mdc-floating-label.mdc-floating-label,
+    &.mat-mdc-form-field-has-value .mat-mdc-floating-label.mdc-floating-label {
+      color: $primary-color !important;
+      opacity: 1 !important;
+      transform: translateY(-130%) scale(0.75) !important;
+      padding-left: 0 !important;
+    }
+  }
+  
+  /* Icon positioning */
+  .mat-mdc-form-field {
     &.mat-mdc-form-field-has-icon {
       .mat-mdc-text-field-wrapper {
         position: relative !important;
@@ -101,37 +123,6 @@ h1 {
       }
     }
     
-    .mat-mdc-form-field-label-wrapper {
-      height: 100% !important;
-      top: 0 !important;
-      padding: 0 !important;
-    }
-    
-    &.mat-form-field-invalid .mat-mdc-form-field-label {
-      color: $text-color-light !important;
-    }
-    
-    .mat-mdc-floating-label.mdc-floating-label {
-      color: $text-color-light !important;
-      font-size: $font-size-normal !important;
-    }
-    
-    &.mat-focused .mat-mdc-floating-label.mdc-floating-label {
-      color: $primary-color !important;
-      opacity: 1 !important;
-      transform: translateY(-100%) scale(0.75) !important;
-    }
-    
-    .mat-mdc-form-field-label {
-      transform-origin: left top !important;
-      transition: transform 0.2s ease, color 0.2s ease !important;
-    }
-    
-    &.mat-mdc-form-field-has-value .mat-mdc-form-field-label {
-      display: block !important;
-      transform: translateY(-100%) scale(0.75) !important;
-    }
-    
     .mat-icon {
       color: $text-color-light !important;
       font-size: 18px !important;
@@ -144,6 +135,7 @@ h1 {
     }
   }
   
+  /* Input element styling */
   .mat-mdc-text-field-wrapper {
     background-color: transparent !important;
     padding: 0 !important;
@@ -157,46 +149,19 @@ h1 {
   
   .mat-mdc-input-element {
     color: $text-color-dark !important;
-    font-weight: 400 !important;
+    font-weight: $font-weight-regular !important;
     font-size: $font-size-normal !important;
     caret-color: $primary-color !important;
   }
   
-  // Error messages
-  .mat-mdc-form-field-subscript-wrapper {
-    position: static !important;
-    height: auto !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    display: block !important;
-    margin-top: 2px !important;
-  }
-  
-  .mat-mdc-form-field-error-wrapper {
-    position: static !important;
-    padding: 0 !important;
-  }
-  
-  .mat-mdc-form-field-error {
-    color: $error-color !important;
-    font-size: 11px !important;
-    margin-top: 1px !important;
-    position: static !important;
-    display: block !important;
-    padding: 0 !important;
-    font-weight: 400 !important;
-    line-height: 1.2 !important;
-  }
-  
-  // Checkbox styles
+  /* Checkbox styles */
   .mat-mdc-checkbox {
     margin: 0 !important;
-    margin-right: 8px !important;
+    margin-right: $spacing-sm !important;
     
     .mdc-checkbox {
       padding: 0 !important;
       margin: 0 !important;
-      margin-top: 0 !important;
     }
     
     .mat-mdc-checkbox-touch-target {
@@ -217,21 +182,39 @@ h1 {
     }
     
     .mdc-form-field,
-    .mdc-checkbox__ripple {
-      padding: 0 !important;
+    .mdc-form-field label {
       margin: 0 !important;
-      align-items: flex-start !important;
+      font-size: $font-size-sm !important;
+      display: flex !important;
+      align-items: center !important;
     }
-    
-    .mdc-form-field > label {
-      margin-top: -2px !important;
-      font-size: 13px !important;
-      line-height: 1.4 !important;
-    }
-    
-    .mdc-label {
-      margin-left: $spacing-xs;
-    }
+  }
+
+  /* Solución para errores de los formularios */
+  .mat-mdc-form-field-subscript-wrapper {
+    display: block !important;
+    height: auto !important;
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  .mat-mdc-form-field-error-wrapper {
+    padding: 0 !important;
+    position: static !important;
+  }
+
+  .mat-mdc-form-field-error {
+    position: static !important; /* Cambiar de absolute a static */
+    top: auto !important;
+    left: 0 !important;
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+    margin-top: 4px !important;
+    padding-left: 36px !important; /* Alinear con el texto del input */
+    color: $error-color !important;
+    display: block !important;
   }
 }
 
@@ -245,7 +228,7 @@ h1 {
 
 .remember-me {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 0;
   min-height: 24px !important;
   height: auto !important;
@@ -387,4 +370,91 @@ h1 {
   .login-container {
     padding: $spacing-md;
   }
-} 
+}
+
+/* Estilos para el checkbox en el login */
+.recordar-contrasena {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-lg;
+  
+  .recordar-contrasena-checkbox {
+    display: flex;
+    align-items: center;
+  }
+  
+  .forgot-password {
+    a {
+      color: $primary-color;
+      font-size: $font-size-sm;
+      text-decoration: none;
+      cursor: pointer;
+      
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+/* Login button */
+button[type="submit"] {
+  margin-bottom: $spacing-lg;
+}
+
+/* Sign up prompt */
+.signup-prompt {
+  text-align: center;
+  font-size: $font-size-sm;
+  color: $text-color-dark;
+  
+  a {
+    color: $primary-color;
+    text-decoration: none;
+    font-weight: $font-weight-medium;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+/* Estilos para checkbox */
+::ng-deep .mat-mdc-checkbox {
+  margin: 0 !important;
+}
+
+::ng-deep .mdc-checkbox {
+  margin: 0 !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+::ng-deep .mdc-checkbox__background {
+  top: 0 !important;
+  left: 0 !important;
+}
+
+::ng-deep .mdc-form-field {
+  display: flex !important;
+  align-items: center !important;
+}
+
+::ng-deep .mat-mdc-checkbox .mdc-label {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.error-message {
+  color: $error-color;
+  font-size: $font-size-sm;
+  margin-top: 0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

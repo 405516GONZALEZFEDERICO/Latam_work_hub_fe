@@ -3,8 +3,11 @@
   <div class="profile-wrapper">
     <mat-card class="profile-card">
       <mat-card-content>
+      
+        
         <!-- Tabs -->
         <mat-tab-group mat-align-tabs="center" [(selectedIndex)]="activeTab" (selectedIndexChange)="setActiveTab($event)" animationDuration="0ms">
+          <!-- Tab de Datos Personales -->
           <mat-tab>
             <ng-template mat-tab-label>
               <div class="d-flex align-items-center">
@@ -17,7 +20,6 @@
               <!-- Mostrar el stepper de dirección o formulario de datos personales -->
               <div *ngIf="!showAddressStepper">
                 <app-personal-data-form
-                  [initialData]="userData"
                   (formSubmitted)="handleFormSubmitted($event)">
                 </app-personal-data-form>
                 
@@ -56,38 +58,58 @@
                   <h2>Dirección</h2>
                 </div>
                 <app-address-stepper 
-                  [initialData]="addressData"
                   (addressSaved)="handleAddressSaved($event)">
                 </app-address-stepper>
               </div>
             </div>
           </mat-tab>
           
+          <!-- Tab de Empresa/Proveedor -->
           <mat-tab>
             <ng-template mat-tab-label>
               <div class="d-flex align-items-center">
                 <mat-icon class="me-2">business</mat-icon>
-                <span>Tipo de Proveedor</span>
+                <!-- Mostrar etiqueta diferente según rol -->
+                <span *ngIf="isProviderRole() && showProviderSelection">Tipo de Proveedor</span>
+                <span *ngIf="!isProviderRole() || !showProviderSelection">Empresa</span>
               </div>
             </ng-template>
             
             <div class="tab-content">
-              <!-- Formulario de tipo de proveedor -->
-              <div *ngIf="isProviderRole() && showProviderSelection">
+              <!-- Flujo para proveedores - Selección de tipo (Individual/Empresa) -->
+              <div *ngIf="isProviderRole() && showProviderSelection" class="provider-selection-wrapper">
                 <app-provider-type-selection
-                  [initialType]="providerType === 'INDIVIDUAL' ? 'individual' : providerType === 'COMPANY' ? 'company' : undefined"
-                  [showBackButton]="showBackButton"
+                  [initialType]="providerType"
+                  [userRole]="userData?.role || 'PROVEEDOR'"
                   (typeSelected)="handleProviderTypeSelection($event)"
-                  (saved)="handleProviderTypeSaved($event)"
+                  (saved)="handleProviderTypeSaved()"
                   (back)="backToProviderSelection()">
                 </app-provider-type-selection>
               </div>
               
-              <!-- Formulario de empresa -->
-              <div *ngIf="isProviderRole() && providerType === 'COMPANY' && !showProviderSelection">
+              <!-- Flujo para empresa - Formulario de datos de empresa -->
+              <div *ngIf="!showProviderSelection || !isProviderRole()" class="company-form-wrapper">
+                <!-- Si es proveedor, mostrar botón de volver -->
                 <app-company-form
+                  *ngIf="isProviderRole()"
+                  [userRole]="userData?.role || 'PROVEEDOR'"
+                  (formSubmitted)="handleFormSubmitted($event)"
                   (back)="backToProviderSelection()">
                 </app-company-form>
+                
+                <!-- Si es cliente, no mostrar botón de volver -->
+                <app-company-form
+                  *ngIf="!isProviderRole()"
+                  [userRole]="userData?.role || 'CLIENTE'"
+                  (formSubmitted)="handleFormSubmitted($event)">
+                </app-company-form>
+              </div>
+              
+              <!-- Mensaje informativo para roles no permitidos -->
+              <div *ngIf="userData && userData.role !== 'PROVEEDOR' && userData.role !== 'CLIENTE'" class="alert alert-info mt-3">
+                <p><strong>¡Atención!</strong> Esta sección puede requerir permisos adicionales.</p>
+                <p>Tu rol actual es: {{ userData.role }}</p>
+                <p>Si deberías tener acceso a esta sección, por favor contacta a soporte.</p>
               </div>
             </div>
           </mat-tab>

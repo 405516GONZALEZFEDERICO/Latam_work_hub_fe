@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormControl, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth-service/auth.service'
@@ -12,6 +12,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { HttpParams } from '@angular/common/http';
+import { map, catchError } from 'rxjs/operators';
+import { Observable, throwError } from 'rxjs';
 
 @Component({
   selector: 'app-register',
@@ -29,7 +32,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
     MatProgressSpinnerModule
   ],
   templateUrl: './register.component.html',
-  styleUrl: './register.component.scss'
+  styleUrl: './register.component.css'
 })
 export class RegisterComponent {
   registerForm: FormGroup;
@@ -45,27 +48,27 @@ export class RegisterComponent {
     private router: Router,
     private authService: AuthService
   ) {
-    this.registerForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-      confirmPassword: ['', Validators.required],
-      termsCheck: [false, Validators.requiredTrue]
+    this.registerForm = new FormGroup({
+      email: new FormControl('', {nonNullable: true, validators: [Validators.required, Validators.email]}),
+      password: new FormControl('', {nonNullable: true, validators: [Validators.required, Validators.minLength(6)]}),
+      confirmPassword: new FormControl('', {nonNullable: true, validators: [Validators.required]}),
+      termsCheck: new FormControl(false, {nonNullable: true, validators: [Validators.requiredTrue]})
     }, {
-      validators: this.passwordMatchValidator
+      validators: RegisterComponent.passwordMatchValidator
     });
   }
   
-  passwordMatchValidator(formGroup: FormGroup) {
-    const password = formGroup.get('password')?.value;
-    const confirmPassword = formGroup.get('confirmPassword')?.value;
+  static passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
+    const password = control.get('password');
+    const confirmPassword = control.get('confirmPassword');
     
-    if (password === confirmPassword) {
-      formGroup.get('confirmPassword')?.setErrors(null);
+    if (password?.value === confirmPassword?.value) {
+      confirmPassword?.setErrors(null);
+      return null;
     } else {
-      formGroup.get('confirmPassword')?.setErrors({ mismatch: true });
+      confirmPassword?.setErrors({ mismatch: true });
+      return { passwordMismatch: true };
     }
-    
-    return null;
   }
 
   register(): void {
@@ -143,4 +146,5 @@ export class RegisterComponent {
     
     return 'Error en el registro. Por favor, intenta nuevamente.';
   }
+
 }
