@@ -57,8 +57,17 @@ export class AuthService {
     this.authStateSubject.next(initialAuthState);
     
     // Aplicar persistencia local para prevenir pérdida de sesión al recargar
-    setPersistence(this.auth, browserLocalPersistence)
-      .catch(error => console.error('Error setting persistence:', error));
+    try {
+      setPersistence(this.auth, browserLocalPersistence)
+        .catch(error => {
+          console.error('Error setting persistence:', error);
+          // Intentar con otro tipo de persistencia si la primera falla
+          setPersistence(this.auth, browserSessionPersistence)
+            .catch(err => console.error('Error setting session persistence:', err));
+        });
+    } catch (error) {
+      console.warn('Firebase persistence not supported in this environment:', error);
+    }
     
     // Escuchar cambios en el estado de autenticación de Firebase
     onAuthStateChanged(this.auth, async (user) => {
@@ -174,6 +183,13 @@ export class AuthService {
 
   // Obtener información del rol desde el backend - SOLO UNA VEZ al iniciar sesión
   private verifyUserRole(idToken: string): void {
+    // Verificar si estamos en una ruta pública (login/register) y evitar la verificación
+    const currentPath = window.location.pathname;
+    if (currentPath.includes('/login') || currentPath.includes('/register')) {
+      console.log('Evitando verificación de rol en ruta pública:', currentPath);
+      return;
+    }
+    
     this.http.get<any>(`${this.API_BASE_URL}/verificar-rol`, {
       params: { idToken },
       headers: { 'Content-Type': 'application/json' }

@@ -250,7 +250,7 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy {
         fullName: this.personalDataForm.value.fullName,
         name: this.personalDataForm.value.fullName,
         email: this.personalDataForm.value.email,
-        birthDate: formattedBirthDate, // Usar la fecha formateada
+        birthDate: formattedBirthDate || undefined,
         documentType: this.personalDataForm.value.documentType,
         documentNumber: this.personalDataForm.value.documentNumber,
         jobTitle: this.personalDataForm.value.jobTitle,

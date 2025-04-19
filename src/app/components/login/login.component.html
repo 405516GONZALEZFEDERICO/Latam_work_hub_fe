@@ -25,6 +25,7 @@
           matInput 
           [type]="hidePassword ? 'password' : 'text'" 
           formControlName="password" 
+          autocomplete="current-password"
         >
         <mat-icon matPrefix>lock</mat-icon>
         <button 
@@ -84,7 +85,7 @@
     <div class="alternative-login">
       <p>O inicia sesión con</p>
       <button type="button" class="google-btn" (click)="loginWithGoogle()">
-        <img src="assets/icons/google-icon.svg" alt="Google">
+        <img src="icono-google.svg" alt="Google">
         Continuar con Google
       </button>
     </div>
