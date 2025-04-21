@@ -29,6 +29,35 @@ html, body {
   overflow: visible !important;
 }
 
+/* Set a consistent border radius for all buttons */
+.mat-mdc-flat-button,
+.mat-mdc-raised-button,
+.mat-mdc-button,
+.mat-mdc-button-base,
+.mat-flat-button,
+.mat-raised-button,
+.mat-button,
+.mat-button-base,
+.mdc-button,
+button.submit-button,
+button.continue-button {
+  border-radius: 4px !important;
+}
+
+/* Apply border radius to button ripples and focus indicators */
+.mat-ripple, 
+.mat-mdc-focus-indicator,
+.mdc-button__ripple {
+  border-radius: 4px !important;
+}
+
+/* Ensure consistent border radius for MDC classes */
+.mdc-button--outlined,
+.mdc-button--raised,
+.mdc-button--unelevated {
+  border-radius: 4px !important;
+}
+
 /* Asegurar que los componentes personalizados se rendericen correctamente */
 app-provider-type-selection {
   display: flex !important;

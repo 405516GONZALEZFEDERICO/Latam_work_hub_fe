@@ -1,53 +1,324 @@
 /* Contenedor principal del stepper */
 .address-stepper-container {
-  background-color: white;
-  border-radius: 16px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-  padding: 24px;
-  max-width: 500px;
+  display: flex;
+  flex-direction: column;
   width: 100%;
+  max-width: 800px;
   margin: 0 auto;
-  font-family: var(--font-family);
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Alineación de botones */
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.action-button {
+  background-color: var(--color-text-dark);
+  color: white;
+}
+
+.horizontal-stepper {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 30px;
   position: relative;
+}
+
+.horizontal-stepper::after {
+  content: '';
+  position: absolute;
+  top: 25px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #e0e0e0;
+  z-index: 1;
+}
+
+.step-item {
+  flex: 1;
+  position: relative;
+  text-align: center;
+  z-index: 2;
+}
+
+.step-circle {
+  width: 50px;
+  height: 50px;
+  background-color: #e0e0e0;
+  color: #757575;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 10px;
+  font-size: 20px;
+  font-weight: bold;
+  position: relative;
+  z-index: 2;
+}
+
+.step-title {
+  font-size: 16px;
+  color: #757575;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.step-connector {
+  position: absolute;
+  top: 25px;
+  right: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #e0e0e0;
+  z-index: 1;
+}
+
+/* Estilos para paso activo */
+.step-item.active .step-circle {
+  background-color: var(--color-text-dark);
+  color: white;
+}
+
+.step-item.active .step-title {
+  color: var(--color-text-dark);
+}
+
+/* Estilos para paso completado */
+.step-item.completed .step-circle {
+  background-color: var(--color-text-dark);
+  color: white;
+}
+
+.step-item.completed .step-connector {
+  background-color: var(--color-text-dark);
+}
+
+/* Estilos para los contenedores de pasos */
+.step-content-container {
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.step-content-container h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 20px;
+  color: #333;
+}
+
+/* Estilos para campos de formulario */
+.full-width {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.medium-width {
+  width: 60%;
+  margin-bottom: 15px;
+}
+
+.half-width {
+  width: 48%;
+  margin-bottom: 15px;
+}
+
+/* Campos de igual tamaño para país y ciudad */
+.equal-field {
+  flex: 1;
+  margin-right: 5px;
+  margin-bottom: 15px;
+}
+
+/* Corrección para el último campo en la fila para evitar margen extra */
+.equal-field:last-child {
+  margin-right: 0;
+}
+
+/* Ocultar mensajes de error y mostrar solo bordes rojos */
+.field-error {
+  /* Estilo para los bordes en caso de error */
+  border-color: var(--color-error) !important;
+}
+
+.field-error .mat-form-field-outline {
+  color: var(--color-error) !important;
+}
+
+/* Estilo para ocultar los mensajes de error */
+::ng-deep .mat-form-field-subscript-wrapper {
+  display: none !important;
+}
+
+::ng-deep .field-error .mat-form-field-outline-thick {
+  color: var(--color-error) !important;
+}
+
+/* Estilos para inputs de formulario */
+::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline-thick {
+  color: var(--color-text-dark) !important;
+}
+
+::ng-deep .mat-form-field.mat-focused .mat-form-field-label {
+  color: var(--color-text-dark) !important;
+}
+
+::ng-deep .mat-select-arrow {
+  color: var(--color-text-dark) !important;
+}
+
+::ng-deep .mat-form-field.mat-focused .mat-form-field-ripple {
+  background-color: var(--color-text-dark) !important;
+}
+
+::ng-deep .mat-option.mat-selected:not(.mat-option-disabled) {
+  color: var(--color-text-dark) !important;
+}
+
+.small-width {
+  width: 48%;
+}
+
+.flex-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+/* Estilos para campos de ciudad personalizada */
+.custom-city-fields {
+  background-color: #f0f7ff;
+  padding: 15px;
+  border-radius: 4px;
+  border-left: 4px solid var(--color-text-dark);
+  margin-bottom: 20px;
+}
+
+.custom-city-fields h3 {
+  margin-top: 0;
+  color: var(--color-text-dark);
+  font-size: 16px;
+}
+
+/* Estilos para contenedor de botones */
+.button-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+/* Estilos para botones Mat de Angular Material */
+::ng-deep .mat-flat-button.mat-primary {
+  background-color: var(--color-text-dark) !important;
+}
+
+::ng-deep .mat-flat-button.mat-primary:hover {
+  background-color: var(--color-primary-hover) !important;
+}
+
+::ng-deep .mat-icon-button.mat-primary {
+  color: var(--color-text-dark) !important;
+}
+
+::ng-deep .mat-icon-button.mat-primary:hover {
+  background-color: rgba(28, 28, 30, 0.1) !important;
+}
+
+/* Estilos para estados step */
+:host.step-0 {
+  --progress-value: 0;
+}
+
+:host.step-1 {
+  --progress-value: 100;
+}
+
+/* Loading container */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+::ng-deep .mat-progress-spinner circle {
+  stroke: var(--color-text-dark) !important;
+}
+
+/* Estilos responsivos */
+@media (max-width: 600px) {
+  .horizontal-stepper {
+    margin-bottom: 20px;
+  }
+  
+  .step-circle {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+  
+  .step-title {
+    font-size: 14px;
+  }
+  
+  .flex-row {
+    flex-direction: column;
+    gap: 0;
+  }
+  
+  .half-width,
+  .equal-field,
+  .small-width {
+    width: 100%;
+  }
+  
+  .button-container {
+    flex-direction: column;
+    align-items: flex-end;
+  }
 }
 
 /* Encabezado del stepper */
 .stepper-header {
-  margin-bottom: 16px;
+  margin-bottom: 24px;
 }
 
 /* Indicadores de pasos */
 .stepper-indicators {
   display: flex;
   justify-content: space-between;
-  position: relative;
-  margin: 0 auto;
-  max-width: 300px;
+  margin-bottom: 16px;
 }
 
 /* Línea de progreso */
-.stepper-indicators::before {
+.step-indicator:not(:last-child)::after {
   content: '';
   position: absolute;
   top: 16px;
-  left: 10%;
-  right: 10%;
+  left: 50%;
+  width: 100%;
   height: 2px;
   background-color: #e0e0e0;
   z-index: 1;
 }
 
 /* Línea de progreso completada */
-.stepper-indicators::after {
-  content: '';
-  position: absolute;
-  top: 16px;
-  left: 10%;
-  height: 2px;
-  background-color: #0B3C5D; /* Azul marino */
-  z-index: 2;
-  transition: width 0.3s ease;
-  width: calc((100% - 20%) * var(--progress-percentage, 0));
+.step-indicator.completed:not(:last-child)::after {
+  background-color: #0077c2;
 }
 
 /* Indicador de paso individual */
@@ -56,8 +327,7 @@
   flex-direction: column;
   align-items: center;
   position: relative;
-  z-index: 3;
-  width: 70px;
+  flex: 1;
 }
 
 /* Círculo indicador */
@@ -65,15 +335,14 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
+  background-color: #f5f5f5;
+  border: 2px solid #e0e0e0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: white;
-  border: 2px solid #e0e0e0;
-  color: #666;
-  font-weight: 500;
   margin-bottom: 8px;
-  font-size: 14px;
+  position: relative;
+  z-index: 2;
 }
 
 .step-indicator .indicator-circle mat-icon {
@@ -84,52 +353,43 @@
 
 /* Etiqueta del paso */
 .step-indicator .indicator-label {
-  font-size: 12px;
-  color: #666;
+  font-size: 14px;
+  color: #757575;
   text-align: center;
-  max-width: 70px;
-  line-height: 1.2;
 }
 
 /* Estilo para paso activo */
 .step-indicator.active .indicator-circle {
-  border-color: #0B3C5D; /* Azul marino */
-  background-color: #0B3C5D; /* Azul marino */
-  color: white;
+  border-color: #0077c2;
 }
 
 .step-indicator.active .indicator-label {
-  color: #333;
+  color: #0077c2;
   font-weight: 500;
 }
 
 /* Estilo para paso completado */
 .step-indicator.completed .indicator-circle {
-  border-color: #0B3C5D; /* Azul marino */
-  background-color: #0B3C5D; /* Azul marino */
-  color: white;
+  border-color: #0077c2;
 }
 
 /* Contenido del paso */
 .step-content {
-  padding: 10px 0;
+  padding: 16px;
 }
 
 /* Título del paso */
 .step-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #000000;
-  margin: 0 0 8px 0;
-  letter-spacing: -0.5px;
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 500;
 }
 
 /* Descripción del paso */
 .step-description {
+  margin: 0 0 24px;
+  color: #757575;
   font-size: 14px;
-  color: #8e8e93;
-  margin: 0 0 20px 0;
-  line-height: 1.5;
 }
 
 /* Contenedor del formulario */
@@ -142,7 +402,7 @@
 /* Fila del formulario (para elementos en horizontal) */
 .form-row {
   display: flex;
-  gap: 12px;
+  gap: 16px;
 }
 
 .form-row .ios-input {
@@ -152,6 +412,7 @@
 /* Estilos de inputs al estilo iOS */
 .ios-input {
   width: 100%;
+  border-radius: 8px;
 }
 
 .ios-input .mat-form-field-subscript-wrapper {
@@ -205,7 +466,6 @@
 .field-invalid .mdc-notched-outline__notch,
 .field-invalid .mdc-notched-outline__trailing {
   border-color: #f44336 !important;
-  border-width: 2px !important;
 }
 
 /* Ancho completo */
@@ -216,81 +476,62 @@
 /* Botones de navegación */
 .step-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   margin-top: 24px;
+  gap: 8px;
 }
 
 /* Botón siguiente */
 .btn-next {
-  background-color: #0B3C5D; /* Azul marino */
+  background-color: #0077c2;
   color: white;
   border: none;
-  padding: 12px 20px;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 15px;
+  padding: 10px 20px;
+  border-radius: 4px;
   cursor: pointer;
-  margin-left: auto;
-  box-shadow: 0 4px 12px rgba(11, 60, 93, 0.25); /* Azul marino con opacidad */
-  transition: all 0.2s;
-  letter-spacing: -0.2px;
+  font-size: 16px;
+  transition: background-color 0.3s;
 }
 
 .btn-next:hover {
-  background-color: #0A2C43; /* Versión más oscura */
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(11, 60, 93, 0.35); /* Azul marino con opacidad */
+  background-color: #005fa3;
 }
 
 /* Botón atrás */
 .btn-back {
   background-color: transparent;
-  color: #0B3C5D; /* Azul marino */
-  border: 1px solid #0B3C5D; /* Azul marino */
-  padding: 12px 20px;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 15px;
+  color: #0077c2;
+  border: 1px solid #0077c2;
+  padding: 10px 20px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.2s;
-  letter-spacing: -0.2px;
+  font-size: 16px;
+  transition: background-color 0.3s;
 }
 
 .btn-back:hover {
-  background-color: rgba(11, 60, 93, 0.05); /* Azul marino con opacidad */
+  background-color: rgba(0, 119, 194, 0.05);
 }
 
 /* Botón de guardar */
 .btn-submit {
-  background-color: #0B3C5D; /* Azul marino */
+  background-color: #0077c2;
   color: white;
   border: none;
-  padding: 12px 20px;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 15px;
+  padding: 10px 20px;
+  border-radius: 4px;
   cursor: pointer;
-  margin-left: auto;
-  box-shadow: 0 4px 12px rgba(11, 60, 93, 0.25); /* Azul marino con opacidad */
-  transition: all 0.2s;
-  letter-spacing: -0.2px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 16px;
+  transition: background-color 0.3s;
 }
 
 .btn-submit:hover {
-  background-color: #0A2C43; /* Versión más oscura */
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(11, 60, 93, 0.35); /* Azul marino con opacidad */
+  background-color: #005fa3;
 }
 
-.btn-submit:disabled {
+.btn-submit:disabled, .btn-next:disabled {
   background-color: #cccccc;
-  color: #666666;
   cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
 }
 
 /* Host styles based on step */
@@ -308,7 +549,7 @@
 }
 
 /* Responsive styles */
-@media (max-width: 576px) {
+@media (max-width: 600px) {
   :host {
     width: 100%;
   }
@@ -321,7 +562,7 @@
   
   .form-row {
     flex-direction: column;
-    gap: 8px;
+    gap: 16px;
   }
   
   .step-actions {
@@ -335,10 +576,9 @@
     margin: 0;
   }
   
-  .stepper-indicators::before, 
-  .stepper-indicators::after {
-    left: 12%;
-    right: 12%;
+  .stepper-indicators {
+    overflow-x: auto;
+    padding-bottom: 8px;
   }
   
   .step-title {
@@ -348,4 +588,55 @@
   .step-description {
     font-size: 13px;
   }
+}
+
+:host(.step-0) .step-indicator:nth-child(1) .indicator-circle {
+  background-color: #0077c2;
+  color: white;
+  border-color: #0077c2;
+}
+
+:host(.step-1) .step-indicator:nth-child(1) .indicator-circle,
+:host(.step-1) .step-indicator:nth-child(2) .indicator-circle {
+  background-color: #0077c2;
+  color: white;
+  border-color: #0077c2;
+}
+
+:host(.step-1) .step-indicator:nth-child(1)::after {
+  background-color: #0077c2;
+}
+
+/* Estilos para el botón con icono y texto centrado */
+.button-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.button-icon {
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.button-text {
+  vertical-align: middle;
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-text-dark);
+  color: white;
+}
+
+/* Estilos para campos inválidos - mostrar borde rojo */
+.mat-form-field.ng-invalid.ng-touched .mat-form-field-outline {
+  color: #f44336 !important;
+}
+
+.mat-form-field.ng-invalid.ng-touched .mat-form-field-label {
+  color: #f44336 !important;
 } 

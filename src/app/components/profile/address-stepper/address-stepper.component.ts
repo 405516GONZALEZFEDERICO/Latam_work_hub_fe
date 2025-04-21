@@ -1,32 +1,17 @@
-import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ReactiveFormsModule, FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { Address } from '../../../models/address.model';
-
-interface City {
-  id: number;
-  countryId: number;
-  name: string;
-}
-
-interface Country {
-  id: number;
-  name: string;
-}
-
-interface AddressCity {
-  name: string;
-  divisionName: string;
-  divisionType: 'PROVINCE' | 'STATE' | 'DEPARTMENT' | 'REGION';
-  country: {
-    name: string;
-  };
-}
+import { AddressService } from '../../../services/address/address.service';
+import { City, DivisionType } from '../../../models/city.model';
+import { Country } from '../../../models/country.model';
+import { finalize } from 'rxjs/operators';
 
 @Component({
   selector: 'app-address-stepper',
@@ -38,6 +23,7 @@ interface AddressCity {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    MatProgressSpinnerModule,
     ReactiveFormsModule
   ],
   templateUrl: './address-stepper.component.html',
@@ -47,14 +33,18 @@ interface AddressCity {
     '[class.step-1]': 'currentStep === 1'
   }
 })
-export class AddressStepperComponent implements OnInit {
+export class AddressStepperComponent implements OnInit, OnChanges {
   @Output() addressSaved = new EventEmitter<Address>();
+  @Output() cancelled = new EventEmitter<void>();
   @Input() isLoading = false;
+  @Input() userId?: string; // UID del usuario para guardar la dirección
+  @Input() existingAddress?: Address; // Dirección existente para editar
+  @Input() isEditMode = false; // Modo de edición
   
   addressForm!: FormGroup;
   currentStep = 0;
   
-  // Public property to store the current address data
+  // Propiedad para almacenar los datos de dirección actuales
   currentAddressData: Partial<Address> = {};
   
   steps = [
@@ -62,53 +52,128 @@ export class AddressStepperComponent implements OnInit {
     { title: 'Dirección', description: 'Completa los detalles de tu dirección' }
   ];
   
-  countries = [
-    { id: 1, name: 'Argentina' },
-    { id: 2, name: 'Brasil' },
-    { id: 3, name: 'Chile' },
-    { id: 4, name: 'Colombia' },
-    { id: 5, name: 'México' }
+  divisionTypes = [
+    { value: 'PROVINCE', label: 'Provincia' },
+    { value: 'STATE', label: 'Estado' },
+    { value: 'DEPARTMENT', label: 'Departamento' },
+    { value: 'REGION', label: 'Región' }
   ];
   
-  cities = [
-    { id: 1, countryId: 1, name: 'Buenos Aires' },
-    { id: 2, countryId: 1, name: 'Córdoba' },
-    { id: 3, countryId: 1, name: 'Rosario' },
-    { id: 4, countryId: 2, name: 'São Paulo' },
-    { id: 5, countryId: 2, name: 'Rio de Janeiro' },
-    { id: 6, countryId: 3, name: 'Santiago' },
-    { id: 7, countryId: 4, name: 'Bogotá' },
-    { id: 8, countryId: 4, name: 'Medellín' },
-    { id: 9, countryId: 5, name: 'Ciudad de México' },
-    { id: 10, countryId: 5, name: 'Guadalajara' }
-  ];
-  
+  // Datos que ahora vendrán del backend
+  countries: Country[] = [];
   filteredCities: City[] = [];
+  showCustomCity = false;
+  loadingCountries = false;
+  loadingCities = false;
   
-  constructor(private fb: FormBuilder) {}
+  constructor(
+    private fb: FormBuilder,
+    private addressService: AddressService
+  ) {}
   
   ngOnInit(): void {
     this.initForm();
+    this.loadCountries();
+    this.setupFormListeners();
+  }
+  
+  ngOnChanges(changes: SimpleChanges): void {
+    // Si cambia la dirección existente, actualizar el formulario
+    if (changes['existingAddress'] && this.existingAddress && this.addressForm) {
+      this.populateFormWithExistingAddress();
+    }
+  }
+  
+  // Método para llenar el formulario con la dirección existente
+  populateFormWithExistingAddress(): void {
+    if (!this.existingAddress) return;
     
-    // Listen for country changes to filter cities
+    this.currentAddressData = { ...this.existingAddress };
+    
+    // Rellenar el formulario con los datos existentes
+    this.addressForm.patchValue({
+      countryId: this.existingAddress.city.country.id,
+      streetName: this.existingAddress.streetName,
+      streetNumber: this.existingAddress.streetNumber,
+      floor: this.existingAddress.floor || '',
+      apartment: this.existingAddress.apartment || '',
+      postalCode: this.existingAddress.postalCode
+    });
+    
+    // Cargar las ciudades del país seleccionado
+    this.loadCitiesByCountry(this.existingAddress.city.country.id);
+    
+    // Una vez que las ciudades se hayan cargado, seleccionamos la ciudad correcta
+    setTimeout(() => {
+      // Buscar la ciudad en la lista de ciudades filtradas
+      const cityExists = this.filteredCities.some(city => city.id === this.existingAddress?.city.id);
+      
+      if (cityExists) {
+        // Si la ciudad existe en el backend, la seleccionamos
+        this.addressForm.patchValue({
+          cityId: this.existingAddress?.city.id
+        });
+      } else {
+        // Si la ciudad no existe, activamos el modo de ciudad personalizada
+        this.showCustomCity = true;
+        this.addressForm.patchValue({
+          cityId: 'custom',
+          customCityName: this.existingAddress?.city.name,
+          customDivisionName: this.existingAddress?.city.divisionName,
+          customDivisionType: this.existingAddress?.city.divisionType
+        });
+      }
+    }, 500); // Damos tiempo para que las ciudades se carguen
+  }
+  
+  initForm(): void {
+    this.addressForm = this.fb.group({
+      countryId: ['', Validators.required],
+      cityId: ['', Validators.required],
+      streetName: ['', Validators.required],
+      streetNumber: ['', Validators.required],
+      floor: [''],
+      apartment: [''],
+      postalCode: ['', Validators.required],
+      // Campos para ciudad personalizada
+      customCityName: [''],
+      customDivisionName: [''],
+      customDivisionType: ['']
+    });
+    
+    // Si hay una dirección existente, llenar el formulario
+    if (this.existingAddress) {
+      this.populateFormWithExistingAddress();
+    }
+  }
+  
+  // Configurar los listeners del formulario
+  setupFormListeners(): void {
+    // Escuchar cambios en el país seleccionado para filtrar ciudades
     const countryControl = this.addressForm.get('countryId');
     const cityControl = this.addressForm.get('cityId');
     
     if (countryControl && cityControl) {
       countryControl.valueChanges.subscribe(countryId => {
-        this.filteredCities = this.cities.filter(city => city.countryId === countryId);
-        cityControl.setValue(null);
-        
-        // Update the current address data with country information
         if (countryId) {
+          // Llamar al endpoint para obtener ciudades por país
+          this.loadCitiesByCountry(countryId);
+          cityControl.setValue(null);
+          
+          // Resetear la opción de ciudad personalizada
+          this.showCustomCity = false;
+          
+          // Actualizar los datos de dirección con información del país
           const selectedCountry = this.countries.find(country => country.id === countryId);
           if (selectedCountry) {
             if (!this.currentAddressData.city) {
               this.currentAddressData.city = {
+                id: 0, // ID temporal para nuevas ciudades
                 name: '',
-                divisionName: 'Provincia',
-                divisionType: 'PROVINCE',
+                divisionName: '',
+                divisionType: 'PROVINCE' as DivisionType,
                 country: {
+                  id: selectedCountry.id,
                   name: selectedCountry.name
                 }
               };
@@ -116,6 +181,7 @@ export class AddressStepperComponent implements OnInit {
               this.currentAddressData.city = {
                 ...this.currentAddressData.city,
                 country: {
+                  id: selectedCountry.id,
                   name: selectedCountry.name
                 }
               };
@@ -124,22 +190,34 @@ export class AddressStepperComponent implements OnInit {
         }
       });
       
-      // Listen for city changes to update the current address data
+      // Escuchar cambios en la ciudad seleccionada
       cityControl.valueChanges.subscribe(cityId => {
+        if (cityId === 'custom') {
+          this.showCustomCity = true;
+          return;
+        }
+        
+        this.showCustomCity = false;
+        
         if (cityId) {
-          const selectedCity = this.cities.find(city => city.id === cityId);
+          const selectedCity = this.filteredCities.find(city => city.id === cityId);
+          
           if (selectedCity) {
             if (!this.currentAddressData.city) {
               this.currentAddressData.city = {
+                id: selectedCity.id,
                 name: selectedCity.name,
-                divisionName: 'Provincia',
-                divisionType: 'PROVINCE',
-                country: { name: '' }
+                divisionName: selectedCity.divisionName,
+                divisionType: selectedCity.divisionType,
+                country: selectedCity.country
               };
             } else {
               this.currentAddressData.city = {
                 ...this.currentAddressData.city,
-                name: selectedCity.name
+                id: selectedCity.id,
+                name: selectedCity.name,
+                divisionName: selectedCity.divisionName,
+                divisionType: selectedCity.divisionType
               };
             }
           }
@@ -147,9 +225,9 @@ export class AddressStepperComponent implements OnInit {
       });
     }
     
-    // Subscribe to form value changes to keep the current address data updated
+    // Suscribirse a cambios en el formulario para mantener actualizada la dirección
     this.addressForm.valueChanges.subscribe(formValues => {
-      // Update street information
+      // Actualizar información de la calle
       if (formValues.streetName) {
         this.currentAddressData.streetName = formValues.streetName;
       }
@@ -169,54 +247,100 @@ export class AddressStepperComponent implements OnInit {
       if (formValues.postalCode) {
         this.currentAddressData.postalCode = formValues.postalCode;
       }
+      
+      // Actualizar datos de ciudad personalizada si es necesario
+      if (this.showCustomCity) {
+        const countryId = formValues.countryId;
+        const selectedCountry = this.countries.find(c => c.id === countryId);
+        
+        if (selectedCountry && formValues.customCityName && formValues.customDivisionName && formValues.customDivisionType) {
+          this.currentAddressData.city = {
+            id: 0, // ID temporal para nuevas ciudades
+            name: formValues.customCityName,
+            divisionName: formValues.customDivisionName,
+            divisionType: formValues.customDivisionType as DivisionType,
+            country: {
+              id: selectedCountry.id,
+              name: selectedCountry.name
+            }
+          };
+        }
+      }
     });
   }
   
-  initForm(): void {
-    this.addressForm = this.fb.group({
-      countryId: ['', Validators.required],
-      cityId: ['', Validators.required],
-      streetName: ['', Validators.required],
-      streetNumber: ['', Validators.required],
-      floor: [''],
-      apartment: [''],
-      postalCode: ['', Validators.required]
-    });
+  // Cargar países desde el backend
+  loadCountries(): void {
+    this.loadingCountries = true;
+    this.addressService.getAllCountries()
+      .pipe(finalize(() => this.loadingCountries = false))
+      .subscribe({
+        next: (countries) => {
+          this.countries = countries;
+        },
+        error: (error) => {
+          console.error('Error al cargar los países', error);
+        }
+      });
+  }
+  
+  // Cargar ciudades por país desde el backend
+  loadCitiesByCountry(countryId: number): void {
+    this.loadingCities = true;
+    this.addressService.getCitiesByCountry(countryId)
+      .pipe(finalize(() => this.loadingCities = false))
+      .subscribe({
+        next: (cities) => {
+          this.filteredCities = cities;
+          console.log(`Ciudades cargadas para el país ${countryId}:`, cities);
+        },
+        error: (error) => {
+          console.error(`Error al cargar las ciudades para el país ${countryId}:`, error);
+        }
+      });
   }
   
   isFieldInvalid(fieldName: string): boolean {
     const field = this.addressForm.get(fieldName);
-    return field ? field.invalid && (field.dirty || field.touched) : false;
+    return field ? field.invalid : false;
+  }
+  
+  getDivisionTypeLabel(type: string): string {
+    const divisionType = this.divisionTypes.find(t => t.value === type);
+    return divisionType ? divisionType.label : 'División';
   }
   
   nextStep(): void {
-    // Validate current step before proceeding
+    // Validar paso actual antes de continuar
     if (this.currentStep === 0) {
       const countryControl = this.addressForm.get('countryId');
       const cityControl = this.addressForm.get('cityId');
       
-      if (countryControl && cityControl && countryControl.valid && cityControl.valid) {
-        // First step is valid, update the country and city data
-        const countryId = countryControl.value;
-        const cityId = cityControl.value;
+      // Validar campos de ciudad personalizada si es necesario
+      if (this.showCustomCity) {
+        const customCityName = this.addressForm.get('customCityName');
+        const customDivisionName = this.addressForm.get('customDivisionName');
+        const customDivisionType = this.addressForm.get('customDivisionType');
         
-        const selectedCountry = this.countries.find(country => country.id === countryId);
-        const selectedCity = this.cities.find(city => city.id === cityId);
+        if (customCityName) customCityName.setValidators(Validators.required);
+        if (customDivisionName) customDivisionName.setValidators(Validators.required);
+        if (customDivisionType) customDivisionType.setValidators(Validators.required);
         
-        if (selectedCountry && selectedCity) {
-          // Update the current address data
-          this.currentAddressData.city = {
-            name: selectedCity.name,
-            divisionName: 'Provincia',
-            divisionType: 'PROVINCE',
-            country: {
-              name: selectedCountry.name
-            }
-          };
-          
-          // Update host classes for progress bar
-          this.currentStep++;
+        if (customCityName) customCityName.updateValueAndValidity();
+        if (customDivisionName) customDivisionName.updateValueAndValidity();
+        if (customDivisionType) customDivisionType.updateValueAndValidity();
+        
+        if ((customCityName?.invalid || customDivisionName?.invalid || customDivisionType?.invalid)) {
+          if (customCityName) customCityName.markAsTouched();
+          if (customDivisionName) customDivisionName.markAsTouched();
+          if (customDivisionType) customDivisionType.markAsTouched();
+          return;
         }
+      }
+      
+      if (countryControl && cityControl && countryControl.valid && cityControl.valid) {
+        // Actualizar clases de host para barra de progreso
+        this.currentStep++;
       } else {
         if (countryControl) countryControl.markAsTouched();
         if (cityControl) cityControl.markAsTouched();
@@ -230,39 +354,103 @@ export class AddressStepperComponent implements OnInit {
     }
   }
   
+  cancel(): void {
+    this.cancelled.emit();
+  }
+  
   onSubmit(): void {
     if (this.addressForm.valid) {
       const formValue = this.addressForm.value;
+      let address: Address;
       
-      // Create address object from form values
-      const selectedCity = this.cities.find(city => city.id === formValue.cityId);
-      const selectedCountry = this.countries.find(country => country.id === formValue.countryId);
-      
-      if (selectedCity && selectedCountry) {
-        const address: Address = {
+      if (this.showCustomCity) {
+        // Usar datos de ciudad personalizada
+        const selectedCountry = this.countries.find(c => c.id === formValue.countryId);
+        const city: City = {
+          id: 0, // El ID será asignado por el backend
+          name: formValue.customCityName,
+          divisionName: formValue.customDivisionName,
+          divisionType: formValue.customDivisionType as DivisionType,
+          country: {
+            id: formValue.countryId,
+            name: selectedCountry?.name || ''
+          }
+        };
+        
+        address = {
+          ...(this.isEditMode && this.existingAddress ? { id: this.existingAddress.id } : {}),
           streetName: formValue.streetName,
           streetNumber: formValue.streetNumber,
           floor: formValue.floor,
           apartment: formValue.apartment,
           postalCode: formValue.postalCode,
-          city: {
-            name: selectedCity.name,
-            divisionName: 'Provincia',
-            divisionType: 'PROVINCE',
-            country: {
-              name: selectedCountry.name
-            }
-          }
+          city: city
         };
+      } else {
+        // Usar ciudad seleccionada de la lista
+        const selectedCity = this.filteredCities.find(city => city.id === formValue.cityId);
         
-        // Update the current address data with complete information
-        this.currentAddressData = address;
+        if (!selectedCity) {
+          console.error('No se encontró la ciudad seleccionada');
+          return;
+        }
         
-        // Emit event with the address
-        this.addressSaved.emit(address);
+        address = {
+          ...(this.isEditMode && this.existingAddress ? { id: this.existingAddress.id } : {}),
+          streetName: formValue.streetName,
+          streetNumber: formValue.streetNumber,
+          floor: formValue.floor,
+          apartment: formValue.apartment,
+          postalCode: formValue.postalCode,
+          city: selectedCity
+        };
+      }
+      
+      // Actualizar los datos de dirección actuales
+      this.currentAddressData = address;
+      
+      // Verificar que el userId esté definido para crear una nueva dirección
+      if (!this.userId && !this.isEditMode) {
+        console.error('Error: Se requiere el ID de usuario para guardar la dirección');
+        return;
+      }
+      
+      // Guardar la dirección en el backend
+      this.isLoading = true;
+      
+      if (this.isEditMode && this.existingAddress?.id) {
+        console.log('Actualizando dirección existente con ID:', this.existingAddress.id);
+        // Actualizar dirección existente
+        this.addressService.updateAddress(this.existingAddress.id, address)
+          .pipe(finalize(() => this.isLoading = false))
+          .subscribe({
+            next: (updatedAddress) => {
+              console.log('Dirección actualizada correctamente:', updatedAddress);
+              // Emitir evento con la dirección actualizada
+              this.addressSaved.emit(updatedAddress);
+            },
+            error: (error) => {
+              console.error('Error al actualizar la dirección', error);
+            }
+          });
+      } else {
+        console.log('Guardando nueva dirección para usuario:', this.userId);
+        // Crear nueva dirección
+        this.addressService.saveAddress(address, this.userId!)
+          .pipe(finalize(() => this.isLoading = false))
+          .subscribe({
+            next: (savedAddress) => {
+              console.log('Dirección guardada correctamente:', savedAddress);
+              // Emitir evento con la dirección guardada
+              this.addressSaved.emit(savedAddress);
+            },
+            error: (error) => {
+              console.error('Error al guardar la dirección', error);
+            }
+          });
       }
     } else {
-      // Mark all fields as touched to display validation errors
+      // Marcar todos los campos como tocados para mostrar errores de validación
       Object.keys(this.addressForm.controls).forEach(key => {
         const control = this.addressForm.get(key);
         if (control) control.markAsTouched();
@@ -270,7 +458,7 @@ export class AddressStepperComponent implements OnInit {
     }
   }
   
-  // Method to get the current address data
+  // Método para obtener los datos de dirección actuales
   getCurrentAddressData(): Partial<Address> {
     return this.currentAddressData;
   }

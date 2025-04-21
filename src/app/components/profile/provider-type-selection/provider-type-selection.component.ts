@@ -1,5 +1,5 @@
 // provider-type-selection.component.ts
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
@@ -11,8 +11,8 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environment/environment';
 import { HostBinding } from '@angular/core';
 import { UserRole } from '../../../models/user';
-
-export type ProviderType = 'individual' | 'company' | null;
+import { ProviderTypeService, ProviderType } from '../../../services/provider/provider-type.service';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-provider-type-selection',
@@ -70,8 +70,8 @@ export type ProviderType = 'individual' | 'company' | null;
       
       <div class="button-container">
         <button 
-          class="continue-button" 
-          mat-raised-button 
+          mat-flat-button 
+          color="primary"
           [disabled]="!selectedProviderType || isLoading"
           (click)="continueToNextStep()"
         >
@@ -83,7 +83,7 @@ export type ProviderType = 'individual' | 'company' | null;
   `,
   styleUrls: ['./provider-type-selection.component.css']
 })
-export class ProviderTypeSelectionComponent implements OnInit {
+export class ProviderTypeSelectionComponent implements OnInit, OnDestroy {
   @Input() initialType: ProviderType = null;
   @Input() userRole: UserRole = 'PROVEEDOR';
   @Output() typeSelected = new EventEmitter<ProviderType>();
@@ -93,25 +93,54 @@ export class ProviderTypeSelectionComponent implements OnInit {
   selectedProviderType: ProviderType = null;
   isLoading = false;
   
+  private destroy$ = new Subject<void>();
+  
   constructor(
     private router: Router,
     private authService: AuthService,
     private snackBar: MatSnackBar,
-    private http: HttpClient
+    private http: HttpClient,
+    private providerTypeService: ProviderTypeService
   ) {}
   
   ngOnInit(): void {
-    // Si se recibe un tipo inicial, usarlo
+    // Observar cambios en el tipo de proveedor
+    this.providerTypeService.getProviderType()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(type => {
+        if (type) {
+          this.selectedProviderType = type;
+        }
+      });
+    
+    // Si se recibe un tipo inicial desde @Input, tiene prioridad
     if (this.initialType) {
       this.selectedProviderType = this.initialType;
+      this.providerTypeService.setProviderType(this.initialType);
+    } else {
+      // Si no hay tipo inicial, intentar cargar desde el servicio
+      const currentType = this.providerTypeService.getCurrentProviderType();
+      if (currentType) {
+        this.selectedProviderType = currentType;
+      }
     }
+    
     console.log('ProviderTypeSelectionComponent inicializado');
     console.log('Rol de usuario:', this.userRole);
     console.log('¿Tiene observadores el back?', this.back.observed);
+    console.log('Tipo de proveedor seleccionado:', this.selectedProviderType);
+  }
+  
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
   
   selectProviderType(type: string): void {
     this.selectedProviderType = type as ProviderType;
+    // Actualizar el servicio
+    this.providerTypeService.setProviderType(this.selectedProviderType);
+    // Emitir evento
     this.typeSelected.emit(this.selectedProviderType);
     console.log('Tipo seleccionado:', type);
   }
@@ -127,6 +156,9 @@ export class ProviderTypeSelectionComponent implements OnInit {
       });
       return;
     }
+    
+    // Asegurar que el tipo de proveedor se guarda en el servicio antes de continuar
+    this.providerTypeService.setProviderType(this.selectedProviderType);
     
     // Emitir evento para notificar que el usuario quiere continuar
     this.saved.emit();

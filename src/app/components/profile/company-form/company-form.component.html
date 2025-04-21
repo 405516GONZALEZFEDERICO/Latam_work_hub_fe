@@ -10,7 +10,13 @@
     <p class="form-subtitle">Completa los datos para establecer tu perfil de empresa</p>
   </div>
 
-  <form [formGroup]="companyForm" (ngSubmit)="onSubmit()" class="form-fields">
+  <!-- Indicador de carga mientras se obtienen los datos de la compañía -->
+  <div *ngIf="isLoadingCompanyData" class="loading-container">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Cargando datos de la empresa...</p>
+  </div>
+
+  <form *ngIf="!isLoadingCompanyData" [formGroup]="companyForm" (ngSubmit)="onSubmit()" class="form-fields">
     <!-- Fila 1: Nombre comercial y Razón social -->
     <div class="form-flex-row">
       <div class="form-flex-col">
@@ -20,9 +26,6 @@
             matInput 
             formControlName="name" 
             placeholder="Nombre comercial">
-          <mat-error *ngIf="formControls['name'].errors?.['required']">
-            Obligatorio
-          </mat-error>
         </mat-form-field>
       </div>
       
@@ -33,9 +36,6 @@
             matInput 
             formControlName="legalName" 
             placeholder="Razón social">
-          <mat-error *ngIf="formControls['legalName'].errors?.['required']">
-            Obligatorio
-          </mat-error>
         </mat-form-field>
       </div>
     </div>
@@ -49,9 +49,6 @@
             matInput 
             formControlName="taxId" 
             placeholder="RFC / RUT / NIT">
-          <mat-error *ngIf="formControls['taxId'].errors?.['required']">
-            Obligatorio
-          </mat-error>
         </mat-form-field>
       </div>
       
@@ -63,9 +60,6 @@
             formControlName="phone" 
             type="tel" 
             placeholder="+1 234 567 8900">
-          <mat-error *ngIf="formControls['phone'].errors?.['required']">
-            Obligatorio
-          </mat-error>
         </mat-form-field>
       </div>
     </div>
@@ -79,10 +73,8 @@
             matInput 
             formControlName="email" 
             type="email" 
-            placeholder="empresa@ejemplo.com">
-          <mat-error *ngIf="formControls['email'].errors?.['required']">
-            Obligatorio
-          </mat-error>
+            placeholder="empresa@ejemplo.com"
+            [disabled]="true">
         </mat-form-field>
       </div>
       
@@ -113,31 +105,44 @@
         <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
           <mat-label>País</mat-label>
           <mat-select formControlName="country">
-            <mat-option *ngFor="let country of countries" [value]="country.code">
-              {{country.name}}
-            </mat-option>
+            <mat-option *ngIf="isLoadingCountries">Cargando países...</mat-option>
+            <ng-container *ngIf="!isLoadingCountries">
+              <mat-option *ngFor="let country of countries" [value]="country.code || country.id.toString()">
+                {{country.name}}
+              </mat-option>
+            </ng-container>
           </mat-select>
-          <mat-error *ngIf="formControls['country'].errors?.['required']">
-            Obligatorio
-          </mat-error>
         </mat-form-field>
       </div>
     </div>
-
-    
 
     <!-- Botón de guardar -->
     <div class="form-actions">
       <button 
         type="submit" 
+        mat-flat-button
+        color="primary"
         [disabled]="isSubmitting" 
-        class="continue-button full-width">
-        <span *ngIf="!isSubmitting">Guardar información</span>
-        <span *ngIf="isSubmitting">
-          <mat-spinner diameter="20" class="spinner-in-button"></mat-spinner>
-          Guardando...
-        </span>
+        class="continue-button full-width"
+        style="border-radius: 4px !important; overflow: hidden;">
+        <ng-container *ngIf="!isSubmitting" class="button-content">
+          <mat-icon class="button-icon">save</mat-icon>
+          <span class="button-text">Guardar información</span>
+        </ng-container>
+        <mat-spinner *ngIf="isSubmitting" diameter="24"></mat-spinner>
       </button>
+    </div>
+
+    <!-- Add this after the form actions div -->
+    <div class="debug-info" *ngIf="apiError" style="margin-top: 20px; padding: 10px; background-color: #fff1f1; border: 1px solid #ffcaca; border-radius: 4px;">
+      <h3 style="color: #d32f2f; margin-top: 0;">Error al comunicarse con el API</h3>
+      <p><strong>URL:</strong> {{apiError.url}}</p>
+      <p><strong>Estado:</strong> {{apiError.status}} {{apiError.statusText}}</p>
+      <p><strong>Mensaje:</strong> {{apiError.message}}</p>
+      <div *ngIf="apiError.error">
+        <p><strong>Detalle:</strong></p>
+        <pre style="background: #f5f5f5; padding: 10px; overflow: auto; max-height: 200px;">{{apiError.error | json}}</pre>
+      </div>
     </div>
   </form>
 </div> 

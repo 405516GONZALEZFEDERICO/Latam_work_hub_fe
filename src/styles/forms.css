@@ -28,7 +28,7 @@
 
 .form-flex-row {
   display: flex;
-  gap: var(--spacing-sm);
+  gap: 8px;
   margin-bottom: var(--spacing-md);
   flex-direction: row;
 }
@@ -47,7 +47,7 @@
 /* Angular Material Form Field básico sin forzar estilos */
 .mat-mdc-form-field {
   font-family: var(--font-family);
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   width: 100%;
 }
 
@@ -205,7 +205,7 @@
 
 /* Fix crítico para forzar la correcta visualización de errores en todos los componentes */
 .mat-mdc-form-field {
-  margin-bottom: 30px !important;
+  margin-bottom: 16px !important;
 }
 
 /* Estilo de alta prioridad para el contenedor de errores */
@@ -224,5 +224,5 @@
 
 /* Forza el espaciado correcto entre campos con errores */
 .mat-mdc-form-field + .mat-mdc-form-field {
-  margin-top: 10px !important;
+  margin-top: 8px !important;
 } 

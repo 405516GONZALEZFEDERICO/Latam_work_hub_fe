@@ -10,7 +10,7 @@
         <img *ngIf="profilePicture" [src]="profilePicture" alt="Profile picture" style="width: 100%; height: 100%; object-fit: cover;">
         <div *ngIf="!profilePicture" style="color: #666; font-size: 13px;">Foto</div>
       </div>
-      <button type="button" class="button-img" (click)="fileInput.click()">
+      <button type="button" mat-stroked-button color="primary" (click)="fileInput.click()">
         Cambiar foto
       </button>
     </div>
@@ -33,7 +33,7 @@
       <div class="form-flex-col">
         <mat-form-field appearance="outline" class="ios-input w-100 custom-field" [class.field-invalid]="isFieldInvalid('email')">
           <mat-label>Correo electrónico</mat-label>
-          <input matInput formControlName="email" type="email" placeholder="email@ejemplo.com">
+          <input matInput formControlName="email" type="email" placeholder="email@ejemplo.com" [disabled]="true">
         </mat-form-field>
       </div>
       <div class="form-flex-col">
@@ -43,6 +43,8 @@
           <mat-datepicker-toggle matSuffix [for]="birthDatePicker"></mat-datepicker-toggle>
           <mat-datepicker #birthDatePicker></mat-datepicker>
         </mat-form-field>
+        
+     
       </div>
     </div>
     
@@ -82,24 +84,21 @@
       </div>
     </div>
 
-    <div style="text-align: center;">
+    <!-- Botones de acción -->
+    <div class="form-actions">
       <button 
+        mat-flat-button 
+        color="primary"
+        class="submit-button"
         type="submit" 
-        [disabled]="isLoading || personalDataForm.invalid" 
-        class="continue-button">
-        <span *ngIf="!isLoading">Guardar información</span>
-        <span *ngIf="isLoading" class="loading-content">
-          <mat-spinner diameter="20" color="accent"></mat-spinner>
-          <span>Guardando...</span>
-        </span>
+        [disabled]="personalDataForm.invalid || isLoading"
+        style="border-radius: 4px !important; overflow: hidden;">
+        <ng-container *ngIf="!isLoading" class="button-content">
+          <mat-icon class="button-icon">save</mat-icon>
+          <span class="button-text">Guardar información</span>
+        </ng-container>
+        <mat-spinner *ngIf="isLoading" diameter="24"></mat-spinner>
       </button>
     </div>
   </form>
-
-  <div style="margin-top: -10px; overflow: visible;">
-    <app-address-stepper 
-      *ngIf="showAddressStepper"
-      (addressSaved)="onAddressSaved($event)">
-    </app-address-stepper>
-  </div>
 </div>

@@ -12,6 +12,12 @@ import { ProfileService } from './services/profile/profile.service';
 import { httpErrorInterceptor } from './interceptors/http-error.interceptor';
 import { MAT_SNACK_BAR_DEFAULT_OPTIONS } from '@angular/material/snack-bar';
 import { provideAnimations } from '@angular/platform-browser/animations';
+import { registerLocaleData } from '@angular/common';
+import localeEs from '@angular/common/locales/es';
+import { LOCALE_ID } from '@angular/core';
+
+// Registrar los datos de localización para español
+registerLocaleData(localeEs);
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -25,6 +31,7 @@ export const appConfig: ApplicationConfig = {
     provideAuth(() => getAuth()),
     provideFirestore(() => getFirestore()),
     ProfileService,
+    { provide: LOCALE_ID, useValue: 'es' },
     {
       provide: MAT_SNACK_BAR_DEFAULT_OPTIONS,
       useValue: {

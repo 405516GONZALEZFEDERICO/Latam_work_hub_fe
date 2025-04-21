@@ -1,16 +1,4 @@
-export interface Country {
-  id?: number;
-  name: string;
-  code?: string;
-}
-
-export interface City {
-  id?: number;
-  name: string;
-  divisionName: string;
-  divisionType: 'PROVINCE' | 'STATE' | 'DEPARTMENT' | 'REGION';
-  country: Country;
-}
+import { City } from './city.model';
 
 export interface Address {
   id?: number;

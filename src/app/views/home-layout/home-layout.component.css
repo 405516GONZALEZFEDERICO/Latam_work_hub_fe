@@ -271,26 +271,27 @@
 }
 
 .logout-button {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px;
-  background-color: rgba(255, 59, 48, 0.1);
-  color: var(--color-error);
-  border: none;
-  border-radius: var(--border-radius-small);
-  font-weight: 500;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.logout-button:hover {
-  background-color: rgba(255, 59, 48, 0.15);
+  width: 90%;
+  margin: 0 auto;
+  background-color: var(--color-text-dark) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 25px !important;
+  padding: 8px 16px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: none !important;
+  box-shadow: none !important;
 }
 
 .logout-button mat-icon {
-  margin-right: 8px;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  margin-right: 4px;
 }
 
 /* Cards y Componentes */

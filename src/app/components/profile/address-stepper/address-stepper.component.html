@@ -1,103 +1,152 @@
 <div class="address-stepper-container">
-  <div class="stepper-header">
-    <div class="stepper-indicators">
-      <div *ngFor="let step of steps; let i = index" 
-           class="step-indicator" 
-           [class.active]="i === currentStep"
-           [class.completed]="i < currentStep">
-        <div class="indicator-circle">
-          <span *ngIf="i >= currentStep">{{i + 1}}</span>
-          <mat-icon *ngIf="i < currentStep">check</mat-icon>
+  <!-- Barra de progreso horizontal en la parte superior -->
+  <div class="horizontal-stepper">
+    <div class="step-item" [class.active]="currentStep >= 0" [class.completed]="currentStep > 0">
+      <div class="step-circle">1</div>
+      <div class="step-title">{{ steps[0].title }}</div>
+      <div class="step-connector"></div>
+    </div>
+    <div class="step-item" [class.active]="currentStep >= 1">
+      <div class="step-circle">2</div>
+      <div class="step-title">{{ steps[1].title }}</div>
+    </div>
+  </div>
+  
+  <!-- Spinner cuando se están cargando los países o ciudades -->
+  <ng-container *ngIf="loadingCountries || loadingCities || isLoading">
+    <div class="loading-container">
+      <mat-spinner></mat-spinner>
+    </div>
+  </ng-container>
+
+  <!-- Formulario de dirección cargado correctamente -->
+  <ng-container *ngIf="!loadingCountries && !loadingCities && !isLoading">
+    <form [formGroup]="addressForm" (ngSubmit)="onSubmit()">
+      <!-- Paso 1: Selección de país y ciudad -->
+      <div *ngIf="currentStep === 0">
+        <div class="full-width">
+          <mat-form-field class="full-width" appearance="outline">
+            <mat-label>País</mat-label>
+            <mat-select formControlName="countryId">
+              <mat-option *ngFor="let country of countries" [value]="country.id">
+                {{ country.name }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="isFieldInvalid('countryId')">Este campo es requerido</mat-error>
+          </mat-form-field>
         </div>
-        <div class="indicator-label">{{step.title}}</div>
+
+        <div class="full-width">
+          <mat-form-field class="full-width" appearance="outline">
+            <mat-label>Ciudad</mat-label>
+            <mat-select formControlName="cityId">
+              <mat-option *ngFor="let city of filteredCities" [value]="city.id">
+                {{ city.name }}
+              </mat-option>
+              <mat-option value="custom">Ingresar ciudad manualmente</mat-option>
+            </mat-select>
+            <mat-error *ngIf="isFieldInvalid('cityId')">Este campo es requerido</mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Campos para ciudad personalizada -->
+        <!-- <div *ngIf="showCustomCity" class="custom-city-fields">
+          <div class="full-width">
+            <mat-form-field class="full-width" appearance="outline">
+              <mat-label>Nombre de la ciudad</mat-label>
+              <input matInput formControlName="customCityName" />
+            </mat-form-field>
+          </div>
+          <div class="flex-row">
+            <mat-form-field class="equal-field" appearance="outline">
+              <mat-label>Tipo de división</mat-label>
+              <mat-select formControlName="customDivisionType">
+                <mat-option *ngFor="let type of divisionTypes" [value]="type.value">
+                  {{ type.label }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field class="equal-field" appearance="outline">
+              <mat-label>Nombre de la división</mat-label>
+              <input matInput formControlName="customDivisionName" />
+            </mat-form-field>
+          </div>
+        </div> -->
       </div>
-    </div>
-  </div>
 
-  <div class="stepper-content" [ngSwitch]="currentStep">
-    <!-- Paso 1: Selección de País y Ciudad -->
-    <div *ngSwitchCase="0" class="step-content">
-      <h2 class="step-title">{{steps[0].title}}</h2>
-      <p class="step-description">{{steps[0].description}}</p>
-
-      <form [formGroup]="addressForm" class="form-container">
-        <!-- País -->
-        <mat-form-field appearance="outline" class="ios-input w-100" [class.field-invalid]="isFieldInvalid('countryId')">
-          <mat-label>País</mat-label>
-          <mat-select formControlName="countryId">
-            <mat-option *ngFor="let country of countries" [value]="country.id">
-              {{country.name}}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <!-- Ciudad -->
-        <mat-form-field appearance="outline" class="ios-input w-100" [class.field-invalid]="isFieldInvalid('cityId')">
-          <mat-label>Ciudad</mat-label>
-          <mat-select formControlName="cityId" [disabled]="!addressForm.get('countryId')?.value">
-            <mat-option *ngFor="let city of filteredCities" [value]="city.id">
-              {{city.name}}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <!-- Botones de navegación -->
-        <div class="step-actions">
-          <button type="button" class="btn-next" (click)="nextStep()">
-            Continuar
-          </button>
-        </div>
-      </form>
-    </div>
-
-    <!-- Paso 2: Detalles de la dirección -->
-    <div *ngSwitchCase="1" class="step-content">
-      <h2 class="step-title">{{steps[1].title}}</h2>
-      <p class="step-description">{{steps[1].description}}</p>
-
-      <form [formGroup]="addressForm" (ngSubmit)="onSubmit()" class="form-container">
-        <!-- Calle -->
-        <mat-form-field appearance="outline" class="ios-input w-100" [class.field-invalid]="isFieldInvalid('streetName')">
-          <mat-label>Calle</mat-label>
-          <input matInput formControlName="streetName" placeholder="Nombre de la calle">
-        </mat-form-field>
-
-        <!-- Número -->
-        <mat-form-field appearance="outline" class="ios-input w-100" [class.field-invalid]="isFieldInvalid('streetNumber')">
-          <mat-label>Número</mat-label>
-          <input matInput formControlName="streetNumber" placeholder="Número de la calle">
-        </mat-form-field>
-
-        <!-- Fila para Piso y Departamento -->
-        <div class="form-row">
-          <mat-form-field appearance="outline" class="ios-input">
-            <mat-label>Piso</mat-label>
-            <input matInput formControlName="floor" placeholder="Piso (opcional)">
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="ios-input">
-            <mat-label>Departamento</mat-label>
-            <input matInput formControlName="apartment" placeholder="Depto. (opcional)">
+      <!-- Paso 2: Detalles de la dirección -->
+      <div *ngIf="currentStep === 1">
+        <div class="full-width">
+          <mat-form-field class="full-width" appearance="outline">
+            <mat-label>Nombre de la calle</mat-label>
+            <input matInput formControlName="streetName" />
+            <mat-error *ngIf="isFieldInvalid('streetName')">Este campo es requerido</mat-error>
           </mat-form-field>
         </div>
 
-        <!-- Código Postal -->
-        <mat-form-field appearance="outline" class="ios-input w-100" [class.field-invalid]="isFieldInvalid('postalCode')">
-          <mat-label>Código Postal</mat-label>
-          <input matInput formControlName="postalCode" placeholder="Código postal">
-        </mat-form-field>
+        <div class="full-width">
+          <mat-form-field class="full-width" appearance="outline">
+            <mat-label>Número</mat-label>
+            <input matInput formControlName="streetNumber" />
+            <mat-error *ngIf="isFieldInvalid('streetNumber')">Este campo es requerido</mat-error>
+          </mat-form-field>
+        </div>
 
-        <!-- Botones de navegación -->
-        <div class="step-actions">
-          <button type="button" class="btn-back" (click)="previousStep()">
-            Atrás
-          </button>
-          <button type="submit" class="btn-submit" [disabled]="isLoading">
-            <span *ngIf="!isLoading">Guardar</span>
-            <span *ngIf="isLoading">Guardando...</span>
+        <div class="flex-row">
+          <mat-form-field class="equal-field" appearance="outline">
+            <mat-label>Piso (opcional)</mat-label>
+            <input matInput formControlName="floor" />
+          </mat-form-field>
+
+          <mat-form-field class="equal-field" appearance="outline">
+            <mat-label>Departamento (opcional)</mat-label>
+            <input matInput formControlName="apartment" />
+          </mat-form-field>
+        </div>
+
+        <div class="full-width">
+          <mat-form-field class="full-width" appearance="outline">
+            <mat-label>Código Postal</mat-label>
+            <input matInput formControlName="postalCode" />
+            <mat-error *ngIf="isFieldInvalid('postalCode')">Este campo es requerido</mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="button-container">
+        <!-- Paso 1: Solo botón Siguiente alineado a la derecha -->
+        <div *ngIf="currentStep === 0" class="action-buttons">
+          <button 
+            mat-flat-button 
+            color="primary" 
+            type="button" 
+            class="action-button"
+            [disabled]="!addressForm.get('countryId')?.valid || !addressForm.get('cityId')?.valid" 
+            (click)="nextStep()">
+            <span class="button-content">
+              <span class="button-text">Siguiente</span>
+              <mat-icon class="button-icon">arrow_forward</mat-icon>
+            </span>
           </button>
         </div>
-      </form>
-    </div>
-  </div>
+        
+        <!-- Paso 2: Solo botón Guardar alineado a la derecha -->
+        <div *ngIf="currentStep === 1" class="action-buttons">
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            class="action-button"
+            [disabled]="addressForm.invalid || isLoading"
+          >
+            <ng-container *ngIf="!isLoading" class="button-content">
+              <mat-icon class="button-icon">save</mat-icon>
+              <span class="button-text">{{ isEditMode ? 'Actualizar' : 'Guardar' }}</span>
+            </ng-container>
+            <mat-spinner *ngIf="isLoading" diameter="24"></mat-spinner>
+          </button>
+        </div>
+      </div>
+    </form>
+  </ng-container>
 </div> 

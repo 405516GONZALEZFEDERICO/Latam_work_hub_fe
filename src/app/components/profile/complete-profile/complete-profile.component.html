@@ -20,31 +20,59 @@
               <!-- Mostrar el stepper de dirección o formulario de datos personales -->
               <div *ngIf="!showAddressStepper">
                 <app-personal-data-form
-                  (formSubmitted)="handleFormSubmitted($event)">
+                  (formSubmitted)="handleFormSubmitted($event)"
+                  (profileDataLoaded)="handleProfileDataLoaded($event)">
                 </app-personal-data-form>
                 
-                <!-- Sección de dirección con un botón para abrir el stepper -->
+                <!-- Sección de dirección con desplegable -->
                 <div class="address-section">
-                  <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h3 class="address-title">Dirección</h3>
-                    <button mat-stroked-button color="primary" (click)="toggleAddressStepper()">
-                      <mat-icon>add</mat-icon> Agregar dirección
-                    </button>
+                  <div class="address-header" (click)="toggleAddressSection()">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <h3 class="address-title">Dirección</h3>
+                      <mat-icon class="dropdown-icon" [class.rotated]="showAddressContent">keyboard_arrow_down</mat-icon>
+                    </div>
                   </div>
                   
-                  <!-- Mostrar la dirección guardada si existe -->
-                  <div *ngIf="addressData" class="address-card">
-                    <div class="address-info">
-                      <p><strong>{{addressData.city.country.name}}, {{addressData.city.name}}</strong></p>
-                      <p>{{addressData.streetName}} {{addressData.streetNumber}}</p>
-                      <p *ngIf="addressData.floor || addressData.apartment">
-                        Piso: {{addressData.floor || '-'}}, Depto: {{addressData.apartment || '-'}}
-                      </p>
-                      <p>CP: {{addressData.postalCode}}</p>
+                  <!-- Contenido de dirección desplegable -->
+                  <div class="address-content" [class.expanded]="showAddressContent">
+                    <div class="address-actions" *ngIf="showAddressContent">
+                      <!-- Solo mostrar el botón de agregar si NO hay dirección -->
+                      <button *ngIf="!addressData && !isLoadingAddress" 
+                              mat-stroked-button 
+                              color="primary" 
+                              (click)="toggleAddressStepper(false)">
+                        <mat-icon>add</mat-icon> Agregar dirección
+                      </button>
                     </div>
-                    <button mat-icon-button color="primary" (click)="toggleAddressStepper()">
-                      <mat-icon>edit</mat-icon>
-                    </button>
+                    
+                    <!-- Indicador de carga -->
+                    <div *ngIf="isLoadingAddress" class="loading-container">
+                      <mat-spinner diameter="40"></mat-spinner>
+                    </div>
+                    
+                    <!-- Mostrar la dirección guardada si existe -->
+                    <div *ngIf="addressData && !isLoadingAddress" class="address-card">
+                      <div class="address-info">
+                        <!-- Añadir logs para depuración de los datos -->
+                        <p *ngIf="false">Debug: {{addressData | json}}</p>
+                        
+                        <!-- Usar operador de navegación segura para todas las propiedades -->
+                        <p><strong>{{addressData?.city?.country?.name || 'País no disponible'}}, {{addressData?.city?.name || 'Ciudad no disponible'}}</strong></p>
+                        <p>{{addressData?.streetName || 'Calle no disponible'}} {{addressData?.streetNumber || ''}}</p>
+                        <p *ngIf="addressData?.floor || addressData?.apartment">
+                          Piso: {{addressData?.floor || '-'}}, Depto: {{addressData?.apartment || '-'}}
+                        </p>
+                        <p>CP: {{addressData?.postalCode || 'CP no disponible'}}</p>
+                      </div>
+                      <button mat-icon-button color="primary" (click)="toggleAddressStepper(true)">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                    </div>
+                    
+                    <!-- Mensaje cuando no hay dirección y no se está agregando una -->
+                    <div *ngIf="!addressData && !showAddressStepper && !isLoadingAddress" class="empty-address-message">
+                      <p>No has agregado ninguna dirección todavía.</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -52,13 +80,17 @@
               <!-- Stepper de dirección -->
               <div *ngIf="showAddressStepper">
                 <div class="address-stepper-header">
-                  <button mat-icon-button (click)="toggleAddressStepper()">
+                  <button mat-icon-button (click)="handleCancelAddress()">
                     <mat-icon>arrow_back</mat-icon>
                   </button>
-                  <h2>Dirección</h2>
+                  <h2>{{ isEditingAddress ? 'Editar dirección' : 'Agregar dirección' }}</h2>
                 </div>
                 <app-address-stepper 
-                  (addressSaved)="handleAddressSaved($event)">
+                  (addressSaved)="handleAddressSaved($event)"
+                  (cancelled)="handleCancelAddress()"
+                  [isEditMode]="isEditingAddress"
+                  [existingAddress]="isEditingAddress && addressData ? addressData : undefined"
+                  [userId]="currentUserId">
                 </app-address-stepper>
               </div>
             </div>
@@ -79,7 +111,6 @@
               <!-- Flujo para proveedores - Selección de tipo (Individual/Empresa) -->
               <div *ngIf="isProviderRole() && showProviderSelection" class="provider-selection-wrapper">
                 <app-provider-type-selection
-                  [initialType]="providerType"
                   [userRole]="userData?.role || 'PROVEEDOR'"
                   (typeSelected)="handleProviderTypeSelection($event)"
                   (saved)="handleProviderTypeSaved()"
@@ -93,6 +124,7 @@
                 <app-company-form
                   *ngIf="isProviderRole()"
                   [userRole]="userData?.role || 'PROVEEDOR'"
+                  [providerType]="providerType ? providerType : undefined"
                   (formSubmitted)="handleFormSubmitted($event)"
                   (back)="backToProviderSelection()">
                 </app-company-form>
@@ -105,12 +137,6 @@
                 </app-company-form>
               </div>
               
-              <!-- Mensaje informativo para roles no permitidos -->
-              <div *ngIf="userData && userData.role !== 'PROVEEDOR' && userData.role !== 'CLIENTE'" class="alert alert-info mt-3">
-                <p><strong>¡Atención!</strong> Esta sección puede requerir permisos adicionales.</p>
-                <p>Tu rol actual es: {{ userData.role }}</p>
-                <p>Si deberías tener acceso a esta sección, por favor contacta a soporte.</p>
-              </div>
             </div>
           </mat-tab>
         </mat-tab-group>

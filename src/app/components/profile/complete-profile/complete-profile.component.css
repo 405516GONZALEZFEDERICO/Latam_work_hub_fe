@@ -3,61 +3,96 @@
   max-width: 860px;
   margin: 0 auto;
   padding: 20px;
+  background-color: var(--color-background);
+  min-height: calc(100vh - 64px);
 }
 
 .profile-wrapper {
   width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
 .profile-card {
   width: 100%;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   background-color: white;
   margin-bottom: 20px;
 }
 
 .tab-content {
-  padding: 20px;
+  padding: 24px 16px;
   background-color: white;
 }
 
 /* Estilos de la sección de dirección */
 .address-section {
-  margin-top: 30px;
-  padding-top: 20px;
+  margin-top: 32px;
   border-top: 1px solid #e0e0e0;
+  padding-top: 24px;
 }
 
 .address-title {
   font-size: 18px;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
+  font-weight: 500;
+  margin-bottom: 0;
+  color: var(--color-text-dark);
+}
+
+.address-header {
+  cursor: pointer;
+  padding: 8px 0;
+  transition: all 0.3s ease;
+}
+
+.address-header:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.dropdown-icon {
+  transition: transform 0.3s ease;
+  color: var(--color-text-dark);
+}
+
+.dropdown-icon.rotated {
+  transform: rotate(180deg);
+}
+
+.address-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.address-content.expanded {
+  max-height: 500px;
+}
+
+.address-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: 16px 0;
 }
 
 .address-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
   background-color: #f9f9f9;
   border-radius: 8px;
-  padding: 16px;
-  margin-top: 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.address-info {
-  flex: 1;
+  border-left: 4px solid var(--color-text-dark);
 }
 
 .address-info p {
-  margin: 5px 0;
-  color: #555;
+  margin: 4px 0;
 }
 
-.address-info strong {
-  color: #333;
+.address-info p strong {
+  color: var(--color-text-dark);
 }
 
 .address-stepper-header {
@@ -67,10 +102,10 @@
 }
 
 .address-stepper-header h2 {
-  margin: 0 0 0 8px;
-  font-size: 20px;
-  font-weight: 600;
-  color: #333;
+  margin: 0 0 0 16px;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--color-text-dark);
 }
 
 /* Media queries para dispositivos móviles */
@@ -87,7 +122,7 @@
   }
   
   .tab-content {
-    padding: 15px;
+    padding: 16px 8px;
   }
   
   .mat-tab-body-content {
@@ -99,4 +134,90 @@
   .profile-wrapper {
     min-height: min-content;
   }
+
+  .address-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .address-card button {
+    align-self: flex-end;
+    margin-top: 10px;
+  }
+}
+
+.empty-address-message {
+  text-align: center;
+  padding: 20px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  color: #757575;
+}
+
+.empty-address-message p {
+  margin: 0;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+.loading-container p {
+  margin-top: 10px;
+  color: #757575;
+}
+
+::ng-deep .mat-progress-spinner circle {
+  stroke: var(--color-text-dark) !important;
+}
+
+/* Estilos para las pestañas */
+::ng-deep .mat-tab-label {
+  opacity: 1 !important;
+  padding: 0 24px !important;
+  height: 48px !important;
+}
+
+::ng-deep .mat-tab-label-active {
+  color: var(--color-text-dark) !important;
+  font-weight: 500 !important;
+}
+
+::ng-deep .mat-ink-bar {
+  background-color: var(--color-text-dark) !important;
+}
+
+/* Estilos para los botones */
+::ng-deep .mat-flat-button.mat-primary {
+  background-color: var(--color-text-dark) !important;
+}
+
+::ng-deep .mat-stroked-button.mat-primary {
+  color: var(--color-text-dark) !important;
+  border-color: var(--color-text-dark) !important;
+}
+
+::ng-deep .mat-icon-button.mat-primary {
+  color: var(--color-text-dark) !important;
+}
+
+::ng-deep .mat-icon-button.mat-primary:hover {
+  background-color: rgba(28, 28, 30, 0.1) !important;
+}
+
+::ng-deep .mat-flat-button.mat-primary:hover {
+  background-color: var(--color-primary-hover) !important;
+}
+
+/* Estilos para selección de tipo de proveedor */
+.provider-selection-wrapper {
+  padding: 16px 0;
+}
+
+/* Estilos para el formulario de empresa */
+.company-form-wrapper {
+  padding: 16px 0;
 }
