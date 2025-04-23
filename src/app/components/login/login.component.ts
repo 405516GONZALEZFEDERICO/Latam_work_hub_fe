@@ -8,7 +8,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-login',
@@ -21,41 +20,39 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
     MatFormFieldModule,
     MatInputModule,
     MatIconModule,
-    MatButtonModule,
-    MatCheckboxModule
+    MatButtonModule
   ],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
 export class LoginComponent implements OnInit {
   hidePassword = true;
-  
-  async loginWithGoogle(): Promise<void> {
-    try {
-      await this.authService.loginWithGoogle();
-      this.router.navigate(['/select-role']);
-    } catch (error) {
-      console.error('Error al iniciar sesión con Google:', error);
-    }
-  }
-  
   loginForm: FormGroup;
   isLoading = false;
   showError = false;
   errorMessage = 'Error al iniciar sesión. Verifique sus credenciales.';
-  private fb=inject(FormBuilder);
-  private authService=inject(AuthService);
+  
+  private fb = inject(FormBuilder);
+  private authService = inject(AuthService);
   private router = inject(Router);
   
   constructor() {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-      rememberMe: [false]
+      password: ['', [Validators.required, Validators.minLength(6)]]
     });
   }
 
   ngOnInit(): void {
+  }
+
+  async loginWithGoogle(): Promise<void> {
+    try {
+      await this.authService.loginWithGoogle();
+      // La redirección la maneja el servicio de autenticación
+    } catch (error) {
+      console.error('Error al iniciar sesión con Google:', error);
+    }
   }
 
   onLogin(): void {
@@ -66,20 +63,12 @@ export class LoginComponent implements OnInit {
     this.isLoading = true;
     this.showError = false;
 
-    const { email, password, rememberMe } = this.loginForm.value;
+    const { email, password } = this.loginForm.value;
 
-    this.authService.loginWithEmail(email, password, rememberMe).subscribe({
-      next: (response) => {
+    this.authService.loginWithEmail(email, password).subscribe({
+      next: () => {
         this.isLoading = false;
-        this.authService.getCurrentUser().subscribe(user => {
-          if (user && user.role && user.role !== 'DEFAULT') {
-            console.log('Navegando a home con rol:', user.role);
-            this.router.navigate(['/home']);
-          } else {
-            console.log('Navegando a select-role');
-            this.router.navigate(['/select-role']);
-          }
-        });
+        // La redirección la maneja el servicio de autenticación
       },
       error: (error) => {
         this.isLoading = false;
@@ -110,7 +99,7 @@ export class LoginComponent implements OnInit {
       error: (error: any) => {
         this.isLoading = false;
         this.showError = true;
-        this.errorMessage = 'No se pudo enviar el correo de recuperación. Intente nuevamente.';
+        this.errorMessage = 'No se pudo enviar el correo de recuperación. Verifique que el correo sea correcto.';
         console.error('Password reset error:', error);
       }
     });

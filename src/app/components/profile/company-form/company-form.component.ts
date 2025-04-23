@@ -16,7 +16,7 @@ import { Country } from '../../../models/country.model';
 import { CompanyInfoDto } from '../../../models/company-info.dto';
 import { catchError, finalize, Subject, takeUntil, EMPTY, debounceTime } from 'rxjs';
 import { ErrorHandlerService } from '../../../services/error/error-handler.service';
-import { ProviderTypeService, ProviderType } from '../../../services/provider/provider-type.service';
+import { ProviderTypeService, ProviderType } from '../../../services/provider.service/provider-type.service';
 
 @Component({
   selector: 'app-company-form',
@@ -36,7 +36,7 @@ import { ProviderTypeService, ProviderType } from '../../../services/provider/pr
 })
 export class CompanyFormComponent implements OnInit, OnDestroy {
   @Input() userRole: UserRole = 'CLIENTE';
-  @Input() providerType?: string;
+  @Input() providerType?: ProviderType;
   @Output() back = new EventEmitter<void>();
   @Output() formSubmitted = new EventEmitter<any>();
   
@@ -64,34 +64,38 @@ export class CompanyFormComponent implements OnInit, OnDestroy {
   ) {}
   
   ngOnInit(): void {
+    console.log('[CompanyForm] Iniciando componente, userRole:', this.userRole, 'providerType:', this.providerType);
+    
+    // Si no tenemos un tipo de proveedor definido pero el usuario es proveedor, intentar obtenerlo del servicio
+    if (this.userRole === 'PROVEEDOR' && !this.providerType) {
+      this.providerType = this.providerTypeService.getCurrentProviderType() || undefined;
+      console.log('[CompanyForm] Tipo de proveedor obtenido del servicio:', this.providerType);
+    }
+    
+    // Inicializar el formulario con los datos correctos según el tipo
     this.initForm();
-    this.loadCountries();
     
     // Configurar el debounce para evitar múltiples envíos rápidos
     this.submitAction$.pipe(
       takeUntil(this.destroy$),
-      debounceTime(500) // 500ms debounce para evitar múltiples clics
+      debounceTime(500)
     ).subscribe(() => {
       this.processFormSubmission();
     });
     
-    // Obtener el ID del usuario actual
+    // Obtener el ID del usuario actual y cargar datos si es necesario
     const user = this.authService.getCurrentUserSync();
-    if (user && user.uid) {
+    if (user?.uid) {
       this.currentUserId = user.uid;
       
-      // Obtener el tipo de proveedor si no se proporciona como Input
-      if (!this.providerType) {
-        this.providerType = this.providerTypeService.getCurrentProviderType() || undefined;
-      }
-      
-      // Solo cargar datos de la compañía si no estamos en el flujo de selección de tipo de proveedor
-      // Un proveedor con tipo no definido está en el proceso de selección, no debemos cargar datos aún
-      if (!(this.userRole === 'PROVEEDOR' && !this.providerType)) {
-        console.log('Cargando datos de la compañía...');
+      // Cargar datos según el rol y tipo de proveedor
+      if (this.userRole === 'CLIENTE') {
+        console.log('[CompanyForm] Cargando datos para CLIENTE');
         this.loadCompanyData(this.currentUserId);
-      } else {
-        console.log('Omitiendo carga de datos de compañía durante selección de tipo de proveedor');
+      } 
+      else if (this.userRole === 'PROVEEDOR' && this.providerType === 'COMPANY') {
+        console.log('[CompanyForm] Cargando datos para PROVEEDOR tipo COMPANY');
+        this.loadCompanyData(this.currentUserId);
       }
     }
     
@@ -100,19 +104,19 @@ export class CompanyFormComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(type => {
         if (type !== this.providerType) {
+          console.log('[CompanyForm] Cambio en tipo de proveedor detectado:', type);
           this.providerType = type || undefined;
           
-          // Si cambia a 'company', cargar datos de la empresa
-          if (this.providerType === 'company' && this.currentUserId) {
+          // Reinicializar el formulario con las nuevas reglas de validación
+          this.initForm();
+          
+          // Si es tipo empresa, cargar datos
+          if (this.providerType === 'COMPANY' && this.currentUserId) {
+            console.log('[CompanyForm] Cargando datos después de cambio a tipo COMPANY');
             this.loadCompanyData(this.currentUserId);
           }
         }
       });
-    
-    console.log('CompanyFormComponent inicializado');
-    console.log('¿Tiene observadores el evento back?:', this.back.observed);
-    console.log('Rol de usuario:', this.userRole);
-    console.log('Tipo de proveedor:', this.providerType);
   }
   
   ngOnDestroy(): void {
@@ -122,33 +126,39 @@ export class CompanyFormComponent implements OnInit, OnDestroy {
   }
   
   loadCompanyData(userId: string): void {
-    // Solo cargar datos si es proveedor tipo empresa o no es proveedor
-    if (this.providerType !== 'individual') {
+    if (this.isLoadingCompanyData) return;
+    
+    console.log('[CompanyForm] Iniciando carga de datos de compañía, userRole:', this.userRole, 'providerType:', this.providerType);
+    
+    // Cargar los países para el select
+    if (this.countries.length === 0) {
+      this.loadCountries();
+    }
+    
+    // Permitir la carga para clientes o proveedores de tipo empresa
+    if (this.userRole === 'CLIENTE' || this.providerType === 'COMPANY') {
       this.isLoadingCompanyData = true;
-      this.apiError = null; // Limpiar errores anteriores
-      console.log(`[CompanyForm] Intentando cargar datos de la compañía para usuario ${userId}, providerType: ${this.providerType}`);
+      this.apiError = null;
       
       this.companyService.getCompanyInfo(userId)
         .pipe(
           takeUntil(this.destroy$),
           catchError(error => {
-            // No mostrar error si es que el usuario no tiene datos de compañía aún
+            this.isLoadingCompanyData = false;
+            console.error('[CompanyForm] Error al cargar datos de la compañía:', error);
+            
+            // Inicializar el formulario vacío
+            this.initForm();
+            
+            // No mostrar error al usuario si es 404
             if (error.status !== 404) {
-              console.error('[CompanyForm] Error al cargar datos de la compañía:', error);
-              console.error('[CompanyForm] URL:', error.url);
-              console.error('[CompanyForm] Status:', error.status, error.statusText);
-              console.error('[CompanyForm] Error mensaje:', error.message);
-              if (error.error) {
-                console.error('[CompanyForm] Error detalle:', error.error);
-              }
-              
-              // Guardar el error para mostrarlo en la interfaz
-              this.apiError = error;
-              
-              this.errorHandler.showErrorMessage(error, 'Error al cargar los datos de la empresa');
+              this.snackBar.open('Error al cargar los datos de la empresa', 'Cerrar', {
+                duration: 3000
+              });
             } else {
-              console.log('[CompanyForm] No se encontraron datos de compañía para el usuario (404)');
+              console.log('[CompanyForm] No se encontraron datos de compañía - Iniciando formulario vacío');
             }
+            
             return EMPTY;
           }),
           finalize(() => {
@@ -156,45 +166,23 @@ export class CompanyFormComponent implements OnInit, OnDestroy {
           })
         )
         .subscribe(companyData => {
+          console.log('[CompanyForm] Datos de compañía recibidos:', companyData);
+          
           if (companyData) {
-            console.log('[CompanyForm] Datos de compañía cargados exitosamente:', companyData);
-            
-            // Obtener el tipo de proveedor, teniendo en cuenta que puede estar en mayúscula o minúscula
-            const backendProviderType = companyData.providerType || companyData.ProviderType;
-            
-            // Actualizar el tipo de proveedor con los datos obtenidos
-            if (backendProviderType) {
-              const providerTypeValueLower = backendProviderType.toLowerCase();
-              console.log(`[CompanyForm] Tipo de proveedor detectado: ${backendProviderType} (normalizado: ${providerTypeValueLower})`);
-              
-              if (providerTypeValueLower === 'company') {
-                this.providerType = 'company';
-                this.providerTypeService.setProviderType('company');
-              } else if (providerTypeValueLower === 'individual') {
-                this.providerType = 'individual';
-                this.providerTypeService.setProviderType('individual');
-              }
-            }
-            
-            // Actualizar el formulario con los datos recibidos
             this.companyForm.patchValue({
-              name: companyData.name,
-              legalName: companyData.legalName,
-              taxId: companyData.taxId,
-              phone: companyData.phone,
-              email: companyData.email,
+              name: companyData.name || '',
+              legalName: companyData.legalName || '',
+              taxId: companyData.taxId || '',
+              phone: companyData.phone || '',
+              email: companyData.email || '',
               website: companyData.website || '',
               contactPerson: companyData.contactPerson || '',
-              country: companyData.country.toString()
+              country: companyData.country ? companyData.country.toString() : ''
             });
-            
-            console.log('[CompanyForm] Formulario actualizado con datos cargados');
-          } else {
-            console.log('[CompanyForm] No se encontraron datos de compañía para el usuario:', userId);
           }
         });
     } else {
-      console.log(`[CompanyForm] Omitiendo carga de datos para proveedor tipo ${this.providerType}`);
+      console.log('[CompanyForm] No se cargan datos porque no es CLIENTE ni PROVEEDOR tipo COMPANY');
     }
   }
   
@@ -242,18 +230,32 @@ export class CompanyFormComponent implements OnInit, OnDestroy {
   }
   
   initForm(): void {
+    console.log('[CompanyForm] Inicializando formulario, providerType:', this.providerType);
+    
+    // Determinar si se necesitan validadores requeridos
+    const needsRequired = this.userRole === 'CLIENTE' || this.providerType === 'COMPANY';
+    
     this.companyForm = this.fb.group({
-      name: ['', Validators.required],
-      legalName: ['', Validators.required],
-      taxId: ['', Validators.required],
-      phone: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
+      name: ['', needsRequired ? [Validators.required] : []],
+      legalName: ['', needsRequired ? [Validators.required] : []],
+      taxId: ['', needsRequired ? [Validators.required] : []],
+      phone: [''],
+      email: ['', [Validators.email]],
       website: [''],
       contactPerson: [''],
-      country: ['', Validators.required]
+      country: ['', needsRequired ? [Validators.required] : []]
     });
+    
+    // Si es proveedor individual, deshabilitamos los campos
+    if (this.userRole === 'PROVEEDOR' && this.providerType === 'INDIVIDUAL') {
+      console.log('[CompanyForm] Tipo de proveedor INDIVIDUAL, deshabilitando campos');
+      this.companyForm.disable();
+    } else {
+      console.log('[CompanyForm] Tipo de proveedor COMPANY o CLIENTE, habilitando campos');
+      this.companyForm.enable();
+    }
   }
-  
+
   get formControls() {
     return this.companyForm.controls;
   }
@@ -263,7 +265,7 @@ export class CompanyFormComponent implements OnInit, OnDestroy {
   }
   
   canShowBackButton(): boolean {
-    return this.back.observed && (this.userRole === 'CLIENTE' || this.userRole === 'ADMIN' || this.userRole === 'PROVEEDOR');
+    return this.back.observed && this.userRole === 'PROVEEDOR';
   }
   
   onSubmit(): void {
@@ -273,6 +275,11 @@ export class CompanyFormComponent implements OnInit, OnDestroy {
       isFormValid: this.companyForm.valid,
       hasUserId: !!this.currentUserId
     });
+    
+    // Asegurar que los países estén cargados antes de enviar el formulario
+    if (this.countries.length === 0) {
+      this.loadCountries();
+    }
     
     if (this.companyForm.valid && this.currentUserId) {
       // Prevenir múltiples envíos con debounce
@@ -293,74 +300,88 @@ export class CompanyFormComponent implements OnInit, OnDestroy {
       }
     }
   }
-  
   processFormSubmission(): void {
+    console.log('Procesando envío de formulario, providerType:', this.providerType);
+    
+    // Si es un proveedor individual, solo enviar el tipo de proveedor
+    if (this.userRole === 'PROVEEDOR' && this.providerType === 'INDIVIDUAL') {
+      const individualProviderData: CompanyInfoDto = {
+        legalName: '',
+        name: '',
+        taxId: '',
+        phone: '',
+        email: '',
+        contactPerson: '',
+        country: 0,
+        providerType: 'INDIVIDUAL'
+      };
+
+      this.submitProviderTypeRequest(individualProviderData);
+      return;
+    }
+
+    // Para proveedores de empresa o clientes
     if (this.companyForm.valid) {
       this.isSubmitting = true;
-      this.apiError = null; // Limpiar errores anteriores
+      this.apiError = null;
       
-      // Obtener los datos del formulario
       const companyData: CompanyInfoDto = {
         ...this.companyForm.value,
         country: parseInt(this.companyForm.value.country, 10)
       };
       
-      // Solo agregar providerType si es un proveedor
-      if (this.userRole === 'PROVEEDOR') {
-        companyData.ProviderType = this.providerType;
-        console.log(`[CompanyForm] Incluyendo ProviderType: ${this.providerType}`);
-      } else {
-        console.log(`[CompanyForm] No se incluye ProviderType porque el rol es: ${this.userRole}`);
+      // Establecer providerType según el rol del usuario
+      if (this.userRole === 'PROVEEDOR' && this.providerType) {
+        // Para proveedores, usar el tipo seleccionado
+        companyData.providerType = this.providerType === 'COMPANY' ? 'COMPANY' : 'INDIVIDUAL';
+      } else if (this.userRole === 'CLIENTE') {
+        // Para clientes, siempre establecer como COMPANY
+        companyData.providerType = 'COMPANY';
       }
       
-      const userId = this.currentUserId;
-      
-      console.log(`[CompanyForm] Datos completos a enviar para el usuario ${userId}:`, companyData);
-      
-      this.companyService.createOrUpdateCompanyInfo(userId, companyData)
-        .pipe(
-          takeUntil(this.destroy$),
-          catchError(error => {
-            console.error('[CompanyForm] Error al enviar datos de la compañía:', error);
-            console.error('[CompanyForm] URL:', error.url);
-            console.error('[CompanyForm] Status:', error.status, error.statusText);
-            console.error('[CompanyForm] Error mensaje:', error.message);
-            if (error.error) {
-              console.error('[CompanyForm] Error detalle:', error.error);
-            }
-            
-            // Guardar el error para mostrarlo en la interfaz
-            this.apiError = error;
-            
-            this.errorHandler.showErrorMessage(error, 'Error al guardar los datos de la empresa');
-            return EMPTY;
-          }),
-          finalize(() => {
-            this.isSubmitting = false;
-          })
-        )
-        .subscribe(response => {
-          console.log('[CompanyForm] Respuesta exitosa del servidor:', response);
-          
-          if (!response) {
-            console.warn('[CompanyForm] Advertencia: El servidor devolvió una respuesta vacía');
-          }
-          
-          this.snackBar.open('Datos de empresa guardados correctamente', 'Cerrar', {
-            duration: 3000
-          });
-          
-          // Actualizar el tipo de proveedor en el servicio
-          if (this.providerType) {
-            this.providerTypeService.setProviderType(this.providerType as ProviderType);
-          }
-          
-          // Emitir evento de formulario enviado con los datos
-          this.formSubmitted.emit(companyData);
-        });
+      console.log('Enviando datos al backend:', companyData);
+      this.submitProviderTypeRequest(companyData);
     } else {
       this.markFormGroupTouched(this.companyForm);
     }
+  }
+
+  private submitProviderTypeRequest(companyData: CompanyInfoDto): void {
+    this.companyService.createOrUpdateCompanyInfo(this.currentUserId, companyData)
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError(error => {
+          console.error('[CompanyForm] Error al enviar datos:', error);
+          this.isSubmitting = false;
+          this.apiError = error;
+          this.snackBar.open('Error al guardar los datos de la empresa', 'Cerrar', {
+            duration: 3000
+          });
+          return EMPTY;
+        }),
+        finalize(() => {
+          this.isSubmitting = false;
+        })
+      )
+      .subscribe(response => {
+        console.log('[CompanyForm] Respuesta exitosa del servidor:', response);
+        
+        // Show different success messages based on role and type
+        const message = this.userRole === 'PROVEEDOR' && this.providerType === 'INDIVIDUAL' 
+          ? 'Tipo de proveedor guardado correctamente'
+          : 'Datos de la empresa guardados correctamente';
+          
+        this.snackBar.open(message, 'Cerrar', {
+          duration: 3000
+        });
+        
+        // Update provider type only for PROVIDER role
+        if (this.userRole === 'PROVEEDOR' && this.providerType) {
+          this.providerTypeService.setProviderType(this.providerType);
+        }
+        
+        this.formSubmitted.emit(companyData);
+      });
   }
   
   // Método para marcar todos los campos como tocados
@@ -372,4 +393,4 @@ export class CompanyFormComponent implements OnInit, OnDestroy {
       }
     });
   }
-} 
+}

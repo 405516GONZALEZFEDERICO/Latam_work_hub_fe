@@ -86,17 +86,35 @@ export const routes: Routes = [
             data: { activeTab: 'provider-type', title: 'Tipo de Proveedor' }
           }
         ]
+      },
+      {
+        path: 'spaces',
+        canActivate: [SecurityWardGuard],
+        data: { 
+          allowedRoles: ['PROVEEDOR'],
+          title: 'Mis Espacios'
+        },
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./components/spaces/spaces-list/spaces-list.component').then(m => m.SpacesListComponent),
+            data: { title: 'Mis Espacios' }
+          },
+          {
+            path: 'create',
+            loadComponent: () =>
+              import('./components/spaces/space-form/space-form.component').then(m => m.SpaceFormComponent),
+            data: { title: 'Crear Espacio' }
+          },
+          {
+            path: ':id/edit',
+            loadComponent: () =>
+              import('./components/spaces/space-form/space-form.component').then(m => m.SpaceFormComponent),
+            data: { title: 'Editar Espacio' }
+          }
+        ]
       }
     ]
-  },
-  {
-    path: 'unauthorized',
-    loadComponent: () =>
-      import('./components/login/login.component').then(m => m.LoginComponent), 
-    data: { message: 'No tienes permiso para acceder a esta página', title: 'No Autorizado' }
-  },
-  {
-    path: '**',
-    redirectTo: 'login'
   }
 ];

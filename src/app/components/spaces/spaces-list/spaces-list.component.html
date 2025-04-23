@@ -1,0 +1,128 @@
+<div class="container-fluid py-4">
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h1 class="text-2xl font-bold mb-2">My Spaces</h1>
+      <p class="text-muted">Manage and monitor your workspace portfolio</p>
+    </div>
+    <div class="col-md-4 d-flex justify-content-end align-items-center">
+      <button mat-raised-button color="primary" (click)="navigateToCreate()">
+        <mat-icon>add</mat-icon>
+        Add New Space
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title mb-3">Filter Spaces</h5>
+          <form [formGroup]="filterForm">
+            <div class="row align-items-end">
+              <div class="col-md-4 mb-3">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Search by name</mat-label>
+                  <input matInput formControlName="name" placeholder="Enter name">
+                  <mat-icon matSuffix>search</mat-icon>
+                </mat-form-field>
+              </div>
+              <div class="col-md-3 mb-3">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Space Type</mat-label>
+                  <mat-select formControlName="type">
+                    <mat-option *ngFor="let type of spaceTypes" [value]="type">
+                      {{type}}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <div class="col-md-3 mb-3">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Status</mat-label>
+                  <mat-select formControlName="status">
+                    <mat-option *ngFor="let status of statusOptions" [value]="status">
+                      {{status}}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <div class="col-md-2 mb-3">
+                <button mat-flat-button color="primary" class="w-100">
+                  Apply Filters
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Spaces Grid -->
+  <div class="row">
+    <div *ngFor="let space of filteredSpaces" class="col-md-6 col-lg-4 mb-4">
+      <div class="card h-100 shadow-sm">
+        <div class="position-relative">
+          <img [src]="space.imageUrl" class="card-img-top" style="height: 200px; object-fit: cover;" [alt]="space.name">
+        </div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between mb-3">
+            <h5 class="card-title mb-0">{{space.name}}</h5>
+          </div>
+          <p class="card-text text-muted mb-3">{{space.description}}</p>
+          
+          <div class="row mb-3">
+            <div class="col-6">
+              <small class="text-muted d-block">Type</small>
+              <span>{{space.type}}</span>
+            </div>
+            <div class="col-6">
+              <small class="text-muted d-block">Capacity</small>
+              <span>{{space.capacity}} people</span>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-6">
+              <small class="text-muted d-block">Price/hour</small>
+              <span>${{space.price}}</span>
+            </div>
+            <div class="col-6">
+              <small class="text-muted d-block">Status</small>
+              <div>
+                <span class="badge" [ngClass]="space.active ? 'bg-success' : 'bg-secondary'">
+                  {{space.active ? 'Active' : 'Inactive'}}
+                </span>
+                <span class="ms-1 badge" [ngClass]="space.available ? 'bg-primary' : 'bg-danger'">
+                  {{space.available ? 'Available' : 'Unavailable'}}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer bg-transparent">
+          <div class="d-flex justify-content-between">
+            <button mat-button color="primary" (click)="navigateToView(space.id)">
+              <mat-icon>visibility</mat-icon> View
+            </button>
+            <button mat-button color="accent" (click)="navigateToEdit(space.id)">
+              <mat-icon>edit</mat-icon> Edit
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- No spaces message -->
+  <div *ngIf="filteredSpaces.length === 0" class="text-center py-5">
+    <mat-icon class="text-muted" style="font-size: 48px; width: 48px; height: 48px;">business</mat-icon>
+    <h3 class="mt-3">No spaces found</h3>
+    <p class="text-muted">Try adjusting your filters or add a new space</p>
+    <button mat-raised-button color="primary" class="mt-3" (click)="navigateToCreate()">
+      <mat-icon>add</mat-icon>
+      Add New Space
+    </button>
+  </div>
+</div> 

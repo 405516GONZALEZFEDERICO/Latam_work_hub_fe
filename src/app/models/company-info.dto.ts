@@ -1,14 +1,16 @@
 export interface CompanyInfoDto {
-  legalName: string;
+  id?: number;
   name: string;
+  legalName: string;
   taxId: string;
   phone: string;
   email: string;
   website?: string;
   contactPerson?: string;
-  country: number;
-  providerType?: string;
-  ProviderType?: string;
+  country?: number;
+  providerType?: 'INDIVIDUAL' | 'COMPANY';
+  active?: boolean;
+  registrationDate?: string;
 }
 
 export interface CompanyInfoResponse {
@@ -21,5 +23,4 @@ export interface CompanyInfoResponse {
   contactPerson?: string;
   country: number;
   providerType?: string;
-  ProviderType?: string;
-} 
+}

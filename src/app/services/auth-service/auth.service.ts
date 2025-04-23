@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Auth, GoogleAuthProvider, signInWithPopup, signOut, signInWithEmailAndPassword, onAuthStateChanged, browserLocalPersistence, browserSessionPersistence, setPersistence, sendPasswordResetEmail } from '@angular/fire/auth';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, from, throwError, catchError, switchMap, of, BehaviorSubject, firstValueFrom } from 'rxjs';
+import { Observable, from, throwError, catchError, switchMap, of, BehaviorSubject, firstValueFrom, map } from 'rxjs';
 import { AuthResponseGoogleDto, User, UserRole } from '../../models/user';
 import { environment } from '../../../environment/environment';
 
@@ -33,15 +33,23 @@ export class AuthService {
       const timestamp = localStorage.getItem('userDataTimestamp');
       
       if (userData && timestamp) {
+        const user = JSON.parse(userData);
+        console.log('Datos de usuario encontrados en localStorage:', user.role);
+        
+        // Verificar si los datos tienen más de 24 horas (mayor margen para ser compatible con tokens refresh)
         const now = new Date().getTime();
         const parsedTimestamp = parseInt(timestamp);
+        const hoursElapsed = (now - parsedTimestamp) / (1000 * 60 * 60);
         
-        // Check if data is not expired (less than 1 hour old)
-        if (now - parsedTimestamp <= 3600000) {
-          const user = JSON.parse(userData);
+        if (hoursElapsed <= 24) {
+          console.log('Datos de usuario válidos, restaurando sesión');
           this.currentUserData = user;
           this.userSubject.next(user);
           return true;
+        } else {
+          console.log('Datos de usuario expirados, limpiando localStorage');
+          localStorage.removeItem('currentUserData');
+          localStorage.removeItem('userDataTimestamp');
         }
       }
       return false;
@@ -58,9 +66,13 @@ export class AuthService {
     
     // Aplicar persistencia local para prevenir pérdida de sesión al recargar
     try {
+      // Aplicar persistencia de forma inmediata
       setPersistence(this.auth, browserLocalPersistence)
+        .then(() => {
+          console.log('Persistencia local configurada correctamente');
+        })
         .catch(error => {
-          console.error('Error setting persistence:', error);
+          console.error('Error al configurar persistencia local:', error);
           // Intentar con otro tipo de persistencia si la primera falla
           setPersistence(this.auth, browserSessionPersistence)
             .catch(err => console.error('Error setting session persistence:', err));
@@ -75,14 +87,37 @@ export class AuthService {
       this.isInitialized = true;
       
       if (user) {
+        // Verificar si hay un conflicto entre el usuario en Firebase y el usuario en localStorage
+        const storedUser = localStorage.getItem('currentUserData');
+        if (storedUser) {
+          try {
+            const parsedUser = JSON.parse(storedUser);
+            if (parsedUser.uid !== user.uid) {
+              console.log('CONFLICTO DETECTADO: Usuario en Firebase diferente al almacenado en localStorage');
+              console.log('Firebase UID:', user.uid, 'LocalStorage UID:', parsedUser.uid);
+              // Limpiar localStorage para prevenir conflictos
+              localStorage.removeItem('currentUserData');
+              localStorage.removeItem('userDataTimestamp');
+              console.log('LocalStorage limpiado para prevenir conflictos de usuarios');
+            }
+          } catch (e) {
+            console.error('Error al verificar conflicto de usuarios:', e);
+          }
+        }
+        
         // Intentar recuperar datos de localStorage primero
         const cachedUser = this.getUserFromLocalStorage(user.uid);
         
         if (cachedUser && cachedUser.uid === user.uid) {
+          console.log('Usando datos de usuario en caché con rol:', cachedUser.role);
           // Si tenemos datos en caché válidos, los usamos inmediatamente
           this.currentUserData = cachedUser;
           this.userSubject.next(cachedUser);
           this.authStateSubject.next(true);
+          
+          // Asegurar que esté actualizado en localStorage (por si acaso)
+          localStorage.setItem('currentUserData', JSON.stringify(cachedUser));
+          localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
           
           // Verificar si el token necesita actualizarse (más de 30 minutos)
           const now = new Date().getTime();
@@ -110,12 +145,16 @@ export class AuthService {
             // Si no tenemos datos en caché o están expirados, obtener un nuevo token
             const idToken = await (user as import('@firebase/auth').User).getIdToken();
             
+            // Intentar recuperar el rol anterior de localStorage
+            const cachedUser = this.getUserFromLocalStorage(user.uid);
+            const previousRole = cachedUser?.role || 'DEFAULT';
+            
             // Usar datos básicos mientras verificamos el rol
             this.currentUserData = {
               uid: user.uid,
               email: user.email!,
               emailVerified: user.emailVerified,
-              role: 'DEFAULT',
+              role: previousRole, // Usar el rol previo si existe, no DEFAULT automáticamente
               refreshToken: user.refreshToken,
               photoURL: user.photoURL || '',
               idToken: idToken 
@@ -143,6 +182,21 @@ export class AuthService {
           }
         }
       } else {
+        // No hay usuario en Firebase, pero podría haber en localStorage
+        const cachedUser = this.getUserFromLocalStorage();
+        
+        if (cachedUser && this.isTokenValid(cachedUser)) {
+          console.log('Intentando restaurar sesión desde localStorage');
+          this.currentUserData = cachedUser;
+          this.userSubject.next(cachedUser);
+          this.authStateSubject.next(true);
+          
+          // No limpiamos localStorage para permitir futuras restauraciones
+          return;
+        }
+        
+        // Si no hay usuario en caché o su token no es válido, limpiar todo
+        console.log('No hay sesión válida, limpiando datos');
         this.currentUserData = null;
         this.userSubject.next(null);
         this.authStateSubject.next(false);
@@ -159,15 +213,22 @@ export class AuthService {
       if (!userData) return null;
       
       const parsedUser = JSON.parse(userData);
+      console.log('Datos recuperados de localStorage:', parsedUser.role);
       
       // Verificar que sea el mismo usuario si se proporciona un UID
-      if (uid && parsedUser.uid !== uid) return null;
+      if (uid && parsedUser.uid !== uid) {
+        console.log('UID no coincide con el usuario en localStorage');
+        return null;
+      }
       
-      // Comprobar si los datos tienen más de 1 hora (3600000 ms)
+      // Comprobar si los datos tienen más de 24 horas (en lugar de 1 hora)
       const timestamp = localStorage.getItem('userDataTimestamp');
       if (timestamp) {
         const now = new Date().getTime();
-        if (now - parseInt(timestamp) > 3600000) {
+        const hoursElapsed = (now - parseInt(timestamp)) / (1000 * 60 * 60);
+        
+        if (hoursElapsed > 24) {
+          console.log('Datos de usuario expirados (más de 24h)');
           localStorage.removeItem('currentUserData');
           localStorage.removeItem('userDataTimestamp');
           return null;
@@ -190,6 +251,61 @@ export class AuthService {
       return;
     }
     
+    // Verificar que el usuario actual en Firebase coincida con lo que tenemos en localStorage
+    const currentFirebaseUid = this.auth.currentUser?.uid;
+    const cachedUser = this.getUserFromLocalStorage();
+    
+    if (cachedUser && currentFirebaseUid && cachedUser.uid !== currentFirebaseUid) {
+      console.log('¡ALERTA! UID actual y UID en caché no coinciden. Limpiando caché para prevenir conflictos.');
+      // Hay un usuario diferente al almacenado - limpiar localStorage para evitar confusión
+      localStorage.removeItem('currentUserData');
+      localStorage.removeItem('userDataTimestamp');
+    }
+    
+    // Intentar recuperar los datos de localStorage primero
+    const cachedUserFromLocalStorage = this.getUserFromLocalStorage();
+    if (cachedUserFromLocalStorage && cachedUserFromLocalStorage.role && cachedUserFromLocalStorage.role !== 'DEFAULT') {
+      console.log('Usando rol encontrado en localStorage:', cachedUserFromLocalStorage.role);
+      
+      // Si ya tiene un rol válido en localStorage, usarlo inmediatamente
+      this.currentUserData = cachedUserFromLocalStorage;
+      this.userSubject.next(cachedUserFromLocalStorage);
+      this.authStateSubject.next(true);
+      
+      // De todas formas verificar con el backend, pero no esperar la respuesta para continuar
+      this.http.get<any>(`${this.API_BASE_URL}/verificar-rol`, {
+        params: { idToken },
+        headers: { 'Content-Type': 'application/json' }
+      }).subscribe({
+        next: (response) => {
+          if (response && this.auth.currentUser && response.role) {
+            console.log('Verificación de backend completada, rol:', response.role);
+            if (response.role !== cachedUserFromLocalStorage.role) {
+              console.log('Actualizando rol de', cachedUserFromLocalStorage.role, 'a', response.role);
+              // Solo actualizar si el rol cambió
+              this.currentUserData = {
+                ...this.currentUserData,
+                role: response.role
+              } as User;
+              this.userSubject.next(this.currentUserData);
+              
+              // Actualizar localStorage
+              localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
+              localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
+            }
+          }
+        },
+        error: (error) => {
+          console.error('Error al verificar rol con backend:', error);
+          // Seguir usando el rol de localStorage en caso de error
+        }
+      });
+      
+      return;
+    }
+    
+    // Si no hay datos en caché o el rol es DEFAULT, verificar con el backend
+    console.log('No hay rol válido en localStorage, verificando con backend');
     this.http.get<any>(`${this.API_BASE_URL}/verificar-rol`, {
       params: { idToken },
       headers: { 'Content-Type': 'application/json' }
@@ -198,6 +314,8 @@ export class AuthService {
         if (response && this.auth.currentUser) {
           const role = response.role || 'DEFAULT';
           const photoUrl = response.photoUrl || this.auth.currentUser.photoURL || '';
+          
+          console.log('Rol verificado con backend:', role);
           
           this.currentUserData = {
             uid: this.auth.currentUser.uid,
@@ -216,10 +334,15 @@ export class AuthService {
           // Guardar en localStorage para futuras recargas
           localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
           localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
+          
+          // Si estamos en select-rol pero el rol no es DEFAULT, redirigir a home
+          if (currentPath.includes('/select-role') && role !== 'DEFAULT') {
+            this.router.navigate(['/home']);
+          }
         }
       },
       error: (error) => {
-        console.error('Error al verificar rol:', error);
+        console.error('Error al verificar rol con backend:', error);
       }
     });
   }
@@ -231,6 +354,14 @@ export class AuthService {
       const result = await signInWithPopup(this.auth, provider);
       const idToken = await result.user.getIdToken();
       
+      // Verificar si hay un usuario diferente en localStorage y limpiarlo
+      const cachedUser = this.getUserFromLocalStorage();
+      if (cachedUser && cachedUser.uid !== result.user.uid) {
+        console.log('Detectado cambio de usuario en login Google. Limpiando datos del usuario anterior.');
+        localStorage.removeItem('currentUserData');
+        localStorage.removeItem('userDataTimestamp');
+      }
+      
       // Notificar al backend para verificar/asignar rol
       this.http.post<any>(`${this.API_BASE_URL}/google/login`, null, {
         params: new HttpParams().set('idToken', idToken),
@@ -238,12 +369,22 @@ export class AuthService {
       }).subscribe({
         next: (response) => {
           if (this.auth.currentUser) {
+            // Verificar si ya existe un rol en localStorage
+            const cachedUser = this.getUserFromLocalStorage(this.auth.currentUser.uid);
+            const roleFromBackend = response.role || 'DEFAULT';
+            const persistedRole = cachedUser?.role;
+            
+            // Priorizar el rol persistido si es diferente a DEFAULT y el backend devuelve DEFAULT
+            const finalRole = (roleFromBackend === 'DEFAULT' && persistedRole && persistedRole !== 'DEFAULT')
+              ? persistedRole
+              : roleFromBackend;
+              
             // Actualizar usuario con los datos del backend
             this.currentUserData = {
               uid: this.auth.currentUser.uid,
               email: this.auth.currentUser.email!,
               emailVerified: this.auth.currentUser.emailVerified,
-              role: response.role || 'DEFAULT',
+              role: finalRole,
               idToken: idToken,
               refreshToken: this.auth.currentUser.refreshToken,
               photoURL: response.photoUrl || this.auth.currentUser.photoURL || ''
@@ -252,12 +393,13 @@ export class AuthService {
             this.userSubject.next(this.currentUserData);
             this.authStateSubject.next(true);
             
-            // Guardar en localStorage
+            // Guardar en localStorage siempre
+            console.log('Guardando datos de usuario en localStorage con rol:', finalRole);
             localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
             localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
             
             // Redireccionar según el rol
-            if (response.role === 'DEFAULT') {
+            if (finalRole === 'DEFAULT') {
               this.router.navigate(['/select-rol']);
             } else {
               this.router.navigate(['/home']);
@@ -373,9 +515,9 @@ export class AuthService {
     );
   }
 
-  loginWithEmail(email: string, password: string, rememberMe: boolean = false): Observable<any> {
-    // Configurar la persistencia según la opción de recordar
-    const persistenceType = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+  loginWithEmail(email: string, password: string): Observable<any> {
+    // Siempre usar persistencia local
+    const persistenceType = browserLocalPersistence;
     
     return from(setPersistence(this.auth, persistenceType)).pipe(
       switchMap(() => {
@@ -383,101 +525,145 @@ export class AuthService {
           .set('email', email)
           .set('password', password);
         
-        // Autenticamos con el backend primero para verificar rol
         return this.http.post<any>(`${this.API_BASE_URL}/login`, null, { 
           params: params,
           headers: { 'Content-Type': 'application/json' } 
         }).pipe(
           switchMap(response => {
-            // Si el backend autenticó correctamente, ahora autenticamos con Firebase
             return from(signInWithEmailAndPassword(this.auth, email, password)).pipe(
               switchMap(userCredential => {
-                const user = userCredential.user;
-                return from(user.getIdToken()).pipe(
-                  switchMap(idToken => {
+                // Verificar si hay un usuario diferente en localStorage y limpiarlo
+                const cachedUser = this.getUserFromLocalStorage();
+                if (cachedUser && cachedUser.uid !== userCredential.user.uid) {
+                  console.log('Detectado cambio de usuario. Limpiando datos del usuario anterior.');
+                  localStorage.removeItem('currentUserData');
+                  localStorage.removeItem('userDataTimestamp');
+                }
+                
+                return from(userCredential.user.getIdToken()).pipe(
+                  map(idToken => {
+                    // Verificar si ya existe un rol en localStorage
+                    const cachedUser = this.getUserFromLocalStorage(userCredential.user.uid);
+                    const roleFromBackend = response.role || 'DEFAULT';
+                    const persistedRole = cachedUser?.role;
+                    
+                    // Priorizar el rol persistido si es diferente a DEFAULT y el backend devuelve DEFAULT
+                    const finalRole = (roleFromBackend === 'DEFAULT' && persistedRole && persistedRole !== 'DEFAULT')
+                      ? persistedRole
+                      : roleFromBackend;
+                      
                     // Actualizar el estado del usuario con los datos del backend
                     this.currentUserData = {
-                      uid: user.uid,
-                      email: user.email!,
-                      emailVerified: user.emailVerified,
-                      role: response.role || 'DEFAULT',
+                      uid: userCredential.user.uid,
+                      email: userCredential.user.email!,
+                      emailVerified: userCredential.user.emailVerified,
+                      role: finalRole,
                       idToken: idToken,
-                      refreshToken: user.refreshToken,
-                      photoURL: response.photoUrl || user.photoURL || ''
+                      refreshToken: userCredential.user.refreshToken,
+                      photoURL: response.photoUrl || userCredential.user.photoURL || ''
                     };
                     
                     this.userSubject.next(this.currentUserData);
                     this.authStateSubject.next(true);
                     
-                    // Guardar en localStorage si se seleccionó "recordarme"
-                    if (rememberMe) {
-                      localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
-                      localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
-                    }
+                    // Siempre guardar en localStorage, independientemente de rememberMe
+                    localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
+                    localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
+
+                    // Determinar la ruta basada en el rol
+                    const redirectPath = finalRole === 'DEFAULT' ? '/select-role' : '/home';
+                    this.router.navigate([redirectPath]);
                     
-                    return of({ 
+                    return { 
                       success: true, 
-                      role: response.role || 'DEFAULT',
-                      needsRole: response.role === 'DEFAULT'
-                    });
+                      role: finalRole,
+                      needsRole: finalRole === 'DEFAULT'
+                    };
                   })
                 );
               })
             );
-          }),
-          catchError(error => {
-            console.error('Login error with backend:', error);
-            
-            // Manejar errores específicos del backend
-            let errorMessage = 'Error al iniciar sesión';
-            if (error.status === 404) {
-              errorMessage = 'Usuario no encontrado';
-            } else if (error.status === 401) {
-              errorMessage = 'Credenciales inválidas';
-            }
-            
-            return throwError(() => new Error(errorMessage));
           })
         );
-      }),
-      catchError(error => {
-        console.error('Firebase persistence error:', error);
-        return throwError(() => error);
       })
     );
   }
 
   async logout(): Promise<void> {
     try {
-      // Limpiar datos locales
+      console.log('Iniciando proceso de logout completo');
+      
+      // 1. Obtener token antes de limpiar datos (si existe)
+      const token = this.currentUserData?.idToken || await this.getIdToken();
+      
+      // 2. Limpiar datos locales
       this.currentUserData = null;
       this.userSubject.next(null);
       this.authStateSubject.next(false);
+      
+      // 3. Limpiar completamente localStorage
+      console.log('Limpiando localStorage');
       localStorage.removeItem('currentUserData');
       localStorage.removeItem('userDataTimestamp');
       
-      // Cerrar sesión en Firebase
+      // 4. Limpiar cualquier otro item de localStorage relacionado con Firebase
+      // Esto es importante para evitar que queden rastros de la sesión anterior
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.includes('firebase') || key.includes('firebaseui') || key.includes('auth'))) {
+          console.log('Limpiando clave adicional de localStorage:', key);
+          localStorage.removeItem(key);
+          // Ajustar el índice después de eliminar
+          i--;
+        }
+      }
+      
+      // 5. Cerrar sesión en Firebase
+      console.log('Cerrando sesión en Firebase');
       await signOut(this.auth);
       
-      // Notificar al backend en segundo plano
-      const token = await this.getIdToken();
+      // 6. Notificar al backend (solo si tenemos token)
       if (token) {
+        console.log('Notificando logout al backend');
         this.http.post(`${this.API_BASE_URL}/logout`, {}, {
           headers: { 'Authorization': `Bearer ${token}` }
         }).subscribe({
-          error: () => console.log('Backend notificado de logout (o error ignorado)')
+          next: () => console.log('Backend notificado de logout exitosamente'),
+          error: () => console.log('Error al notificar backend de logout (ignorado)')
         });
       }
       
+      // 7. Navegar a la página de login para asegurar reinicio completo
+      this.router.navigate(['/login']);
+      
+      console.log('Proceso de logout completado');
       return Promise.resolve();
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Error durante logout:', error);
+      
+      // Incluso si hay error, intentar limpiar localStorage y navegar a login
+      localStorage.removeItem('currentUserData');
+      localStorage.removeItem('userDataTimestamp');
+      this.router.navigate(['/login']);
+      
       return Promise.reject(error);
     }
   }
 
+// filepath: c:\Users\Federico gonzalez\Desktop\Latam_work_hub_fe\src\app\services\auth-service\auth.service.ts
+updateCurrentUser(user: User): void {
+  this.currentUserData = user; // Actualiza el usuario localmente
+  this.userSubject.next(user); // Notifica a los observadores
+  localStorage.setItem('currentUserData', JSON.stringify(user)); // Guarda en localStorage
+}
   getIdToken(): Promise<string | null> {
     if (!this.auth.currentUser) {
+      // Si no hay usuario activo en Firebase, intentar obtener el token de localStorage
+      const cachedUser = this.getUserFromLocalStorage();
+      if (cachedUser && cachedUser.idToken && this.isTokenValid(cachedUser)) {
+        console.log('Usando token del localStorage cuando no hay usuario activo en Firebase');
+        return Promise.resolve(cachedUser.idToken);
+      }
       return Promise.resolve(null);
     }
     
@@ -491,96 +677,92 @@ export class AuthService {
   }
   
   isAuthenticated(): boolean {
-    return !!this.currentUserData && !!this.auth.currentUser;
+    // Si hay usuario en currentUserData, considerarlo autenticado
+    if (this.currentUserData) {
+      return true;
+    }
+    
+    // Si hay usuario en Firebase, considerarlo autenticado
+    if (this.auth.currentUser) {
+      return true;
+    }
+    
+    // Intentar recuperar desde localStorage como último recurso
+    const cachedUser = this.getUserFromLocalStorage();
+    if (cachedUser && this.isTokenValid(cachedUser)) {
+      // Restaurar el estado desde localStorage
+      this.currentUserData = cachedUser;
+      this.userSubject.next(cachedUser);
+      this.authStateSubject.next(true);
+      return true;
+    }
+    
+    // Si ninguna de las condiciones anteriores se cumple, no está autenticado
+    return false;
   }
   
   // Método para refrescar el token cuando expire
   refreshToken(): Observable<string | null> {
     return new Observable<string | null>(subscriber => {
-      if (!this.auth.currentUser) {
-        // Si no hay usuario autenticado en Firebase, intentar recuperar de localStorage
-        const cachedUser = this.getUserFromLocalStorage();
-        if (cachedUser && cachedUser.idToken) {
-          // Intentar usar el token guardado en localStorage mientras se refresca
-          console.log('Usando token en caché mientras se refresca');
-          subscriber.next(cachedUser.idToken);
-          
-          // Intentar refrescar el token a través de Firebase
-          const currentUser = this.auth.currentUser;
-          if (currentUser) {
-            // Necesitamos usar un tipo correcto para resolver el error de TypeScript
-            import('firebase/auth').then(firebaseAuth => {
-              // Ahora que tenemos acceso a los tipos, podemos realizar la operación
-              (currentUser as import('@firebase/auth').User).getIdToken(true)
-                .then((newToken: string) => {
-                  console.log('Token refrescado correctamente');
-                  // Actualizar token en localStorage
-                  if (this.currentUserData) {
-                    this.currentUserData.idToken = newToken;
-                    this.userSubject.next(this.currentUserData);
-                    localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
-                    localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
-                    this.lastTokenRefresh = new Date().getTime();
-                  }
-                })
-                .catch((error: any) => {
-                  console.error('Error al refrescar token:', error);
-                });
-            }).catch(err => {
-              console.error('Error cargando módulo de Firebase Auth:', err);
-            });
-          }
-          subscriber.complete();
-          return;
-        }
+      // Caso 1: Hay usuario en Firebase, intentar refrescar directamente
+      if (this.auth.currentUser) {
+        console.log('Refrescando token con usuario activo en Firebase');
         
-        subscriber.next(null);
-        subscriber.complete();
+        // Usar la técnica de importación dinámica para acceder a los tipos correctos
+        import('firebase/auth').then(firebaseAuth => {
+          (this.auth.currentUser as import('@firebase/auth').User).getIdToken(true)
+            .then(newToken => {
+              console.log('Token refrescado exitosamente en Firebase');
+              
+              // Actualizar el token en los datos del usuario
+              if (this.currentUserData) {
+                this.currentUserData.idToken = newToken;
+                this.userSubject.next(this.currentUserData);
+                this.lastTokenRefresh = new Date().getTime();
+                
+                // Actualizar en localStorage para mantener persistencia entre pestañas
+                localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
+                localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
+              }
+              
+              subscriber.next(newToken);
+              subscriber.complete();
+            })
+            .catch(error => {
+              console.error('Error refrescando token en Firebase:', error);
+              this.tryRecoverFromLocalStorage(subscriber);
+            });
+        }).catch(err => {
+          console.error('Error cargando módulo de Firebase Auth:', err);
+          this.tryRecoverFromLocalStorage(subscriber);
+        });
+        
         return;
       }
       
-      // Si hay usuario autenticado, forzar refresco del token
-      console.log('Refrescando token de Firebase');
-      
-      // Usar la técnica de importación dinámica para acceder a los tipos correctos
-      import('firebase/auth').then(firebaseAuth => {
-        // Ahora que tenemos acceso a los tipos, podemos realizar la operación
-        (this.auth.currentUser as import('@firebase/auth').User).getIdToken(true)
-          .then(newToken => {
-            console.log('Token refrescado exitosamente');
-            // Actualizar el token en los datos del usuario
-            if (this.currentUserData) {
-              this.currentUserData.idToken = newToken;
-              this.userSubject.next(this.currentUserData);
-              this.lastTokenRefresh = new Date().getTime();
-              
-              // Actualizar en localStorage
-              localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
-              localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
-            }
-            
-            subscriber.next(newToken);
-            subscriber.complete();
-          })
-          .catch(error => {
-            console.error('Error refreshing token:', error);
-            
-            // Si hay error al refrescar, intentar recuperar de localStorage
-            const cachedUser = this.getUserFromLocalStorage();
-            if (cachedUser && cachedUser.idToken) {
-              console.log('Usando token en caché después de error de refresco');
-              subscriber.next(cachedUser.idToken);
-            } else {
-              subscriber.next(null);
-            }
-            subscriber.complete();
-          });
-      }).catch(err => {
-        console.error('Error cargando módulo de Firebase Auth:', err);
-        subscriber.next(null);
-        subscriber.complete();
-      });
+      // Caso 2: No hay usuario en Firebase, intentar recuperar de localStorage
+      this.tryRecoverFromLocalStorage(subscriber);
     });
+  }
+  
+  // Método auxiliar para intentar usar token de localStorage
+  private tryRecoverFromLocalStorage(subscriber: any): void {
+    console.log('Intentando recuperar token desde localStorage');
+    const cachedUser = this.getUserFromLocalStorage();
+    
+    if (cachedUser && cachedUser.idToken) {
+      console.log('Usando token en caché de localStorage');
+      
+      // No intentamos reconectar automáticamente con Firebase aquí
+      // ya que requeriría la contraseña que no tenemos almacenada
+      
+      subscriber.next(cachedUser.idToken);
+    } else {
+      console.log('No se pudo obtener token de ninguna fuente');
+      subscriber.next(null);
+    }
+    
+    subscriber.complete();
   }
   
   // Utilidades
@@ -588,7 +770,22 @@ export class AuthService {
     return !!this.currentUserData;
   }
   
+  // Método sincrónico para obtener el usuario actual (inmediato)
   getCurrentUserSync(): User | null {
+    console.log('Obteniendo usuario actual (sync):', this.currentUserData);
+    // Si no hay datos, intentar cargar desde localStorage
+    if (!this.currentUserData) {
+      const userData = localStorage.getItem('currentUserData');
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          console.log('Usuario recuperado de localStorage:', user);
+          return user;
+        } catch (e) {
+          console.error('Error parseando datos del usuario:', e);
+        }
+      }
+    }
     return this.currentUserData;
   }
   
@@ -598,15 +795,15 @@ export class AuthService {
 
   // Añadir el método getCurrentUser() para compatibilidad
   getCurrentUser(): Observable<User | null> {
-    // Simplemente devolver el valor actual del subject
-    return of(this.currentUserData);
+    return this.currentUser$;
   }
 
+  getUserProfile(): Observable<User | null> {
+    return this.currentUser$;
+  }
+  
   recuperarContrasenia(email: string): Observable<any> {
-    return this.http.get(`${this.API_BASE_URL}/recuperar-contrasenia`, {
-      params: { email },
-      responseType: 'text'
-    });
+    return from(sendPasswordResetEmail(this.auth, email));
   }
 
   // Añadir checkTokenExpiration() para compatibilidad con el interceptor
@@ -619,6 +816,7 @@ export class AuthService {
     return new Observable<boolean>(subscriber => {
       // Si ya tenemos userData, devolvemos true inmediatamente
       if (this.currentUserData) {
+        console.log('Auth ready: currentUserData ya existe');
         subscriber.next(true);
         subscriber.complete();
         return;
@@ -626,17 +824,81 @@ export class AuthService {
       
       // Si el usuario en Firebase está listo, devolvemos true
       if (this.auth.currentUser) {
+        console.log('Auth ready: usuario en Firebase activo');
+        subscriber.next(true);
+        subscriber.complete();
+        return;
+      }
+      
+      // Intentar recuperar desde localStorage
+      const cachedUser = this.getUserFromLocalStorage();
+      if (cachedUser && this.isTokenValid(cachedUser)) {
+        console.log('Auth ready: recuperado de localStorage');
+        this.currentUserData = cachedUser;
+        this.userSubject.next(cachedUser);
+        this.authStateSubject.next(true);
         subscriber.next(true);
         subscriber.complete();
         return;
       }
       
       // De lo contrario, esperamos a que se resuelva el estado de auth
+      console.log('Auth pendiente: esperando cambios de estado en Firebase');
       const unsubscribe = onAuthStateChanged(this.auth, user => {
         unsubscribe(); // Dejar de escuchar cambios
+        console.log('Auth ready: estado determinado por Firebase', !!user);
         subscriber.next(true); // Completar la promesa
         subscriber.complete();
       });
     });
+  }
+
+  // Determinar si un token aún podría ser válido
+  private isTokenValid(user: User): boolean {
+    try {
+      if (!user.idToken) return false;
+      
+      // Verificar si hay marca de tiempo
+      const timestamp = localStorage.getItem('userDataTimestamp');
+      if (!timestamp) return false;
+      
+      const tokenDate = new Date(parseInt(timestamp));
+      const now = new Date();
+      
+      // Considerar válido si tiene menos de 24 horas (generalmente tokens de Firebase duran 1 hora)
+      const hoursElapsed = (now.getTime() - tokenDate.getTime()) / (1000 * 60 * 60);
+      
+      // Si han pasado menos de 24 horas, considerarlo potencialmente válido
+      // El interceptor HTTP se encargará de manejar errores si realmente expiró
+      return hoursElapsed < 24;
+    } catch (e) {
+      console.error('Error al verificar validez del token:', e);
+      return false;
+    }
+  }
+
+  // Método para limpiar explícitamente el caché de autenticación
+  clearAuthCache(): void {
+    console.log('Limpiando manualmente el caché de autenticación');
+    
+    // Limpiar datos en memoria
+    this.currentUserData = null;
+    this.userSubject.next(null);
+    
+    // Limpiar localStorage
+    localStorage.removeItem('currentUserData');
+    localStorage.removeItem('userDataTimestamp');
+    
+    // Limpiar datos relacionados con Firebase
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.includes('firebase') || key.includes('firebaseui') || key.includes('auth'))) {
+        console.log('Limpiando:', key);
+        localStorage.removeItem(key);
+        i--; // Ajustar índice después de eliminar
+      }
+    }
+    
+    console.log('Caché de autenticación limpiado correctamente');
   }
 }

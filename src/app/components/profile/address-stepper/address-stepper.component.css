@@ -16,17 +16,21 @@
   display: flex;
   justify-content: flex-end;
   width: 100%;
+  gap: 16px;
 }
 
 .action-button {
   background-color: var(--color-text-dark);
   color: white;
+  min-width: 120px;
 }
 
 .horizontal-stepper {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 30px;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 0 16px;
   position: relative;
 }
 
@@ -42,6 +46,8 @@
 }
 
 .step-item {
+  display: flex;
+  align-items: center;
   flex: 1;
   position: relative;
   text-align: center;
@@ -49,51 +55,53 @@
 }
 
 .step-circle {
-  width: 50px;
-  height: 50px;
-  background-color: #e0e0e0;
-  color: #757575;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
+  background-color: #e0e0e0;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #666;
+  font-weight: 500;
   margin: 0 auto 10px;
   font-size: 20px;
-  font-weight: bold;
   position: relative;
   z-index: 2;
 }
 
 .step-title {
-  font-size: 16px;
-  color: #757575;
-  margin-bottom: 5px;
+  margin-left: 12px;
+  color: #666;
   font-weight: 500;
+  font-size: 16px;
+  margin-bottom: 5px;
 }
 
 .step-connector {
+  flex: 1;
+  height: 2px;
+  background-color: #e0e0e0;
+  margin: 0 16px;
   position: absolute;
   top: 25px;
   right: 0;
-  width: 100%;
-  height: 2px;
-  background-color: #e0e0e0;
   z-index: 1;
 }
 
 /* Estilos para paso activo */
 .step-item.active .step-circle {
-  background-color: var(--color-text-dark);
+  background-color: #3f51b5;
   color: white;
 }
 
 .step-item.active .step-title {
-  color: var(--color-text-dark);
+  color: #3f51b5;
 }
 
 /* Estilos para paso completado */
 .step-item.completed .step-circle {
-  background-color: var(--color-text-dark);
+  background-color: #4caf50;
   color: white;
 }
 
@@ -119,7 +127,7 @@
 /* Estilos para campos de formulario */
 .full-width {
   width: 100%;
-  margin-bottom: 15px;
+  margin-bottom: 16px;
 }
 
 .medium-width {
@@ -132,7 +140,16 @@
   margin-bottom: 15px;
 }
 
-/* Campos de igual tamaño para país y ciudad */
+.flex-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 16px;
+  margin-bottom: 15px;
+}
+
 .equal-field {
   flex: 1;
   margin-right: 5px;
@@ -188,16 +205,6 @@
   width: 48%;
 }
 
-.flex-row {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  gap: 8px;
-  margin-bottom: 15px;
-}
-
 /* Estilos para campos de ciudad personalizada */
 .custom-city-fields {
   background-color: #f0f7ff;
@@ -205,6 +212,7 @@
   border-radius: 4px;
   border-left: 4px solid var(--color-text-dark);
   margin-bottom: 20px;
+  margin-top: 16px;
 }
 
 .custom-city-fields h3 {
@@ -217,7 +225,7 @@
 .button-container {
   display: flex;
   justify-content: flex-end;
-  margin-top: 20px;
+  margin-top: 24px;
 }
 
 /* Estilos para botones Mat de Angular Material */
@@ -613,23 +621,53 @@
   align-items: center;
   justify-content: center;
   width: 100%;
+  gap: 8px;
 }
 
 .button-icon {
   margin-right: 8px;
   vertical-align: middle;
+  margin-left: 4px;
 }
 
 .button-text {
   vertical-align: middle;
 }
 
-.action-button {
+/* Estilos para la tarjeta de dirección */
+.address-card {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  background-color: var(--color-text-dark);
-  color: white;
+  justify-content: space-between;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.address-info p {
+  margin: 0;
+  color: #333;
+}
+
+.address-info p.mb-1 {
+  margin-bottom: 8px;
+}
+
+.no-address-message {
+  text-align: center;
+  padding: 24px;
+  color: #666;
+}
+
+.no-address-message p {
+  margin-bottom: 16px;
+}
+
+/* Asegurar que los botones mat-flat-button tengan bordes redondeados */
+.mat-flat-button {
+  border-radius: 4px !important;
 }
 
 /* Estilos para campos inválidos - mostrar borde rojo */
@@ -639,4 +677,4 @@
 
 .mat-form-field.ng-invalid.ng-touched .mat-form-field-label {
   color: #f44336 !important;
-} 
+}

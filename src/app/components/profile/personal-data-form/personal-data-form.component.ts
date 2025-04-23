@@ -1,6 +1,6 @@
-import { Component, EventEmitter, OnInit, Output, ViewEncapsulation, OnDestroy } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, ViewEncapsulation, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ProfileService } from '../../../services/profile/profile.service';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -17,6 +17,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { Location } from '@angular/common';
 import { PersonalDataUserDto } from '../../../models/personal-data-user-dto';
 import { catchError, EMPTY, finalize, Subject, takeUntil } from 'rxjs';
+import { Address } from '../../../models/address.model';
+import { AddressStepperComponent } from '../address-stepper/address-stepper.component';
+import { AddressService } from '../../../services/address/address.service';
 
 // Formato de fecha personalizado
 export const MY_DATE_FORMATS = {
@@ -31,6 +34,102 @@ export const MY_DATE_FORMATS = {
   }
 };
 
+// Validador personalizado para verificar que el usuario tenga al menos 18 años
+export function ageValidator(minAge: number = 18): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    if (!control.value) {
+      return null; // Si no hay valor, otros validadores manejarán esto
+    }
+    
+    const birthDate = new Date(control.value);
+    if (isNaN(birthDate.getTime())) {
+      return { invalidDate: true };
+    }
+    
+    // Usar la fecha actual en lugar de un año fijo
+    const today = new Date();
+    
+    let age = today.getFullYear() - birthDate.getFullYear();
+    
+    // Ajustar la edad si aún no se ha cumplido años en este año
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return age < minAge ? { minAge: { required: minAge, actual: age } } : null;
+  };
+}
+
+// Validador personalizado para verificar que el número de documento coincida con el tipo
+export function documentValidator(): ValidatorFn {
+  return (group: AbstractControl): ValidationErrors | null => {
+    if (!(group instanceof FormGroup)) {
+      return null;
+    }
+    
+    const documentType = group.get('documentType')?.value;
+    const documentNumber = group.get('documentNumber')?.value;
+    
+    if (!documentType || !documentNumber) {
+      return null; // Si no hay valores, otros validadores manejarán esto
+    }
+    
+    let isValid = true;
+    let errorType = '';
+    
+    switch (documentType) {
+      case 'DNI':
+        // Validar DNI: 8 dígitos
+        isValid = /^\d{8}$/.test(documentNumber);
+        errorType = 'dniFormat';
+        break;
+      case 'CEDULA':
+        // Validar Cédula: Formato de cédula de varios países
+        isValid = /^[A-Z0-9]{6,12}$/.test(documentNumber);
+        errorType = 'cedulaFormat';
+        break;
+      case 'CURP':
+        // Validar CURP: Formato de CURP mexicana
+        isValid = /^[A-Z]{4}\d{6}[HM][A-Z]{5}[0-9A-Z]\d$/.test(documentNumber);
+        errorType = 'curpFormat';
+        break;
+      case 'CPF':
+        // Validar CPF: Formato de CPF brasileño
+        isValid = /^\d{11}$/.test(documentNumber) || /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(documentNumber);
+        errorType = 'cpfFormat';
+        break;
+      case 'PASSPORT':
+        // Validar Pasaporte: Letras y números, generalmente 8-9 caracteres
+        isValid = /^[A-Z0-9]{6,9}$/.test(documentNumber);
+        errorType = 'passportFormat';
+        break;
+      case 'FOREIGN_ID':
+        // ID extranjera: más flexible, pero al menos requiere algo
+        isValid = /^[A-Z0-9-]{4,20}$/.test(documentNumber);
+        errorType = 'foreignIdFormat';
+        break;
+      // 'OTHER' no tiene validación específica
+    }
+    
+    if (!isValid) {
+      const error: ValidationErrors = {};
+      error[errorType] = true;
+      group.get('documentNumber')?.setErrors(error);
+      return { [errorType]: true };
+    }
+    
+    // Limpiar errores anteriores si ahora es válido
+    const currentErrors = group.get('documentNumber')?.errors;
+    if (currentErrors) {
+      const { [errorType]: removed, ...rest } = currentErrors;
+      group.get('documentNumber')?.setErrors(Object.keys(rest).length ? rest : null);
+    }
+    
+    return null;
+  };
+}
+
 @Component({
   selector: 'app-personal-data-form',
   standalone: true,
@@ -44,8 +143,10 @@ export const MY_DATE_FORMATS = {
     MatNativeDateModule,
     MatProgressSpinnerModule,
     MatButtonModule,
-    MatIconModule
+    MatIconModule,
+    AddressStepperComponent
   ],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './personal-data-form.component.html',
   styleUrls: ['./personal-data-form.component.css'],
   encapsulation: ViewEncapsulation.None,
@@ -54,15 +155,20 @@ export const MY_DATE_FORMATS = {
     { provide: MAT_DATE_FORMATS, useValue: MY_DATE_FORMATS }
   ]
 })
-export class PersonalDataFormComponent implements OnInit, OnDestroy {
+export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
   @Output() formSubmitted = new EventEmitter<any>();
   @Output() profileDataLoaded = new EventEmitter<any>();
+  
+  // Input para controlar si el componente está activo
+  @Input() isActiveTab: boolean = false;
+  @Input() shouldLoadData: boolean = true;
   
   personalDataForm: FormGroup;
   profilePicture: string | null = null;
   isLoading = false;
   currentUserId: string = '';
   dataLoaded = false;
+  addressDataLoaded = false;
   
   // Para limpieza de suscripciones
   private destroy$ = new Subject<void>();
@@ -76,24 +182,38 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy {
     { value: 'FOREIGN_ID', label: 'Identificación Extranjera' },
     { value: 'OTHER', label: 'Otro' }
   ];
+
+  showAddressContent = false;
+  address: Address | null = null;
+  addressStepperVisible = false;
+  
+  documentPatterns: Record<string, string> = {
+    DNI: 'Debe contener 8 dígitos numéricos',
+    CEDULA: 'Debe contener entre 6 y 12 caracteres alfanuméricos',
+    CURP: 'Debe tener formato CURP mexicano válido',
+    CPF: 'Debe contener 11 dígitos o formato ###.###.###-##',
+    PASSPORT: 'Debe contener entre 6 y 9 caracteres alfanuméricos',
+    FOREIGN_ID: 'Debe contener entre 4 y 20 caracteres alfanuméricos o guiones',
+    OTHER: 'Ingrese su número de documento'
+  };
   
   constructor(
     private fb: FormBuilder,
     private profileService: ProfileService,
     private authService: AuthService,
     private snackBar: MatSnackBar,
-    private router: Router,
-    private location: Location
+    private location: Location,
+    private addressService: AddressService
   ) {
     this.personalDataForm = this.fb.group({
       fullName: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      birthDate: ['', Validators.required],
+      email: [{value: '', disabled: true}, [Validators.required, Validators.email]],
+      birthDate: ['', [Validators.required, ageValidator(18)]],
       documentType: ['', Validators.required],
       documentNumber: ['', Validators.required],
       jobTitle: [''],
       department: ['']
-    });
+    }, { validators: documentValidator() });
 
     // Suscribirse a cambios en el campo birthDate para mostrar inmediatamente el formato
     this.personalDataForm.get('birthDate')?.valueChanges
@@ -137,72 +257,88 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy {
           }
         }
       });
+
+    // Suscribirse a cambios en el tipo de documento para mostrar el patrón correcto
+    this.personalDataForm.get('documentType')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(type => {
+        if (type) {
+          // Revalidar el número de documento cuando cambia el tipo
+          const documentNumber = this.personalDataForm.get('documentNumber');
+          if (documentNumber?.value) {
+            documentNumber.updateValueAndValidity();
+          }
+        }
+      });
   }
   
   ngOnInit(): void {
-    // Añadir clases para prevenir scroll
-    document.body.classList.add('no-scroll-form');
-    
+    // Obtener el ID del usuario una sola vez
     const user = this.authService.getCurrentUserSync();
     if (user && user.uid) {
       this.currentUserId = user.uid;
       
-      // Solo cargar los datos del usuario si no se han cargado previamente
-      if (!this.dataLoaded) {
-        this.loadUserData();
+      // Cargar datos solo si se debe cargar y la pestaña está activa
+      if (this.shouldLoadData && this.isActiveTab) {
+        this.loadDataIfNeeded();
       }
-    } else {
-      this.snackBar.open('No se pudo identificar el usuario actual', 'Cerrar', {
-        duration: 3000,
-        panelClass: ['snackbar-error']
-      });
+    }
+  }
+  
+  // Nuevo método para cargar datos cuando cambia la tab
+  loadDataIfNeeded(): void {
+    console.log('PersonalDataFormComponent: Verificando si se deben cargar datos', {
+      dataLoaded: this.dataLoaded,
+      addressDataLoaded: this.addressDataLoaded
+    });
+    
+    // Solo cargar los datos del usuario si no se han cargado previamente
+    if (!this.dataLoaded && this.currentUserId) {
+      this.loadUserData();
+    }
+
+    // Cargar la dirección si no se ha cargado previamente
+    if (!this.addressDataLoaded && this.currentUserId) {
+      this.loadAddress();
     }
   }
   
   // Cargar datos del usuario
   loadUserData(): void {
-    if (this.dataLoaded) {
-      console.log('PersonalDataFormComponent: Datos ya cargados, evitando petición adicional');
-      return;
-    }
-
-    this.isLoading = true; // Muestra un indicador de carga mientras se obtienen los datos
+    this.isLoading = true;
     console.log('PersonalDataFormComponent: Cargando datos del usuario:', this.currentUserId);
     
     this.profileService.getPersonalData(this.currentUserId)
       .pipe(
         takeUntil(this.destroy$),
         catchError(error => {
-          this.isLoading = false;
-          console.error('Error al obtener datos personales:', error);
-          this.snackBar.open('Error al cargar los datos personales', 'Cerrar', { duration: 3000 });
+          // Solo mostrar error si no es 404 (no encontrado)
+          if (error.status !== 404) {
+            console.error('Error al cargar datos del usuario:', error);
+            this.snackBar.open('Error al cargar los datos personales', 'Cerrar', {
+              duration: 3000,
+              panelClass: ['snackbar-error']
+            });
+          } else {
+            console.log('No se encontraron datos personales - Iniciando formulario vacío');
+          }
           return EMPTY;
         }),
         finalize(() => {
           this.isLoading = false;
+          this.dataLoaded = true;
         })
       )
       .subscribe(data => {
-        console.log('PersonalDataFormComponent: Datos de perfil cargados:', data);
-        this.dataLoaded = true;
+        console.log('PersonalDataFormComponent: Datos recibidos del backend:', data);
         
         // Convertir la fecha a un objeto Date para que funcione correctamente con el datepicker
         let birthDateObj = null;
         if (data.birthDate) {
-          // Corregir el problema de la zona horaria al convertir a objeto Date
-          // Usar split y crear la fecha con año, mes, día para evitar ajustes de zona horaria
-          const parts = data.birthDate.split('-');
-          if (parts.length === 3) {
-            // Crear fecha usando año, mes (0-based), día y forzar hora local
-            birthDateObj = new Date(
-              parseInt(parts[0]), 
-              parseInt(parts[1]) - 1, 
-              parseInt(parts[2]), 
-              12, 0, 0
-            );
-          } else {
-            // Fallback si el formato no es el esperado
-            birthDateObj = new Date(data.birthDate + 'T12:00:00');
+          try {
+            birthDateObj = new Date(data.birthDate);
+          } catch (error) {
+            console.error('Error al convertir la fecha:', error);
           }
         }
         
@@ -210,7 +346,7 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy {
         this.personalDataForm.patchValue({
           fullName: data.name,
           email: data.email,
-          birthDate: birthDateObj, // Usar el objeto Date
+          birthDate: birthDateObj,
           documentType: data.documentType,
           documentNumber: data.documentNumber,
           jobTitle: data.jobTitle,
@@ -219,13 +355,37 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy {
 
         if (data.photoUrl) {
           this.profilePicture = this.ensureCompleteUrl(data.photoUrl);
-        } else {
-          console.log('No se recibió URL de imagen de perfil');
-          this.profilePicture = null;
         }
         
         // Emitir los datos cargados al componente padre
         this.profileDataLoaded.emit(data);
+      });
+  }
+
+  loadAddress(): void {
+    console.log('PersonalDataFormComponent: Cargando dirección');
+    this.addressService.getAddressByUserUid(this.currentUserId)
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError(error => {
+          if (error.status !== 404) {
+            console.error('Error al cargar la dirección:', error);
+          } else {
+            console.log('No se encontró dirección registrada');
+          }
+          return EMPTY;
+        }),
+        finalize(() => {
+          this.addressDataLoaded = true;
+        })
+      )
+      .subscribe({
+        next: (address) => {
+          if (address) {
+            this.address = address;
+            this.showAddressContent = true;
+          }
+        }
       });
   }
   
@@ -318,87 +478,53 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy {
   
   onSubmit(): void {
     console.log('Método onSubmit() llamado');
-    console.log('Estado del formulario:', this.personalDataForm.valid ? 'válido' : 'inválido');
-    console.log('Valores del formulario:', this.personalDataForm.value);
-    
     if (this.personalDataForm.valid) {
       this.isLoading = true;
-      console.log('Formulario válido, procesando envío...');
 
-      // Obtener el usuario actual
       const user = this.authService.getCurrentUserSync();
-      console.log('Usuario actual:', user);
-      
       if (!user || !user.uid) {
         this.snackBar.open('No se pudo identificar el usuario actual', 'Cerrar', {
           duration: 3000,
           panelClass: ['snackbar-error']
         });
-        console.error('No se encontró UID de usuario');
         return;
       }
 
-      // Formatear la fecha correctamente para Java LocalDate (YYYY-MM-DD)
+      // Obtener todos los valores del formulario, incluyendo los campos deshabilitados
+      const formValues = this.personalDataForm.getRawValue();
+
+      // Formatear la fecha para el backend (YYYY-MM-DD)
       let formattedBirthDate: string | null = null;
-      const birthDate = this.personalDataForm.value.birthDate;
-      
+      const birthDate = formValues.birthDate;
       if (birthDate) {
-        // Si es Date object, convertir pero considerando zona horaria
-        if (birthDate instanceof Date) {
-          // Formato YYYY-MM-DD usando directamente getFullYear, getMonth y getDate
-          // para evitar ajustes de zona horaria
-          const year = birthDate.getFullYear();
-          // getMonth() es 0-indexed, necesitamos sumar 1 y formatear con padding
-          const month = String(birthDate.getMonth() + 1).padStart(2, '0');
-          const day = String(birthDate.getDate()).padStart(2, '0');
-          formattedBirthDate = `${year}-${month}-${day}`;
-        } 
-        // Si ya es string, verificar formato
-        else if (typeof birthDate === 'string') {
-          // Si ya tiene el formato correcto, usarlo directamente
-          if (/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
-            formattedBirthDate = birthDate;
-          } else {
-            // Intentar convertir otras representaciones de fecha manualmente
-            try {
-              const tempDate = new Date(birthDate);
-              const year = tempDate.getFullYear();
-              const month = String(tempDate.getMonth() + 1).padStart(2, '0');
-              const day = String(tempDate.getDate()).padStart(2, '0');
-              formattedBirthDate = `${year}-${month}-${day}`;
-            } catch(e) {
-              console.error('Error al formatear la fecha:', e);
-            }
-          }
+        try {
+          formattedBirthDate = birthDate.toISOString().split('T')[0];
+        } catch (error) {
+          console.error('Error al formatear la fecha:', error);
         }
       }
-      
-      console.log('Fecha de nacimiento formateada:', formattedBirthDate);
 
       // Preparar los datos para enviar al backend
       const personalData: PersonalDataUserDto = {
         uid: user.uid,
-        fullName: this.personalDataForm.value.fullName,
-        name: this.personalDataForm.value.fullName,
-        email: this.personalDataForm.value.email,
+        name: formValues.fullName, // Usar 'name' en lugar de 'fullName' para el backend
+        email: formValues.email,
         birthDate: formattedBirthDate || undefined,
-        documentType: this.personalDataForm.value.documentType,
-        documentNumber: this.personalDataForm.value.documentNumber,
-        jobTitle: this.personalDataForm.value.jobTitle,
-        department: this.personalDataForm.value.department
+        documentType: formValues.documentType,
+        documentNumber: formValues.documentNumber,
+        jobTitle: formValues.jobTitle,
+        department: formValues.department
       };
       
-      console.log('Datos a enviar:', personalData);
+      console.log('Datos a enviar al backend:', personalData);
 
-      // Llamar al servicio para guardar los datos
-      console.log('Llamando al servicio updateOrCreatePersonalData...');
       this.profileService.updateOrCreatePersonalData(user.uid, personalData)
         .pipe(
           takeUntil(this.destroy$),
           catchError(error => {
             this.isLoading = false;
             console.error('Error al guardar los datos personales:', error);
-            this.snackBar.open('Error al guardar los datos personales. Inténtelo de nuevo.', 'Cerrar', {
+            this.snackBar.open('Error al guardar los datos personales', 'Cerrar', {
               duration: 3000,
               panelClass: ['snackbar-error']
             });
@@ -409,76 +535,99 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy {
           })
         )
         .subscribe(response => {
-          console.log('Datos guardados correctamente:', response);
+          console.log('Respuesta del backend:', response);
           this.snackBar.open('Datos personales guardados correctamente', 'Cerrar', {
             duration: 3000
           });
           
-          // Emitir los datos completos
           this.formSubmitted.emit(personalData);
-          
-          // Comprobar si el usuario es CLIENTE para redirigir al formulario de empresa
-          this.checkUserRoleAndRedirect();
         });
     } else {
-      console.warn('Formulario inválido:', this.personalDataForm.errors);
-      console.log('Errores por campo:');
-      Object.keys(this.personalDataForm.controls).forEach(key => {
-        const control = this.personalDataForm.get(key);
-        if (control?.errors) {
-          console.log(`Campo ${key}:`, control.errors);
-        }
-      });
-      
-      // Marcar todos los campos como tocados para mostrar errores de validación
-      Object.keys(this.personalDataForm.controls).forEach(key => {
-        this.personalDataForm.get(key)?.markAsTouched();
-      });
-      
-      this.snackBar.open('Por favor complete todos los campos requeridos', 'Cerrar', {
-        duration: 3000
-      });
+      console.log('Formulario inválido:', this.personalDataForm.errors);
     }
   }
-  
-  private checkUserRoleAndRedirect(): void {
-    const user = this.authService.getCurrentUserSync();
-    if (user && user.role === 'CLIENTE') {
-      console.log('Redirigiendo a cliente al formulario de empresa...');
-      
-      // Usamos varias estrategias de redirección para asegurar que funcione
-      
-      // 1. Usando Location para forzar un cambio de URL completo
-      this.location.go('/home/profile/company');
-      
-      // 2. Usando Router con replaceUrl para forzar navegación
-      this.router.navigate(['/home/profile/company'], { 
-        replaceUrl: true,
-        skipLocationChange: false,
-      });
-      
-      // 3. Como último recurso, usar redirección mediante window.location
-      setTimeout(() => {
-        const baseHref = document.getElementsByTagName('base')[0].href || '/';
-        const currentUrl = window.location.href;
-        const baseUrl = currentUrl.split('/home')[0];
-        window.location.href = baseUrl + '/home/profile/company';
-      }, 300);
+
+  toggleAddressSection(): void {
+    this.showAddressContent = !this.showAddressContent;
+  }
+
+  addAddress(): void {
+    this.addressStepperVisible = true;
+  }
+
+  editAddress(): void {
+    this.addressStepperVisible = true;
+  }
+
+  handleAddressSaved(savedAddress: Address): void {
+    this.address = savedAddress;
+    this.addressStepperVisible = false;
+    this.showAddressContent = true;
+  }
+
+  handleAddressCancelled(): void {
+    this.addressStepperVisible = false;
+  }
+
+  // Método para obtener el mensaje de error de fecha de nacimiento
+  getBirthDateErrorMessage(): string {
+    const control = this.personalDataForm.get('birthDate');
+    
+    if (control?.hasError('required')) {
+      return 'La fecha de nacimiento es requerida';
     }
+    
+    if (control?.hasError('invalidDate')) {
+      return 'Fecha inválida';
+    }
+    
+    if (control?.hasError('minAge')) {
+      return `Debe ser mayor de 18 años`;
+    }
+    
+    return '';
   }
   
-  // Método para redirigir si el usuario es cliente (llamado desde el HTML)
-  redirectIfClient(): void {
-    // Este método es un gancho para el evento click del botón
-    // La lógica real se maneja en onSubmit
-    if (this.isClientUser()) {
-      console.log('Click detectado, redirección programada si la validación es exitosa');
+  // Método para obtener el mensaje de error del documento según el tipo
+  getDocumentErrorMessage(): string {
+    const control = this.personalDataForm.get('documentNumber');
+    const type = this.personalDataForm.get('documentType')?.value;
+    
+    if (control?.hasError('required')) {
+      return 'El número de documento es requerido';
     }
+    
+    if (type && this.documentPatterns[type] && 
+        (control?.hasError('dniFormat') || 
+         control?.hasError('cedulaFormat') || 
+         control?.hasError('curpFormat') || 
+         control?.hasError('cpfFormat') || 
+         control?.hasError('passportFormat') || 
+         control?.hasError('foreignIdFormat'))) {
+      return `Formato inválido. ${this.documentPatterns[type]}`;
+    }
+    
+    return '';
   }
   
-  // Método para verificar si el usuario es cliente
-  isClientUser(): boolean {
-    const user = this.authService.getCurrentUserSync();
-    return user?.role === 'CLIENTE';
+  // Método para obtener el placeholder según el tipo de documento
+  getDocumentPlaceholder(): string {
+    const type = this.personalDataForm.get('documentType')?.value;
+    return type && this.documentPatterns[type] 
+      ? this.documentPatterns[type]
+      : 'Ingrese su número de documento';
+  }
+
+  // Detector de cambios para reaccionar cuando la pestaña se activa
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['isActiveTab'] && changes['isActiveTab'].currentValue === true && this.shouldLoadData) {
+      console.log('PersonalDataFormComponent: Tab activada, verificando si se deben cargar datos');
+      this.loadDataIfNeeded();
+    }
+    
+    if (changes['shouldLoadData'] && changes['shouldLoadData'].currentValue === true && this.isActiveTab) {
+      console.log('PersonalDataFormComponent: shouldLoadData activado, verificando si se deben cargar datos');
+      this.loadDataIfNeeded();
+    }
   }
 }

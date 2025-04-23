@@ -84,7 +84,7 @@ export class HomeLayoutComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // this.loadUserProfile();
+    this.loadUserProfile();
     
     // En pantallas grandes, el sidebar comienza abierto
     this.isSidebarOpen = window.innerWidth >= 992;
@@ -99,6 +99,14 @@ export class HomeLayoutComponent implements OnInit, OnDestroy {
         console.log('Navegación completada:', event.url);
       }
     });
+    
+    // Botón para cambiar manualmente al rol de PROVEEDOR (solo para pruebas)
+    console.log('Para establecer el rol manualmente, ejecuta en consola: setProviderRole()');
+    // @ts-ignore
+    window.setProviderRole = () => {
+      this.userData.role = 'PROVEEDOR';
+      console.log('Rol establecido a PROVEEDOR manualmente');
+    };
   }
 
   // Detector de cambio de tamaño de ventana
@@ -114,23 +122,32 @@ export class HomeLayoutComponent implements OnInit, OnDestroy {
     this.isSidebarOpen = !this.isSidebarOpen;
   }
 
-  // loadUserProfile(): void {
-  //   this.profileService.getProfileData().subscribe({
-  //     next: (profile: ProfileData) => {
-  //       console.log('Profile loaded:', profile);
-  //       this.userData = profile;
-  //     },
-  //     error: (error: any) => {
-  //       console.error('Error al cargar el perfil:', error);
-  //       // Usar datos por defecto
-  //       this.userData = {
-  //         displayName: 'Usuario de Prueba',
-  //         email: 'usuario@example.com',
-  //         role: 'PROVEEDOR' as UserRole
-  //       } as ProfileData;
-  //     }
-  //   });
-  // }
+  loadUserProfile(): void {
+    // Intentar obtener datos de perfil del servicio
+    this.profileService.getProfileData().subscribe({
+      next: (profile: ProfileData) => {
+        console.log('Profile loaded:', profile);
+        this.userData = profile;
+      },
+      error: (error: any) => {
+        console.error('Error al cargar el perfil:', error);
+        // Usar datos por defecto temporales si hay error
+        this.userData = {
+          displayName: 'Usuario de Prueba',
+          email: 'usuario@example.com',
+          role: 'PROVEEDOR' as UserRole
+        } as ProfileData;
+        
+        // Intentar obtener el rol del usuario del servicio de autenticación
+        this.authService.currentUser$.subscribe(user => {
+          if (user) {
+            this.userData.role = user.role;
+            console.log('Rol de usuario obtenido:', this.userData.role);
+          }
+        });
+      }
+    });
+  }
 
   logout(): void {
     this.authService.logout().then(() => {

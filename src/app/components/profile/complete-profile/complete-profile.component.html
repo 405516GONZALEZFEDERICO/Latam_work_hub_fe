@@ -3,8 +3,6 @@
   <div class="profile-wrapper">
     <mat-card class="profile-card">
       <mat-card-content>
-      
-        
         <!-- Tabs -->
         <mat-tab-group mat-align-tabs="center" [(selectedIndex)]="activeTab" (selectedIndexChange)="setActiveTab($event)" animationDuration="0ms">
           <!-- Tab de Datos Personales -->
@@ -16,128 +14,100 @@
               </div>
             </ng-template>
             
-            <div class="tab-content">
-              <!-- Mostrar el stepper de dirección o formulario de datos personales -->
-              <div *ngIf="!showAddressStepper">
-                <app-personal-data-form
-                  (formSubmitted)="handleFormSubmitted($event)"
-                  (profileDataLoaded)="handleProfileDataLoaded($event)">
-                </app-personal-data-form>
+            <!-- Solo renderizar el contenido cuando el tab está activo -->
+            <ng-template matTabContent>
+              <div class="tab-content">
+                <!-- Mostrar el stepper de dirección o formulario de datos personales -->
+                <div *ngIf="!showAddressStepper">
+                  <app-personal-data-form
+                    [isActiveTab]="activeTab === 0"
+                    [shouldLoadData]="true"
+                    (formSubmitted)="handleFormSubmitted($event)"
+                    (profileDataLoaded)="handleProfileDataLoaded($event)">
+                  </app-personal-data-form>
+                </div>
                 
-                <!-- Sección de dirección con desplegable -->
-                <div class="address-section">
-                  <div class="address-header" (click)="toggleAddressSection()">
-                    <div class="d-flex justify-content-between align-items-center">
-                      <h3 class="address-title">Dirección</h3>
-                      <mat-icon class="dropdown-icon" [class.rotated]="showAddressContent">keyboard_arrow_down</mat-icon>
-                    </div>
+                <div *ngIf="showAddressStepper">
+                  <div class="address-stepper-header">
+                    <h2>{{ isEditingAddress ? 'Editar dirección' : 'Agregar dirección' }}</h2>
                   </div>
-                  
-                  <!-- Contenido de dirección desplegable -->
-                  <div class="address-content" [class.expanded]="showAddressContent">
-                    <div class="address-actions" *ngIf="showAddressContent">
-                      <!-- Solo mostrar el botón de agregar si NO hay dirección -->
-                      <button *ngIf="!addressData && !isLoadingAddress" 
-                              mat-stroked-button 
-                              color="primary" 
-                              (click)="toggleAddressStepper(false)">
-                        <mat-icon>add</mat-icon> Agregar dirección
-                      </button>
-                    </div>
-                    
-                    <!-- Indicador de carga -->
-                    <div *ngIf="isLoadingAddress" class="loading-container">
-                      <mat-spinner diameter="40"></mat-spinner>
-                    </div>
-                    
-                    <!-- Mostrar la dirección guardada si existe -->
-                    <div *ngIf="addressData && !isLoadingAddress" class="address-card">
-                      <div class="address-info">
-                        <!-- Añadir logs para depuración de los datos -->
-                        <p *ngIf="false">Debug: {{addressData | json}}</p>
-                        
-                        <!-- Usar operador de navegación segura para todas las propiedades -->
-                        <p><strong>{{addressData?.city?.country?.name || 'País no disponible'}}, {{addressData?.city?.name || 'Ciudad no disponible'}}</strong></p>
-                        <p>{{addressData?.streetName || 'Calle no disponible'}} {{addressData?.streetNumber || ''}}</p>
-                        <p *ngIf="addressData?.floor || addressData?.apartment">
-                          Piso: {{addressData?.floor || '-'}}, Depto: {{addressData?.apartment || '-'}}
-                        </p>
-                        <p>CP: {{addressData?.postalCode || 'CP no disponible'}}</p>
-                      </div>
-                      <button mat-icon-button color="primary" (click)="toggleAddressStepper(true)">
-                        <mat-icon>edit</mat-icon>
-                      </button>
-                    </div>
-                    
-                    <!-- Mensaje cuando no hay dirección y no se está agregando una -->
-                    <div *ngIf="!addressData && !showAddressStepper && !isLoadingAddress" class="empty-address-message">
-                      <p>No has agregado ninguna dirección todavía.</p>
-                    </div>
-                  </div>
+                  <app-address-stepper 
+                    (addressSaved)="handleAddressSaved($event)"
+                    (cancelled)="handleCancelAddress()"
+                    [isEditMode]="isEditingAddress"
+                    [existingAddress]="isEditingAddress && addressData ? addressData : undefined"
+                    [userId]="currentUserId">
+                  </app-address-stepper>
                 </div>
               </div>
-              
-              <!-- Stepper de dirección -->
-              <div *ngIf="showAddressStepper">
-                <div class="address-stepper-header">
-                  <button mat-icon-button (click)="handleCancelAddress()">
-                    <mat-icon>arrow_back</mat-icon>
-                  </button>
-                  <h2>{{ isEditingAddress ? 'Editar dirección' : 'Agregar dirección' }}</h2>
-                </div>
-                <app-address-stepper 
-                  (addressSaved)="handleAddressSaved($event)"
-                  (cancelled)="handleCancelAddress()"
-                  [isEditMode]="isEditingAddress"
-                  [existingAddress]="isEditingAddress && addressData ? addressData : undefined"
-                  [userId]="currentUserId">
-                </app-address-stepper>
-              </div>
-            </div>
+            </ng-template>
           </mat-tab>
           
-          <!-- Tab de Empresa/Proveedor -->
+          <!-- Tab de Proveedor/Empresa -->
           <mat-tab>
             <ng-template mat-tab-label>
               <div class="d-flex align-items-center">
                 <mat-icon class="me-2">business</mat-icon>
-                <!-- Mostrar etiqueta diferente según rol -->
-                <span *ngIf="isProviderRole() && showProviderSelection">Tipo de Proveedor</span>
-                <span *ngIf="!isProviderRole() || !showProviderSelection">Empresa</span>
+                <!-- Mostrar etiqueta según rol y estado -->
+                <span *ngIf="isProviderRole() && (!providerType || providerType === 'INDIVIDUAL')">Tipo de Proveedor</span>
+                <span *ngIf="isProviderRole() && providerType === 'COMPANY'">Empresa</span>
+                <span *ngIf="!isProviderRole()">Empresa</span>
               </div>
             </ng-template>
             
-            <div class="tab-content">
-              <!-- Flujo para proveedores - Selección de tipo (Individual/Empresa) -->
-              <div *ngIf="isProviderRole() && showProviderSelection" class="provider-selection-wrapper">
-                <app-provider-type-selection
-                  [userRole]="userData?.role || 'PROVEEDOR'"
-                  (typeSelected)="handleProviderTypeSelection($event)"
-                  (saved)="handleProviderTypeSaved()"
-                  (back)="backToProviderSelection()">
-                </app-provider-type-selection>
-              </div>
-              
-              <!-- Flujo para empresa - Formulario de datos de empresa -->
-              <div *ngIf="!showProviderSelection || !isProviderRole()" class="company-form-wrapper">
-                <!-- Si es proveedor, mostrar botón de volver -->
-                <app-company-form
-                  *ngIf="isProviderRole()"
-                  [userRole]="userData?.role || 'PROVEEDOR'"
-                  [providerType]="providerType ? providerType : undefined"
-                  (formSubmitted)="handleFormSubmitted($event)"
-                  (back)="backToProviderSelection()">
-                </app-company-form>
+            <!-- Solo renderizar el contenido cuando el tab está activo -->
+            <ng-template matTabContent>
+              <div class="tab-content">
+                <!-- Para PROVEEDOR que necesita seleccionar tipo: mostrar selector de tipo -->
+                <div *ngIf="isProviderRole() && (!providerType)" class="provider-selection-wrapper">
+                  <div class="debug-info">
+                    <!-- Solo visible en desarrollo para depuración -->
+                    <p *ngIf="false">
+                      <small>DEBUG: [activeTab: {{activeTab}}, providerType: {{providerType}}, showProviderSelection: {{showProviderSelection}}, isProviderRole: {{isProviderRole()}}]</small>
+                    </p>
+                  </div>
+                  <app-provider-type-selection 
+                    [userRole]="userData?.role || 'PROVEEDOR'" 
+                    [initialType]="providerType" 
+                    (typeSelected)="handleProviderTypeSelection($event)">
+                  </app-provider-type-selection>
+                </div>
                 
-                <!-- Si es cliente, no mostrar botón de volver -->
-                <app-company-form
-                  *ngIf="!isProviderRole()"
-                  [userRole]="userData?.role || 'CLIENTE'"
-                  (formSubmitted)="handleFormSubmitted($event)">
-                </app-company-form>
+                <!-- Mensaje para proveedores de tipo INDIVIDUAL -->
+                <div *ngIf="isProviderRole() && (providerType === 'INDIVIDUAL') && !showProviderSelection" class="provider-type-selected-message">
+                  <div class="selected-provider-card">
+                    <div class="provider-icon">
+                      <mat-icon>person</mat-icon>
+                    </div>
+                    <h3>Perfil Individual Seleccionado</h3>
+                    <p>Has seleccionado el perfil de proveedor individual. No es necesario completar datos de empresa.</p>
+                    <button mat-stroked-button color="primary" (click)="backToProviderSelection()">
+                      <mat-icon>edit</mat-icon>
+                      Cambiar tipo de proveedor
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- Selector de tipo de proveedor (cuando se muestra explícitamente después de haber elegido) -->
+                <div *ngIf="isProviderRole() && providerType && showProviderSelection" class="provider-selection-wrapper">
+                  <app-provider-type-selection 
+                    [userRole]="userData?.role || 'PROVEEDOR'" 
+                    [initialType]="providerType" 
+                    (typeSelected)="handleProviderTypeSelection($event)">
+                  </app-provider-type-selection>
+                </div>
+                
+                <!-- Para CLIENTE o PROVEEDOR tipo COMPANY: mostrar formulario de empresa -->
+                <div *ngIf="(!isProviderRole() || (isProviderRole() && providerType === 'COMPANY' && !showProviderSelection))" class="company-form-wrapper">
+                  <app-company-form 
+                    [userRole]="userData?.role || 'CLIENTE'" 
+                    [providerType]="providerType" 
+                    (formSubmitted)="handleFormSubmitted($event)" 
+                    (back)="backToProviderSelection()">
+                  </app-company-form>
+                </div>
               </div>
-              
-            </div>
+            </ng-template>
           </mat-tab>
         </mat-tab-group>
       </mat-card-content>

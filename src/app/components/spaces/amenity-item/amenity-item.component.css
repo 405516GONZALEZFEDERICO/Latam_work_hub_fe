@@ -1,0 +1,26 @@
+.amenity-item {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.w-100 {
+  width: 100%;
+}
+
+.gap-3 {
+  gap: 1rem;
+}
+
+.flex-grow-1 {
+  flex-grow: 1;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+} 

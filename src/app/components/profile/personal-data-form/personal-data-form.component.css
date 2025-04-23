@@ -478,3 +478,205 @@ app-address-stepper {
     align-items: center;
   }
 }
+
+/* Estilos para la sección de dirección */
+.address-section {
+  margin-top: 24px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.address-header {
+  padding: 16px;
+  background-color: #f8f9fa;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.address-header:hover {
+  background-color: #f1f3f5;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+}
+
+.dropdown-icon {
+  transition: transform 0.3s ease;
+}
+
+.dropdown-icon.rotated {
+  transform: rotate(180deg);
+}
+
+.address-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.address-content.expanded {
+  max-height: 500px;
+  padding: 16px;
+}
+
+.address-card {
+  padding: 16px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.address-info p {
+  margin: 0;
+}
+
+.address-info p.mb-1 {
+  margin-bottom: 8px;
+}
+
+.no-address-message {
+  text-align: center;
+  padding: 24px;
+  color: #666;
+}
+
+.no-address-message p {
+  margin-bottom: 16px;
+}
+
+/* Utilidades */
+.d-flex {
+  display: flex !important;
+}
+
+.align-items-center {
+  align-items: center !important;
+}
+
+.justify-content-between {
+  justify-content: space-between !important;
+}
+
+.mb-0 {
+  margin-bottom: 0 !important;
+}
+
+.mb-1 {
+  margin-bottom: 0.25rem !important;
+}
+
+/* Ajustes para Material Design */
+.mat-mdc-icon-button {
+  --mdc-icon-button-state-layer-size: 40px;
+}
+
+/* Animación suave para el contenido */
+.address-section .address-content {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Estilos para mat-hint y mat-error */
+:host ::ng-deep .mat-mdc-form-field-hint {
+  font-size: 11px !important;
+  line-height: 1.2 !important;
+  margin-top: 2px !important;
+}
+
+:host ::ng-deep .smaller-hint {
+  font-size: 10px !important;
+  line-height: 1.1 !important;
+  opacity: 0.7;
+}
+
+:host ::ng-deep .mat-mdc-form-field-error {
+  font-size: 11px !important;
+  line-height: 1.2 !important;
+  margin-top: 2px !important;
+  margin-bottom: 0 !important;
+}
+
+/* Aumentar la altura del contenedor para acomodar los mensajes */
+:host ::ng-deep .mat-mdc-form-field {
+  margin-bottom: 6px !important;
+}
+
+/* Ajustar espaciado del contenedor de errores */
+:host ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+  padding: 0 !important;
+  margin-top: 0 !important;
+  height: auto !important;
+}
+
+/* Ajustar espacio entre campos */
+.form-flex-row {
+  margin-bottom: 8px;
+}
+
+/* Estilos específicos para el campo de documento */
+:host ::ng-deep .document-field .mat-mdc-form-field-subscript-wrapper {
+  min-height: 26px !important;
+}
+
+:host ::ng-deep .error-text {
+  font-size: 10px !important;
+  line-height: 1.1 !important;
+  white-space: normal !important;
+  display: inline-block !important;
+}
+
+/* Añadir espacio vertical adicional entre campos */
+:host ::ng-deep .form-flex-row {
+  margin-bottom: 16px;
+}
+
+/* Estilos para los mensajes de error debajo de los inputs */
+.error-message {
+  color: #f44336;
+  font-size: 12px;
+  margin-top: -4px;
+  margin-bottom: 6px;
+  padding-left: 4px;
+}
+
+.error-message small {
+  font-size: 11px;
+}
+
+/* Reducir el margen inferior de los campos para compensar el nuevo espacio de los mensajes de error */
+:host ::ng-deep .mat-mdc-form-field {
+  margin-bottom: 0 !important;
+}
+
+/* Eliminar los errores del componente de Material */
+:host ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+  display: none !important;
+}
+
+/* Mantener solo el hint */
+:host ::ng-deep .mat-mdc-form-field-hint-wrapper {
+  display: block !important;
+  position: absolute;
+  bottom: -16px;
+}
+
+/* Ajustar espacio adicional entre elementos del formulario */
+.form-flex-row {
+  margin-bottom: 24px;
+}
+
+.form-flex-col {
+  position: relative;
+}
+
+/* Ajustes específicos para los campos de fecha y documento */
+.document-field {
+  margin-bottom: 16px !important;
+}

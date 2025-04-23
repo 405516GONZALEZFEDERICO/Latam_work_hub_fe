@@ -1,0 +1,104 @@
+<div class="space-details-container" *ngIf="space">
+  <mat-card class="space-details-card">
+    <mat-card-header>
+      <mat-card-title>{{ space.name }}</mat-card-title>
+      <mat-card-subtitle>{{ space.type }}</mat-card-subtitle>
+    </mat-card-header>
+    
+    <!-- Pestañas: Detalles y Fotos -->
+    <mat-tab-group [selectedIndex]="activeTab" (selectedIndexChange)="changeTab($event)" animationDuration="300ms">
+      <!-- Pestaña de Detalles -->
+      <mat-tab label="Detalles">
+        <div class="tab-content">
+          <div class="details-content">
+            <h3>Información del Espacio</h3>
+            <div class="detail-row">
+              <span class="detail-label">Descripción:</span>
+              <span class="detail-value">{{ space.description }}</span>
+            </div>
+            
+            <div class="detail-row">
+              <span class="detail-label">Capacidad:</span>
+              <span class="detail-value">{{ space.capacity }} personas</span>
+            </div>
+            
+            <div class="detail-row" *ngIf="space.area">
+              <span class="detail-label">Área:</span>
+              <span class="detail-value">{{ space.area }} m²</span>
+            </div>
+            
+            <h3>Precios</h3>
+            <div class="price-grid">
+              <div class="price-item" *ngIf="space.priceHour !== undefined">
+                <div class="price-label">Por Hora</div>
+                <div class="price-value">{{ formatPrice(space.priceHour) }}</div>
+              </div>
+              
+              <div class="price-item" *ngIf="space.priceDay !== undefined">
+                <div class="price-label">Por Día</div>
+                <div class="price-value">{{ formatPrice(space.priceDay) }}</div>
+              </div>
+              
+              <div class="price-item" *ngIf="space.priceMonth !== undefined">
+                <div class="price-label">Por Mes</div>
+                <div class="price-value">{{ formatPrice(space.priceMonth) }}</div>
+              </div>
+            </div>
+            
+            <h3 *ngIf="space.amenities && space.amenities.length > 0">Comodidades</h3>
+            <div class="amenities-list" *ngIf="space.amenities && space.amenities.length > 0">
+              <div class="amenity-item" *ngFor="let amenity of space.amenities">
+                <span class="amenity-name">{{ amenity.name }}</span>
+                <span class="amenity-price" *ngIf="amenity.price">+{{ formatPrice(+amenity.price) }}</span>
+              </div>
+            </div>
+            
+            <h3 *ngIf="space.address">Ubicación</h3>
+            <div class="address-info" *ngIf="space.address">
+              <div class="address-line">
+                {{ space.address.streetName }} {{ space.address.streetNumber }}
+                <span *ngIf="space.address.floor">, Piso {{ space.address.floor }}</span>
+                <span *ngIf="space.address.apartment">, Apto {{ space.address.apartment }}</span>
+              </div>
+              <div class="address-line">
+                {{ space.address.cityName }}, {{ space.address.countryName }}
+              </div>
+              <div class="address-line">
+                CP: {{ space.address.postalCode }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+      
+      <!-- Pestaña de Fotos -->
+      <mat-tab label="Fotos">
+        <div class="tab-content">
+          <div class="photos-grid">
+            <!-- Imagen principal -->
+            <div class="main-photo">
+              <img [src]="getMainImageUrl()" alt="Imagen principal del espacio">
+            </div>
+            
+            <!-- Galería de imágenes adicionales (si existen) -->
+            <div class="additional-photos" *ngIf="space.additionalImages && space.additionalImages.length > 0">
+              <div class="photo-thumbnail" *ngFor="let img of space.additionalImages">
+                <img [src]="img" alt="Imagen adicional del espacio">
+              </div>
+            </div>
+            
+            <!-- Mensaje si no hay imágenes adicionales -->
+            <div class="no-additional-photos" *ngIf="!space.additionalImages || space.additionalImages.length === 0">
+              <p>No hay imágenes adicionales disponibles</p>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card>
+</div>
+
+<!-- Mensaje si no hay espacio seleccionado -->
+<div class="no-space-message" *ngIf="!space">
+  <p>No hay información disponible sobre este espacio.</p>
+</div>

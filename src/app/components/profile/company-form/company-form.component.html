@@ -16,6 +16,14 @@
     <p>Cargando datos de la empresa...</p>
   </div>
 
+  <!-- Mensaje para proveedores individuales -->
+  <div *ngIf="userRole === 'PROVEEDOR' && providerType === 'INDIVIDUAL'" class="info-container">
+    <div class="info-message">
+      <mat-icon class="info-icon">info</mat-icon>
+      <p>Como proveedor individual, no necesitas completar información de empresa. Puedes cambiar tu tipo de proveedor en cualquier momento.</p>
+    </div>
+  </div>
+
   <form *ngIf="!isLoadingCompanyData" [formGroup]="companyForm" (ngSubmit)="onSubmit()" class="form-fields">
     <!-- Fila 1: Nombre comercial y Razón social -->
     <div class="form-flex-row">
@@ -26,6 +34,7 @@
             matInput 
             formControlName="name" 
             placeholder="Nombre comercial">
+          <mat-error *ngIf="formControls['name'].hasError('required')">El nombre comercial es requerido</mat-error>
         </mat-form-field>
       </div>
       
@@ -36,6 +45,7 @@
             matInput 
             formControlName="legalName" 
             placeholder="Razón social">
+          <mat-error *ngIf="formControls['legalName'].hasError('required')">La razón social es requerida</mat-error>
         </mat-form-field>
       </div>
     </div>
@@ -49,6 +59,7 @@
             matInput 
             formControlName="taxId" 
             placeholder="RFC / RUT / NIT">
+          <mat-error *ngIf="formControls['taxId'].hasError('required')">La identificación fiscal es requerida</mat-error>
         </mat-form-field>
       </div>
       
@@ -112,6 +123,7 @@
               </mat-option>
             </ng-container>
           </mat-select>
+          <mat-error *ngIf="formControls['country'].hasError('required')">El país es requerido</mat-error>
         </mat-form-field>
       </div>
     </div>
@@ -145,4 +157,4 @@
       </div>
     </div>
   </form>
-</div> 
+</div>

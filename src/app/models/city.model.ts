@@ -1,6 +1,5 @@
 import { Country } from './country.model';
 
-// Corresponde al enum DivisionType en el backend
 export type DivisionType = 'PROVINCE' | 'STATE' | 'DEPARTMENT' | 'REGION';
 
 export interface City {

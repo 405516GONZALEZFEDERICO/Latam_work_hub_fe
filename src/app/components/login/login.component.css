@@ -87,19 +87,19 @@ h1 {
 /* Estilos para recordar contraseña */
 .recordar-contrasena {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   margin-bottom: 24px;
 }
 
-.recordar-contrasena .forgot-password a {
+.forgot-password a {
   color: var(--color-primary);
-  font-size: 14px;
+  font-size: var(--font-size-sm);
   text-decoration: none;
   cursor: pointer;
 }
 
-.recordar-contrasena .forgot-password a:hover {
+.forgot-password a:hover {
   text-decoration: underline;
 }
 

@@ -99,9 +99,12 @@ export class RoleSelectionComponent implements OnInit {
           
           // Asegurarse de que el usuario tiene el rol correcto en localStorage
           const updatedUser = this.authService.getCurrentUserSync();
-          if (updatedUser && updatedUser.role !== this.selectedRole) {
-            console.log('Actualizando rol manualmente en localStorage');
-            updatedUser.role = this.selectedRole as UserRole;
+          if (updatedUser) {
+            console.log('Actualizando rol en localStorage');
+            if (updatedUser.role !== this.selectedRole) {
+              updatedUser.role = this.selectedRole as UserRole;
+            }
+            // Asegurar que siempre se guarde en localStorage
             localStorage.setItem('currentUserData', JSON.stringify(updatedUser));
             localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
           }

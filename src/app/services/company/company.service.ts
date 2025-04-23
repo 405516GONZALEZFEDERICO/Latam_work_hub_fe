@@ -1,62 +1,83 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, retry, throwError } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable, catchError, of, map, throwError } from 'rxjs';
 import { environment } from '../../../environment/environment';
 import { CompanyInfoDto } from '../../models/company-info.dto';
-import { ErrorHandlerService } from '../error/error-handler.service';
+import { AuthService } from '../auth-service/auth.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CompanyService {
-  private apiUrl = environment.apiUrl;
+  private apiUrl = `${environment.apiUrl}/company`;
 
-  constructor(
-    private http: HttpClient,
-    private errorHandler: ErrorHandlerService
-  ) {
-    console.log('API URL configurada en CompanyService:', this.apiUrl);
-  }
+  constructor(private http: HttpClient, private authService: AuthService) {}
 
-  /**
-   * Crea o actualiza la información de la compañía
-   * @param userId ID del usuario
-   * @param companyInfo Información de la compañía
-   * @returns Observable con la respuesta
-   */
-  createOrUpdateCompanyInfo(userId: string, companyInfo: CompanyInfoDto): Observable<any> {
-    const url = `${this.apiUrl}/company/select-provider-type?uid=${userId}`;
-    console.log(`Enviando datos de compañía al endpoint: ${url}`, companyInfo);
+  getCompanyInfo(uid: string): Observable<CompanyInfoDto | null> {
+    const params = new HttpParams().set('uid', uid);
     
-    return this.http.post<any>(url, companyInfo)
+    console.log(`CompanyService: Solicitando información de compañía para UID ${uid}`);
+    
+    return this.http.get<CompanyInfoDto>(`${this.apiUrl}/get-info-company`, { params })
       .pipe(
-        // Intentar hasta 3 veces en caso de errores de concurrencia
-        retry({
-          count: 3,
-          delay: (error, retryCount) => this.errorHandler.handleOptimisticLockingRetry(error, retryCount)
+        catchError((error) => {
+          console.error('Error al obtener información de la compañía:', error);
+          return of(null);
         }),
-        catchError(error => {
-          console.error('Error en createOrUpdateCompanyInfo:', error);
-          return throwError(() => error);
+        // Verificar si la respuesta parece vacía (todos los campos de texto están vacíos)
+        map((response) => {
+          console.log('CompanyService: Respuesta del backend:', response);
+          
+          // Si no hay respuesta, retornar null
+          if (!response) {
+            console.log('CompanyService: No se recibió respuesta del backend');
+            return null;
+          }
+          
+          // Verificar si es un objeto vacío (todos los campos de texto están vacíos)
+          const isEmpty = !response.name && !response.legalName && !response.taxId 
+                        && !response.phone && !response.contactPerson;
+          
+          // Si el objeto está vacío pero tiene providerType, preservar solo eso
+          if (isEmpty && response.providerType) {
+            console.log('CompanyService: Objeto vacío con providerType:', response.providerType);
+            return { 
+              name: '',
+              legalName: '',
+              taxId: '',
+              phone: '',
+              email: response.email || '',
+              website: '',
+              contactPerson: '',
+              country: response.country || 0,
+              providerType: response.providerType
+            } as CompanyInfoDto;
+          } 
+          // Si está completamente vacío, tratarlo como si no existiera
+          else if (isEmpty) {
+            console.log('CompanyService: Objeto completamente vacío');
+            return null;
+          }
+          
+          console.log('CompanyService: Datos válidos de compañía recibidos');
+          return response;
         })
       );
   }
 
-  /**
-   * Obtiene la información de la compañía
-   * @param userId ID del usuario
-   * @returns Observable con la información
-   */
-  getCompanyInfo(userId: string): Observable<any> {
-    const url = `${this.apiUrl}/company/get-info-company?uid=${userId}`;
-    console.log(`Obteniendo datos de compañía del endpoint: ${url}`);
-    
-    return this.http.get<any>(url)
-      .pipe(
-        catchError(error => {
-          console.error('Error en getCompanyInfo:', error);
-          return throwError(() => error);
-        })
-      );
+  createOrUpdateCompanyInfo(userId: string, companyData: CompanyInfoDto): Observable<any> {
+    console.log('Enviando datos de empresa para', userId, companyData);
+    return this.http.post<any>(
+      `${this.apiUrl}/select-provider-type`,
+      companyData,
+      {
+        params: { uid: userId }
+      }
+    ).pipe(
+      catchError(error => {
+        console.error('Error en createOrUpdateCompanyInfo:', error);
+        return throwError(() => error);
+      })
+    );
   }
-} 
+}

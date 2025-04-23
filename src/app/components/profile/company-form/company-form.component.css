@@ -223,4 +223,30 @@
   .form-actions .btn-primary {
     width: 100%;
   }
+}
+
+.info-container {
+  margin: 20px 0;
+}
+
+.info-message {
+  background-color: #e3f2fd;
+  border: 1px solid #bbdefb;
+  border-radius: 4px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.info-icon {
+  font-size: 24px;
+  color: #1976d2;
+  margin-right: 16px;
+}
+
+.info-message p {
+  margin: 0;
+  color: #0d47a1;
+  font-size: 14px;
+  line-height: 1.5;
 } 

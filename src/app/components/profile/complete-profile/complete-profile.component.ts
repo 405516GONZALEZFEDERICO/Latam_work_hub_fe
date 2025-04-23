@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -17,10 +17,10 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Address } from '../../../models/address.model';
 import { AuthService } from '../../../services/auth-service/auth.service';
-import { catchError, EMPTY, finalize, Subject, takeUntil } from 'rxjs';
+import { catchError, EMPTY, finalize, Subject, takeUntil, take } from 'rxjs';
 import { AddressService } from '../../../services/address/address.service';
 import { ProfileTab } from '../../../models/profile-tab.enum';
-import { ProviderTypeService, ProviderType } from '../../../services/provider/provider-type.service';
+import { ProviderTypeService, ProviderType } from '../../../services/provider.service/provider-type.service';
 
 @Component({
   selector: 'app-complete-profile',
@@ -47,7 +47,7 @@ export class CompleteProfileComponent implements OnInit, OnDestroy {
   @ViewChild(PersonalDataFormComponent) personalDataForm!: PersonalDataFormComponent;
   @ViewChild(CompanyFormComponent) companyForm!: CompanyFormComponent;
   @ViewChild(ProviderTypeSelectionComponent) providerTypeSelection!: ProviderTypeSelectionComponent;
-  
+
   activeTab = ProfileTab.PERSONAL;
   showAddressStepper: boolean = false;
   showAddressContent: boolean = false;
@@ -60,10 +60,14 @@ export class CompleteProfileComponent implements OnInit, OnDestroy {
   isEditingAddress: boolean = false;
   isLoadingAddress: boolean = false;
   addressDataLoaded: boolean = false;
-  
+  private personalDataLoaded = false;
+  private companyDataLoaded = false;
+  private profileDataLoaded = false;
+  private isLoadingProviderType = false;
+
   // Para manejar la limpieza de suscripciones
   private destroy$ = new Subject<void>();
-  
+
   constructor(
     private profileService: ProfileService,
     public authService: AuthService,
@@ -71,201 +75,220 @@ export class CompleteProfileComponent implements OnInit, OnDestroy {
     private router: Router,
     private route: ActivatedRoute,
     private snackBar: MatSnackBar,
-    private providerTypeService: ProviderTypeService
+    private providerTypeService: ProviderTypeService,
+    private cdr: ChangeDetectorRef
   ) {
     console.log('CompleteProfileComponent constructor - Initializing component');
   }
-  
   ngOnInit(): void {
-    console.log('CompleteProfileComponent ngOnInit - Starting initialization');
+    console.log('CompleteProfileComponent ngOnInit - Iniciando inicialización');
     
     // Inicializar el estado de la sección de dirección (por defecto cerrada)
     this.showAddressContent = false;
+
+    // Analizar la ruta actual para determinar qué tab debería estar activa
+    const currentPath = this.router.url;
+    console.log('Ruta actual:', currentPath);
     
-    // Suscribirse al cambio de tipo de proveedor desde el servicio
+    if (currentPath.includes('/provider-type')) {
+      this.activeTab = ProfileTab.PROVIDER_OR_COMPANY;
+      this.showProviderSelection = true;
+    } else if (currentPath.includes('/company')) {
+      this.activeTab = ProfileTab.PROVIDER_OR_COMPANY;
+      this.showProviderSelection = false;
+    } else {
+      this.activeTab = ProfileTab.PERSONAL;
+    }
+
+    // Forzar la carga del tipo de proveedor desde el servicio
+    this.loadProviderType();
+    
+    // Suscribirse al cambio del tipo de proveedor
     this.providerTypeService.getProviderType()
       .pipe(takeUntil(this.destroy$))
       .subscribe(type => {
-        if (type !== this.providerType) {
-          console.log('Actualizando tipo de proveedor desde servicio:', type);
+        console.log('Provider type changed in service:', type);
+        if (!this.isLoadingProviderType && type !== this.providerType) {
           this.providerType = type;
-          
-          // Si tenemos un tipo de proveedor, ocultar la selección
-          if (this.providerType && this.isProviderRole()) {
-            this.showProviderSelection = false;
-          }
+          this.handleProviderTypeChange();
         }
       });
-    
-    // Verificar si hay un tipo de proveedor en los parámetros de la URL
-    this.route.queryParams
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(params => {
-        if (params['providerType']) {
-          console.log('Recuperando tipo de proveedor de la URL:', params['providerType']);
-          this.providerType = params['providerType'] as ProviderType;
-          
-          // Actualizar el servicio con el tipo de proveedor de la URL
-          this.providerTypeService.setProviderType(this.providerType);
-          
-          // Si tenemos un tipo de proveedor, mostrar el formulario de empresa
-          if (this.providerType && this.isProviderRole()) {
-            this.showProviderSelection = false;
-            console.log('Mostrando formulario de empresa basado en el tipo de proveedor de la URL');
-          }
-        } else {
-          // Si no hay tipo en la URL, intentar cargar desde el servicio
-          const currentType = this.providerTypeService.getCurrentProviderType();
-          if (currentType) {
-            this.providerType = currentType;
-            if (this.isProviderRole()) {
-              this.showProviderSelection = false;
-            }
-          }
-        }
-      });
-    
+
     // Suscribirse al observable de usuario actual para manejar cambios de autenticación
     this.authService.currentUser$
-      .pipe(takeUntil(this.destroy$))
+      .pipe(
+        takeUntil(this.destroy$),
+        take(1)
+      )
       .subscribe(user => {
         if (user) {
           console.log('Usuario autenticado:', user);
+          this.currentUserId = user.uid;
           this.userData = {
-            email: user.email,
-            displayName: user.displayName || user.email.split('@')[0],
-            photoUrl: user.photoURL || '',
             role: user.role,
-            profileCompletion: 10 // Indicar que es un perfil básico
+            email: user.email
           };
           
-          // Guardar el ID del usuario
-          this.currentUserId = user.uid;
-          
-          // Cargar datos de dirección solo si no se han cargado previamente
-          if (!this.addressDataLoaded) {
-            console.log('Cargando datos de dirección por primera vez');
-            this.loadAddressData(this.currentUserId);
-            this.addressDataLoaded = true;
-          }
-
-          console.log('Rol del usuario en profile:', user.role);
-          
-          // Configuración inicial según el rol del usuario
-          if (user.role === 'CLIENTE') {
-            this.showProviderSelection = false;
-            console.log('Usuario es CLIENTE, showProviderSelection = false');
-          } else if (user.role === 'PROVEEDOR') {
-            // Por defecto los proveedores deben seleccionar tipo (a menos que ya tengamos uno)
-            if (!this.providerType) {
-              this.showProviderSelection = true;
-              console.log('Usuario es PROVEEDOR sin tipo, showProviderSelection = true');
-            }
-            
-            // Verificar si el proveedor ya había seleccionado un tipo anteriormente
-            if (this.userData.providerType && !this.providerType) {
-              this.providerType = this.userData.providerType === 'INDIVIDUAL' ? 'individual' : 'company';
-              // Actualizar el servicio con el tipo de proveedor detectado
-              this.providerTypeService.setProviderType(this.providerType);
-              console.log('El proveedor ya tiene un tipo seleccionado:', this.providerType);
-            }
-          }
-
-          // Asegurar que el servicio esté actualizado con el tipo de proveedor actual
-          if (this.providerType) {
-            this.providerTypeService.setProviderType(this.providerType);
-          }
+          // Solo cargar datos necesarios para el tab activo inicialmente
+          this.loadDataForActiveTab();
         } else {
-          // Fallback a valores por defecto si no hay usuario
-          console.log('No hay usuario autenticado');
-          this.userData = {
-            displayName: 'Usuario',
-            email: 'usuario@example.com',
-            role: 'CLIENTE' as UserRole,
-            profileCompletion: 0
-          } as ProfileData;
-          
-          // Para el usuario por defecto, también establecemos showProviderSelection = false
-          this.showProviderSelection = false;
-          console.log('No hay usuario autenticado en profile, redirigiendo al login');
+          console.log('No hay usuario autenticado en perfil, redirigiendo al login');
           this.router.navigate(['/login']);
         }
       });
 
-    // Determinar la pestaña activa basada en los datos de la ruta
-    this.route.data
+    // Handle URL parameters last
+    this.route.queryParams
       .pipe(takeUntil(this.destroy$))
-      .subscribe(data => {
-        console.log('Route data:', data);
-        if (data['activeTab']) {
-          switch (data['activeTab']) {
-            case 'personal':
-              this.activeTab = ProfileTab.PERSONAL;
-              console.log('Activando pestaña personal');
-              break;
-            case 'company':
-              this.activeTab = ProfileTab.PROVIDER_OR_COMPANY;
-              // Solo ocultar la selección de tipo si no somos proveedor o ya tenemos un tipo
-              if (!this.isProviderRole() || this.providerType) {
-                this.showProviderSelection = false;
-                console.log('Activando pestaña company, showProviderSelection = false');
-              }
-              break;
-            case 'provider-type':
-              this.activeTab = ProfileTab.PROVIDER_OR_COMPANY;
-              // Si es proveedor, mostrar selección de tipo
-              if (this.isProviderRole()) {
-                this.showProviderSelection = true;
-                console.log('Usuario es PROVEEDOR, activando pestaña provider-type, showProviderSelection = true');
-              } else {
-                // Si no es proveedor, mostrar form de empresa
-                this.showProviderSelection = false;
-                console.log('Usuario NO es PROVEEDOR, mostrando formulario de empresa, showProviderSelection = false');
-              }
-              break;
-            default:
-              this.activeTab = ProfileTab.PERSONAL;
-              console.log('Activando pestaña personal (default)');
-          }
+      .subscribe(params => {
+        if (params['providerType']) {
+          this.isLoadingProviderType = true;
+          this.providerType = params['providerType'] as ProviderType;
+          this.providerTypeService.setProviderType(this.providerType);
+          this.isLoadingProviderType = false;
         }
       });
-
-    // Logging para debugging
-    console.log('userData en init:', this.userData);
-    console.log('isProviderRole:', this.isProviderRole());
-    console.log('showProviderSelection:', this.showProviderSelection);
-    console.log('providerType:', this.providerType);
   }
-
   ngOnDestroy(): void {
     // Limpiar todas las suscripciones al destruir el componente
     this.destroy$.next();
     this.destroy$.complete();
   }
 
-  setActiveTab(index: number): void {
-    console.log('setActiveTab called with index:', index, 'user role:', this.userData?.role);
+  private getTabIndexFromRoute(tab: string): number {
+    switch (tab) {
+      case 'personal':
+        return ProfileTab.PERSONAL;
+      case 'company':
+      case 'provider-type':
+        return ProfileTab.PROVIDER_OR_COMPANY;
+      default:
+        return ProfileTab.PERSONAL;
+    }
+  }
+  setActiveTab(index: ProfileTab): void {
+    console.log('Cambiando a pestaña:', index, 'Estado actual:', {
+      activeTab: this.activeTab,
+      providerType: this.providerType,
+      showProviderSelection: this.showProviderSelection,
+      isProviderRole: this.isProviderRole()
+    });
+    
+    // Primero, actualizar la pestaña activa
     this.activeTab = index;
     
-    // Actualizar la URL según la pestaña seleccionada
+    // Cargar datos necesarios para el nuevo tab activo
+    this.loadDataForActiveTab();
+    
+    // Verificar si el usuario es proveedor y estamos en la pestaña de empresa/proveedor
+    if (this.isProviderRole() && index === ProfileTab.PROVIDER_OR_COMPANY) {
+      // Forzar carga del tipo de proveedor desde el servicio para asegurarnos de tener la última versión
+      this.providerType = this.providerTypeService.getCurrentProviderType();
+      console.log('Tipo de proveedor actualizado:', this.providerType);
+      
+      // Si no hay tipo seleccionado, siempre mostrar el selector
+      if (!this.providerType) {
+        console.log('No hay tipo de proveedor seleccionado, mostrando selector');
+        this.showProviderSelection = true;
+        if (!this.router.url.includes('/provider-type')) {
+          this.router.navigate(['/home/profile/provider-type'], { replaceUrl: true });
+        }
+        return;
+      } 
+      
+      // Si es tipo empresa, mostrar el formulario de empresa
+      if (this.providerType === 'COMPANY') {
+        console.log('Proveedor tipo COMPANY, mostrando formulario de empresa');
+        this.showProviderSelection = false;
+        if (!this.router.url.includes('/company')) {
+          this.router.navigate(['/home/profile/company'], { replaceUrl: true });
+        }
+        return;
+      } 
+      
+      // Si es tipo individual, mostrar el mensaje de confirmación
+      if (this.providerType === 'INDIVIDUAL') {
+        console.log('Proveedor tipo INDIVIDUAL, mostrando mensaje de confirmación');
+        this.showProviderSelection = false;
+        if (!this.router.url.includes('/provider-type')) {
+          this.router.navigate(['/home/profile/provider-type'], { replaceUrl: true });
+        }
+        return;
+      }
+    }
+    
+    // Para usuarios no proveedores o pestaña personal
     if (index === ProfileTab.PERSONAL) {
-      this.router.navigate(['/home/profile/personal']);
-    } else if (index === ProfileTab.PROVIDER_OR_COMPANY) {
-      // Lógica específica según el rol del usuario
+      console.log('Navegando a pestaña personal');
+      if (!this.router.url.includes('/personal')) {
+        this.router.navigate(['/home/profile/personal'], { replaceUrl: true });
+      }
+    } else if (index === ProfileTab.PROVIDER_OR_COMPANY && !this.isProviderRole()) {
+      console.log('Usuario no proveedor en pestaña empresa, mostrando formulario de empresa');
+      if (!this.router.url.includes('/company')) {
+        this.router.navigate(['/home/profile/company'], { replaceUrl: true });
+      }
+    }
+  }
+  private loadDataForActiveTab(): void {
+    console.log('Cargando datos solo para el tab activo:', this.activeTab);
+    
+    if (this.activeTab === ProfileTab.PERSONAL) {
+      // Tab Personal - Cargar datos personales si no se han cargado
+      if (!this.personalDataLoaded) {
+        this.loadProfileData();
+      }
+    } else if (this.activeTab === ProfileTab.PROVIDER_OR_COMPANY) {
+      // Tab Empresa/Proveedor
       if (this.isProviderRole()) {
-        if (this.showProviderSelection) {
-          this.router.navigate(['/home/profile/provider-type']);
-        } else {
-          this.router.navigate(['/home/profile/company']);
+        // Si es proveedor, verificar tipo para decidir qué cargar
+        if (this.providerType === 'COMPANY' && !this.companyDataLoaded) {
+          // Para proveedores tipo empresa, cargar datos de empresa
+          this.companyDataLoaded = true;
+          // No cargamos los datos aquí - los cargará el componente CompanyForm cuando sea necesario
         }
       } else {
-        // Para CLIENTE, siempre mostrar directamente el formulario de empresa
-        this.showProviderSelection = false;
-        this.router.navigate(['/home/profile/company']);
+        // Si es cliente, cargar datos de empresa
+        if (!this.companyDataLoaded) {
+          this.companyDataLoaded = true;
+          // No cargamos los datos aquí - los cargará el componente CompanyForm cuando sea necesario
+        }
       }
-      
-      console.log('Después de setActiveTab - showProviderSelection:', this.showProviderSelection);
     }
+  }
+
+  private loadProfileData(): void {
+    console.log('Cargando datos del perfil...');
+    if (this.personalDataLoaded) {
+      console.log('Datos personales ya cargados, saltando carga');
+      return;
+    }
+    
+    this.profileService.getProfileData()
+      .pipe(
+        takeUntil(this.destroy$),
+        take(1),
+        catchError(error => {
+          if (error.status !== 404) {
+            console.error('Error al cargar datos del perfil:', error);
+            this.snackBar.open('Error al cargar los datos del perfil', 'Cerrar', {
+              duration: 3000
+            });
+          } else {
+            console.log('No se encontraron datos de perfil - Iniciando perfil nuevo');
+          }
+          return EMPTY;
+        }),
+        finalize(() => {
+          this.personalDataLoaded = true;
+          this.profileDataLoaded = true;
+        })
+      )
+      .subscribe({
+        next: (profileData) => {
+          this.handleProfileDataLoaded(profileData);
+        }
+      });
   }
 
   toggleAddressStepper(isEditing: boolean = false): void {
@@ -279,7 +302,7 @@ export class CompleteProfileComponent implements OnInit, OnDestroy {
     this.snackBar.open('Información guardada correctamente', 'Cerrar', {
       duration: 3000
     });
-    
+
     // Si el usuario es CLIENTE, simplemente cambiar la pestaña y navegar
     if (this.userData?.role === 'CLIENTE') {
       this.activeTab = ProfileTab.PROVIDER_OR_COMPANY;
@@ -292,12 +315,12 @@ export class CompleteProfileComponent implements OnInit, OnDestroy {
     this.addressData = address;
     this.showAddressStepper = false;
     this.isEditingAddress = false;
-    
+
     // Actualizar el perfil del usuario con la nueva dirección
     if (this.userData) {
       this.userData.address = address;
     }
-    
+
     this.snackBar.open(this.isEditingAddress ? 'Dirección actualizada correctamente' : 'Dirección guardada correctamente', 'Cerrar', {
       duration: 3000
     });
@@ -306,73 +329,78 @@ export class CompleteProfileComponent implements OnInit, OnDestroy {
   isProviderRole(): boolean {
     return this.userData?.role === 'PROVEEDOR';
   }
-
   handleProviderTypeSelection(type: ProviderType): void {
+    console.log('Tipo de proveedor seleccionado:', type, 'Tipo actual:', this.providerType);
+    if (type === this.providerType && type !== null) {
+      console.log('El tipo seleccionado es igual al actual, procediendo igualmente para garantizar consistencia');
+    }
+    
     this.providerType = type;
-    // Actualizar el servicio
-    this.providerTypeService.setProviderType(type);
-    console.log('Tipo de proveedor seleccionado:', type);
+    this.providerTypeService.setProviderType(type, true); // Forzar la actualización
+    console.log('Tipo de proveedor actualizado y guardado en servicio:', type);
+    
+    // Solo cambiamos la visibilidad del selector sin hacer cargas adicionales
+    if (type === 'COMPANY') {
+      console.log('Mostrando formulario de empresa para proveedor tipo COMPANY');
+      this.showProviderSelection = false;
+      
+      // Marcar como no cargado para que se cargue cuando sea necesario
+      this.companyDataLoaded = false;
+      
+      // Navegar a la vista de empresa
+      if (!this.router.url.includes('/company')) {
+        this.router.navigate(['/home/profile/company'], { replaceUrl: true });
+      }
+    } else {
+      console.log('Mostrando confirmación para proveedor tipo INDIVIDUAL');
+      this.showProviderSelection = false;
+      
+      // Navegar a la vista de proveedor individual
+      if (!this.router.url.includes('/provider-type')) {
+        this.router.navigate(['/home/profile/provider-type'], { replaceUrl: true });
+      }
+    }
+    
+    // Forzar actualización de la interfaz
+    this.cdr.detectChanges();
+    
+    // Programar una segunda actualización para capturar cambios asíncronos
+    setTimeout(() => {
+      this.cdr.detectChanges();
+      console.log('Segunda actualización de interfaz después de cambio de tipo');
+    }, 300);
   }
-
   handleProviderTypeSaved(): void {
-    console.log('handleProviderTypeSaved llamado');
-    
-    if (!this.providerType) {
-      this.snackBar.open('Por favor selecciona un tipo de proveedor', 'Cerrar', {
-        duration: 3000
-      });
-      return;
-    }
-    
-    // Asegurar que el tipo esté guardado en el servicio
-    this.providerTypeService.setProviderType(this.providerType);
-    
-    console.log('Tipo de proveedor antes de la navegación:', this.providerType);
-    
-    // Al guardar el tipo de proveedor, cambiamos a la vista de empresa
-    this.showProviderSelection = false;
-    
-    // Guardar el tipo de proveedor en el perfil localmente, pero NO enviar al backend todavía
-    if (this.userData) {
-      this.userData.providerType = this.providerType === 'individual' ? 'INDIVIDUAL' : 'COMPANY';
-      console.log('Tipo de proveedor seleccionado (guardado localmente):', this.userData.providerType);
-    }
-    
-    // Forzar una recarga completa para asegurar que se recuperen los datos actualizados
-    // Esto es útil cuando cambiamos entre tipos de proveedor
-    if (this.companyForm) {
-      setTimeout(() => {
-        if (this.currentUserId && this.companyForm) {
-          console.log('Forzando recarga de datos de la compañía después de cambiar tipo de proveedor');
-          this.companyForm.loadCompanyData(this.currentUserId);
-        }
-      }, 100);
-    }
-    
-    // Navegar al formulario de empresa usando QueryParams para preservar el tipo de proveedor seleccionado
-    this.router.navigate(['/home/profile/company'], {
-      queryParams: { providerType: this.providerType },
-      skipLocationChange: true // Evita que se muestre en la URL
-    });
-    
-    this.snackBar.open('Ahora completa los datos de tu empresa', 'Entendido', {
-      duration: 5000
-    });
-    
-    console.log('Navegando a formulario de empresa después de seleccionar tipo de proveedor');
+    // Ya manejado en handleProviderTypeSelection
   }
 
   backToProviderSelection(): void {
     // Solo permitimos volver a la selección si el usuario es proveedor
     if (this.isProviderRole()) {
+      // Resetear el selector y mostrar la selección de tipo
       this.showProviderSelection = true;
-      this.router.navigate(['/home/profile/provider-type']);
-      console.log('Volviendo a selección de tipo de proveedor');
+      
+      // Mantener el tipo actual solo como referencia pero permitir nueva selección
+      // No resetear completamente el tipo para mantener la selección previa visible
+      
+      // Asegurarse de estar en la URL correcta
+      if (!this.router.url.includes('/provider-type')) {
+        this.router.navigate(['/home/profile/provider-type']);
+      }
+      
+      // Notificar al servicio que estamos en modo selección
+      // Nota: No podemos acceder directamente a selectedType porque puede no estar
+      // disponible en este momento.
+      
+      console.log('Volviendo a selección de tipo de proveedor, tipo actual:', this.providerType);
+      
+      // En lugar de intentar acceder directamente al componente hijo,
+      // el componente hijo usará initialType en su ngOnInit
     } else {
       console.warn('Usuario no es proveedor, no puede volver a selección de tipo');
     }
   }
-  
+
   handleCancelAddress(): void {
     this.showAddressStepper = false;
     this.isEditingAddress = false;
@@ -383,9 +411,9 @@ export class CompleteProfileComponent implements OnInit, OnDestroy {
     // Se mantiene por compatibilidad con el evento del componente hijo
     console.log('CompleteProfileComponent: Evento de dirección cargada recibido');
   }
-
   handleProfileDataLoaded(profileData: any): void {
     console.log('CompleteProfileComponent: Recibidos datos de perfil:', profileData);
+    
     if (profileData) {
       // Actualizar los datos del usuario con la información del backend
       this.userData = {
@@ -393,31 +421,87 @@ export class CompleteProfileComponent implements OnInit, OnDestroy {
         ...profileData
       };
       
-      // Si el usuario es proveedor y ya tiene un tipo seleccionado
-      if (this.isProviderRole() && profileData.providerType) {
-        // Mapear el tipo de proveedor del backend a nuestro formato
-        this.providerType = profileData.providerType === 'INDIVIDUAL' ? 'individual' : 'company';
-        
-        // Actualizar el servicio con el tipo de proveedor
-        this.providerTypeService.setProviderType(this.providerType);
-        
-        // Si ya tiene un tipo seleccionado, mostrar el formulario de empresa
-        this.showProviderSelection = false;
-        console.log('CompleteProfileComponent: Proveedor con tipo existente, mostrando formulario empresa');
+      // Si el usuario es proveedor, gestionar el tipo
+      if (this.isProviderRole()) {
+        if (profileData.providerType) {
+          // Convertir el formato de backend a frontend
+          const newProviderType = profileData.providerType === 'INDIVIDUAL' ? 'INDIVIDUAL' : 'COMPANY';
+          console.log('Tipo de proveedor cargado desde backend:', newProviderType, 'Tipo actual:', this.providerType);
+          
+          // Actualizar el tipo de proveedor solo si ha cambiado
+          if (this.providerType !== newProviderType) {
+            this.providerType = newProviderType;
+            
+            // Actualizar el servicio
+            this.providerTypeService.setProviderType(this.providerType);
+            console.log('Tipo de proveedor actualizado en servicio:', this.providerType);
+          }
+          
+          // Actualizar la vista según el tipo de proveedor
+          if (this.activeTab === ProfileTab.PROVIDER_OR_COMPANY) {
+            if (this.providerType === 'COMPANY') {
+              // Si es tipo empresa y estamos en la pestaña de empresa, mostrar el formulario
+              this.showProviderSelection = false;
+              if (!this.router.url.includes('/company')) {
+                this.router.navigate(['/home/profile/company'], { replaceUrl: true });
+              }
+            } else {
+              // Si es tipo individual, mostrar mensaje de confirmación
+              this.showProviderSelection = false; // No mostrar selector sino el mensaje de confirmación
+              if (!this.router.url.includes('/provider-type')) {
+                this.router.navigate(['/home/profile/provider-type'], { replaceUrl: true });
+              }
+            }
+          }
+          
+          // Forzar la actualización del estado del componente hijo
+          this.cdr.detectChanges();
+          
+          // Asegurarse de que el componente hijo tenga el valor correcto
+          setTimeout(() => {
+            if (this.providerTypeSelection) {
+              console.log('Actualizando selectedType en componente hijo a:', this.providerType);
+              this.providerTypeSelection.selectedType = this.providerType;
+              this.cdr.detectChanges();
+            } else {
+              console.log('Componente providerTypeSelection no disponible');
+            }
+          }, 0);
+        } else {
+          // No hay tipo en el perfil
+          console.log('No se encontró tipo de proveedor en los datos del perfil');
+          this.providerType = null;
+          this.providerTypeService.setProviderType(null);
+          
+          // Si estamos en la pestaña de empresa, mostrar la selección de tipo
+          if (this.activeTab === ProfileTab.PROVIDER_OR_COMPANY) {
+            this.showProviderSelection = true;
+            if (!this.router.url.includes('/provider-type')) {
+              this.router.navigate(['/home/profile/provider-type'], { replaceUrl: true });
+            }
+          }
+        }
       }
+      
+      this.profileDataLoaded = true;
+      this.cdr.detectChanges();
     }
   }
-
   // Método para cargar datos de dirección directamente desde este componente
   loadAddressData(userId: string): void {
     if (!userId) {
       console.error('CompleteProfileComponent: No hay ID de usuario para cargar la dirección');
       return;
     }
-    
+
+    if (this.addressDataLoaded) {
+      console.log('Datos de dirección ya cargados, saltando carga');
+      return;
+    }
+
     this.isLoadingAddress = true;
     console.log('CompleteProfileComponent: Cargando dirección para usuario:', userId);
-    
+
     this.addressService.getAddressByUserUid(userId)
       .pipe(
         takeUntil(this.destroy$),
@@ -429,15 +513,16 @@ export class CompleteProfileComponent implements OnInit, OnDestroy {
         }),
         finalize(() => {
           this.isLoadingAddress = false;
+          this.addressDataLoaded = true;
         })
       )
       .subscribe((address) => {
         console.log('CompleteProfileComponent: Dirección recibida del servicio:', address);
-        
+
         if (address) {
           console.log('CompleteProfileComponent: Dirección cargada exitosamente:', address);
           this.addressData = address;
-          
+
           // Actualizar el perfil del usuario con la nueva dirección
           if (this.userData) {
             this.userData.address = address;
@@ -452,5 +537,43 @@ export class CompleteProfileComponent implements OnInit, OnDestroy {
   toggleAddressSection(): void {
     this.showAddressContent = !this.showAddressContent;
     console.log('Toggle address content:', this.showAddressContent);
+  }
+
+  private handleProviderTypeChange(): void {
+    if (this.activeTab === ProfileTab.PROVIDER_OR_COMPANY) {
+      if (this.providerType === 'COMPANY') {
+        this.showProviderSelection = false;
+        if (!this.router.url.includes('/company')) {
+          this.router.navigate(['/home/profile/company'], { replaceUrl: true });
+        }
+      } else {
+        this.showProviderSelection = true;
+        if (!this.router.url.includes('/provider-type')) {
+          this.router.navigate(['/home/profile/provider-type'], { replaceUrl: true });
+        }
+      }
+    }
+  }
+
+  // Método para cargar explícitamente el tipo de proveedor
+  private loadProviderType(): void {
+    console.log('Forzando carga del tipo de proveedor');
+    
+    // Obtener el tipo de proveedor actual desde el servicio
+    this.providerType = this.providerTypeService.getCurrentProviderType();
+    console.log('Tipo de proveedor inicial desde servicio:', this.providerType);
+    
+    // Si el usuario es proveedor, intentar cargar el tipo desde el backend
+    if (this.isProviderRole()) {
+      // Forzar la carga desde el backend
+      this.providerTypeService.loadProviderType();
+      console.log('Solicitada carga de tipo de proveedor desde backend');
+      
+      // También forzar actualización de la vista después de cargar los datos
+      setTimeout(() => {
+        this.cdr.detectChanges();
+        console.log('Vista actualizada después de carga de tipo de proveedor');
+      }, 500);
+    }
   }
 }

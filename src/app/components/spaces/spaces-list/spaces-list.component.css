@@ -1,0 +1,53 @@
+.card {
+  transition: transform 0.3s, box-shadow 0.3s;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+.card-img-top {
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.text-2xl {
+  font-size: 1.75rem;
+}
+
+.w-100 {
+  width: 100%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .card-footer .d-flex {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .card-footer button {
+    width: 100%;
+  }
+}
+
+/* Badge styles */
+.badge {
+  padding: 0.4em 0.6em;
+  font-size: 0.75em;
+  font-weight: 500;
+}
+
+/* Filter card */
+.card-title {
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+/* Button with icon spacing */
+button mat-icon {
+  margin-right: 4px;
+} 

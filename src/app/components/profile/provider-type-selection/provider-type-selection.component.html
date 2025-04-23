@@ -1,0 +1,58 @@
+<!-- Provider Type Selection -->
+<div class="provider-type-container">
+  <div class="header-row" *ngIf="canShowBackButton()">
+    <button class="back-button" (click)="goBack()">
+      <mat-icon>arrow_back_ios</mat-icon>
+      <span>Volver</span>
+    </button>
+  </div>
+
+  <h2 class="provider-type-title">Tipo de Proveedor</h2>
+  <p class="provider-type-description">Selecciona el tipo de proveedor que mejor se ajuste a tu perfil</p>
+
+  <div class="card-container">
+    <!-- Individual Provider Card -->
+    <div class="card" [class.selected]="isSelected('INDIVIDUAL')" (click)="selectType('INDIVIDUAL')">
+      <div class="card-icon">
+        <mat-icon>person</mat-icon>
+      </div>
+      <h3>Individual</h3>
+      <p>Profesionales independientes que ofrecen servicios por cuenta propia</p>
+      <div class="selection-indicator" *ngIf="isSelected('INDIVIDUAL')">
+        <mat-icon>check_circle</mat-icon>
+      </div>
+    </div>
+
+    <!-- Company Provider Card -->
+    <div class="card" [class.selected]="isSelected('COMPANY')" (click)="selectType('COMPANY')">
+      <div class="card-icon">
+        <mat-icon>business</mat-icon>
+      </div>
+      <h3>Empresa</h3>
+      <p>Compañías y organizaciones que ofrecen servicios empresariales</p>
+      <div class="selection-indicator" *ngIf="isSelected('COMPANY')">
+        <mat-icon>check_circle</mat-icon>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div class="error-message" *ngIf="error">
+    <mat-icon>error_outline</mat-icon>
+    <span>{{ error }}</span>
+  </div>
+
+  <!-- Continue Button -->
+  <div class="button-container">
+    <button mat-flat-button color="primary" 
+            class="continue-button" 
+            [disabled]="!selectedType || isLoading"
+            (click)="continue()">
+      <ng-container *ngIf="!isLoading">
+        <span>Continuar</span>
+        <mat-icon>arrow_forward</mat-icon>
+      </ng-container>
+      <mat-spinner *ngIf="isLoading" diameter="24"></mat-spinner>
+    </button>
+  </div>
+</div>

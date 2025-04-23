@@ -1,0 +1,49 @@
+<div class="amenity-item" [formGroup]="amenityForm">
+  <div class="amenity-item-content">
+    <div class="amenity-name">
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Nombre de la Comodidad</mat-label>
+        <input 
+          matInput 
+          formControlName="name"
+          placeholder="ej., WiFi, Proyector"
+        >
+        <mat-error *ngIf="amenityForm.get('name')?.errors?.['required']">
+          El nombre es requerido
+        </mat-error>
+      </mat-form-field>
+    </div>
+    
+    <div class="amenity-price">
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Precio</mat-label>
+        <input 
+          matInput 
+          type="number" 
+          formControlName="price"
+          placeholder="0.00"
+        >
+        <span matPrefix>$&nbsp;</span>
+        <mat-error *ngIf="amenityForm.get('price')?.errors?.['min']">
+          El precio debe ser mayor o igual a 0
+        </mat-error>
+      </mat-form-field>
+    </div>
+    
+    <div class="amenity-actions">
+      <button 
+        mat-icon-button 
+        color="warn" 
+        type="button" 
+        (click)="onRemove()"
+        aria-label="Eliminar comodidad"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+
+</script>
