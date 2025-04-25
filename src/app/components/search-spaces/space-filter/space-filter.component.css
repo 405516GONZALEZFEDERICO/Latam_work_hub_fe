@@ -1,0 +1,129 @@
+.filter-card {
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.filter-header:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.filter-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+}
+
+.filter-icon {
+  color: #555;
+  transition: transform 0.3s;
+}
+
+.filter-content {
+  padding: 0 16px 16px;
+  max-height: 1000px;
+  overflow: hidden;
+  transition: max-height 0.3s ease-in-out, padding 0.3s;
+}
+
+.filter-collapsed {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.filter-item {
+  flex: 1;
+  min-width: 150px;
+}
+
+.filter-label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+  font-weight: 500;
+  font-size: 13px;
+  color: #555;
+}
+
+.filter-label-icon {
+  margin-right: 6px;
+  color: #666;
+  font-size: 16px;
+}
+
+.filter-form-field {
+  width: 100%;
+  font-size: 14px;
+}
+
+.filter-slider {
+  width: 100%;
+  margin-top: 4px;
+  height: 40px;
+}
+
+.slider-value {
+  margin-top: 4px;
+  color: #666;
+  font-size: 12px;
+  text-align: right;
+}
+
+.filter-amenities {
+  margin-bottom: 16px;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.apply-button {
+  min-width: 120px;
+  font-weight: 500;
+  font-size: 14px;
+  border-radius: 4px;
+}
+
+/* Estilos para móvil */
+@media (max-width: 768px) {
+  .filter-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .filter-item {
+    width: 100%;
+  }
+  
+  .filter-actions {
+    justify-content: center;
+  }
+  
+  .apply-button {
+    width: 100%;
+  }
+} 

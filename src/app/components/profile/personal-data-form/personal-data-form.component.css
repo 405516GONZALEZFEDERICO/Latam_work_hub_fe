@@ -21,9 +21,9 @@
   box-sizing: border-box !important;
   overflow: visible !important;
   height: auto !important;
-  min-height: auto !important;
+  min-height: 400px !important;
   max-height: none !important;
-  position: static !important;
+  position: relative !important;
   transform: none !important;
   border: none !important;
 }
@@ -679,4 +679,31 @@ app-address-stepper {
 /* Ajustes específicos para los campos de fecha y documento */
 .document-field {
   margin-bottom: 16px !important;
+}
+
+/* Estilos para el loading spinner centrado */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  min-height: 300px;
+  width: 100%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+}
+
+.loading-container p {
+  margin-top: 15px;
+  color: #757575;
+  font-size: 16px;
+}
+
+/* Personalizar color del spinner */
+::ng-deep .loading-container .mat-progress-spinner circle {
+  stroke: #0071e3 !important;
 }

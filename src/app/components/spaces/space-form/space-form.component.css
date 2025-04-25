@@ -121,6 +121,30 @@ h1, h2, h3, h4, h5, h6 {
   position: relative;
 }
 
+/* Styles for the amenity input group */
+.amenity-input-group {
+  display: flex;
+  align-items: center; /* Vertically align items */
+  gap: 1rem; /* Space between input and button */
+  flex-wrap: wrap; /* Allow items to wrap on smaller screens */
+}
+
+.amenity-input-group .amenity-autocomplete {
+  flex-grow: 1; /* Allow input to take available space */
+  min-width: 200px; /* Minimum width for the input */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .amenity-input-group {
+    flex-direction: column; /* Stack items vertically */
+    align-items: stretch; /* Stretch items to full width */
+  }
+  .amenity-input-group button {
+     width: 100%; /* Button takes full width */
+  }
+}
+
 .address-stepper-container {
   padding: 20px;
   max-width: 100%;
@@ -163,6 +187,11 @@ h1, h2, h3, h4, h5, h6 {
 /* Asegura que el fondo del modal no oculte los dropdowns */
 :host ::ng-deep .cdk-overlay-backdrop {
   z-index: calc(var(--select-z-index) - 10) !important;
+}
+
+/* Asegurar que el panel del autocomplete también use el z-index alto */
+:host ::ng-deep .mat-mdc-autocomplete-panel {
+  z-index: var(--select-z-index) !important;
 }
 
 .address-stepper-header {

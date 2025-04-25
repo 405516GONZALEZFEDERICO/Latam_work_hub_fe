@@ -1,0 +1,20 @@
+<div class="space-grid-container">
+  <h2 class="grid-title">Espacios disponibles</h2>
+  
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Cargando espacios...</p>
+  </div>
+  
+  <div *ngIf="!isLoading" class="space-grid">
+    <app-space-card 
+      *ngFor="let space of spaces" 
+      [space]="space" 
+      class="space-card-item">
+    </app-space-card>
+  </div>
+  
+  <div *ngIf="!isLoading && spaces.length === 0" class="no-spaces-message">
+    <p>No se encontraron espacios con los filtros seleccionados.</p>
+  </div>
+</div> 

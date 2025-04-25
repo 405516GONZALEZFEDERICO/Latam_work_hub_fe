@@ -48,10 +48,18 @@ export class LoginComponent implements OnInit {
 
   async loginWithGoogle(): Promise<void> {
     try {
-      await this.authService.loginWithGoogle();
+      // Limpiar posibles datos conflictivos en localStorage
+      localStorage.removeItem('currentUserData');
+      localStorage.removeItem('userDataTimestamp');
+      console.log('Login con Google: datos de localStorage limpiados');
+      
+      // Especificamos que es un login (no un registro)
+      await this.authService.loginWithGoogle(false);
       // La redirección la maneja el servicio de autenticación
     } catch (error) {
       console.error('Error al iniciar sesión con Google:', error);
+      this.showError = true;
+      this.errorMessage = 'Error en la autenticación con Google. Por favor intente nuevamente.';
     }
   }
 

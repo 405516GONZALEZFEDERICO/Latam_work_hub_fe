@@ -45,17 +45,15 @@ export class RoleSelectionComponent implements OnInit {
   ) {}
   
   ngOnInit(): void {
-    // Verificar si el usuario ya tiene un rol asignado
     const currentUser = this.authService.getCurrentUserSync();
     if (currentUser && currentUser.role !== 'DEFAULT') {
-      // Si ya tiene rol, redirigir a home
       this.router.navigate(['/home']);
     }
   }
   
   selectRole(role: UserRole): void {
     this.selectedRole = role;
-    this.errorMessage = null; // Limpiar mensajes de error al cambiar la selección
+    this.errorMessage = null; 
   }
   
   isRoleSelected(role: string): boolean {

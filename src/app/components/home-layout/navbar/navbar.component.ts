@@ -21,6 +21,7 @@ export class NavbarComponent {
   @Input() isSidebarOpen: boolean = false;
   @Input() displayName: string = 'Usuario';
   @Input() userRole: string = '';
+  @Input() photoUrl: string = '';
   @Output() toggleSidebar = new EventEmitter<void>();
   
   private snackBar=inject(MatSnackBar);

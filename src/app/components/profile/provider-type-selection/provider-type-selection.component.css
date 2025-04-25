@@ -68,7 +68,34 @@
 
 .card.selected {
   border-color: #3f51b5;
-  background-color: rgba(63, 81, 181, 0.05);
+  background-color: rgba(63, 81, 181, 0.1);
+  box-shadow: 0 4px 15px rgba(63, 81, 181, 0.25);
+  transform: translateY(-5px);
+}
+
+.card.selected::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border: 2px solid #3f51b5;
+  border-radius: 8px;
+  animation: pulse 2s infinite;
+  pointer-events: none;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(63, 81, 181, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(63, 81, 181, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(63, 81, 181, 0);
+  }
 }
 
 .card-icon {
@@ -105,6 +132,17 @@
   top: 10px;
   right: 10px;
   color: #3f51b5;
+  font-size: 28px;
+  background-color: white;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.selection-indicator mat-icon {
+  display: block;
+  font-size: 28px;
+  height: 28px;
+  width: 28px;
 }
 
 .error-message {
@@ -142,4 +180,16 @@
   .card-container {
     flex-direction: column;
   }
+}
+
+.selection-text {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background-color: #3f51b5;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
 }

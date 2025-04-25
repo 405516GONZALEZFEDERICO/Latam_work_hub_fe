@@ -1,0 +1,40 @@
+<mat-card class="space-card">
+  <div class="card-image-container">
+    <img mat-card-image [src]="space.imageUrl" [alt]="space.title" class="space-image">
+  </div>
+  <mat-card-content class="card-content">
+    <h3 class="space-title">{{ space.title }}</h3>
+    
+    <div class="space-details">
+      <div class="detail-item">
+        <mat-icon class="detail-icon">location_on</mat-icon>
+        <span class="detail-text">{{ space.address }}</span>
+      </div>
+      
+      <div class="detail-item">
+        <mat-icon class="detail-icon">people</mat-icon>
+        <span class="detail-text">Capacidad: {{ space.capacity }} personas</span>
+      </div>
+      
+      <div class="price-details">
+        <div class="price-item">
+          <mat-icon class="detail-icon">schedule</mat-icon>
+          <span class="detail-text">${{ space.hourlyPrice }}/hora</span>
+        </div>
+        <div class="price-item">
+          <mat-icon class="detail-icon">attach_money</mat-icon>
+          <span class="detail-text">${{ space.monthlyPrice }}/mes</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-footer">
+      <span class="provider-type">
+        {{ space.providerType === 'COMPANY' ? 'Empresa' : 'Individual' }}
+      </span>
+      <button mat-stroked-button color="primary" class="view-button" (click)="viewDetails()">
+        Ver detalles
+      </button>
+    </div>
+  </mat-card-content>
+</mat-card> 

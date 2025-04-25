@@ -9,13 +9,13 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
-import { Space, Amenity, SpaceDto, AmenityDto } from '../../../models/space';
+import { Space } from '../../../models/space.model';
+import { Amenity, AmenityDto, SpaceDto, AddressEntity } from '../../../models/space.model';
+import { Country, City } from '../../../models/address.model';
 import { AmenityItemComponent } from '../amenity-item/amenity-item.component';
 import { AuthService } from '../../../services/auth-service/auth.service';
 import { AddressService } from '../../../services/address/address.service';
-import { Country } from '../../../models/country.model';
-import { City } from '../../../models/city.model';
-import { AmenityService } from '../../../services/space/amenity.service';
+import { AmenityService } from '../../../services/amenity/amenity.service';
 import { SpaceTypeService } from '../../../services/space/space-type.service';
 import { SpaceType } from '../../../models/space-type.model';
 import { Observable, map, startWith } from 'rxjs';
@@ -290,19 +290,19 @@ export class SpaceFormComponent implements OnInit {
   }
   
   loadSpace(id: string): void {
-    this.spaceService.getSpaceById(id).subscribe(
-      (space: Space) => {
+    this.spaceService.getSpaceById(id).subscribe({
+      next: (space) => {
         if (space) {
           // Populate form with space data
           this.spaceForm.patchValue({
-            name: space.name,
-            description: space.description,
-            type: space.type,
+            name: space.name || space.title,
+            description: space.description || '',
+            type: space.type || '',
             capacity: space.capacity,
             area: space.area,
-            priceHour: space.priceHour,
-            priceDay: space.priceDay,
-            priceMonth: space.priceMonth
+            priceHour: space.priceHour || space.hourlyPrice,
+            priceDay: space.priceDay || 0,
+            priceMonth: space.priceMonth || space.monthlyPrice
           });
 
           // Load amenities if any
@@ -313,8 +313,12 @@ export class SpaceFormComponent implements OnInit {
             }
             
             // Add each amenity
-            space.amenities.forEach((amenity: Amenity) => {
-              this.amenities.push(this.fb.control(amenity));
+            space.amenities.forEach((amenity) => {
+              const amenityGroup = this.fb.group({
+                name: [amenity.name, Validators.required],
+                price: [amenity.price, [Validators.required, Validators.min(0)]]
+              });
+              this.amenities.push(amenityGroup);
             });
           }
 
@@ -341,12 +345,12 @@ export class SpaceFormComponent implements OnInit {
           }
         }
       },
-      (error: any) => {
+      error: (error) => {
         this.snackBar.open('Error al cargar el espacio', 'Cerrar', {
           duration: 3000
         });
       }
-    );
+    });
   }
   
   onSubmit(): void {
@@ -361,13 +365,17 @@ export class SpaceFormComponent implements OnInit {
     const formValue = this.spaceForm.getRawValue();
     
     const spaceDto: SpaceDto = {
+      title: formValue.name,
       name: formValue.name,
       description: formValue.description,
       capacity: formValue.capacity,
       area: formValue.area,
+      hourlyPrice: formValue.priceHour,
+      monthlyPrice: formValue.priceMonth,
       pricePerHour: formValue.priceHour,
       pricePerDay: formValue.priceDay,
       pricePerMonth: formValue.priceMonth,
+      providerType: 'COMPANY',
       uid: this.currentUserId,
       type: {
         name: formValue.type

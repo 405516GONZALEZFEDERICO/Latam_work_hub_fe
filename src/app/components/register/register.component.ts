@@ -113,16 +113,21 @@ export class RegisterComponent {
     this.showError = false;
     this.errorMessage = null;
     
+    // Limpiar posibles datos conflictivos en localStorage
+    localStorage.removeItem('currentUserData');
+    localStorage.removeItem('userDataTimestamp');
+    console.log('Registro con Google: datos de localStorage limpiados');
+    
     // Convertir la promesa en Observable para mantener consistencia
-    from(this.authService.loginWithGoogle()).subscribe({
+    from(this.authService.loginWithGoogle(true)).subscribe({
       next: () => {
         // loginWithGoogle ya maneja la redirección a la página correspondiente
-        this.successMessage = 'Autenticación con Google exitosa';
+        this.successMessage = 'Registro con Google exitoso';
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Error al autenticar con Google:', error);
-        this.errorMessage = 'Error al iniciar sesión con Google. Por favor, intenta nuevamente.';
+        console.error('Error al registrarse con Google:', error);
+        this.errorMessage = 'Error en el registro con Google. Por favor, intenta nuevamente.';
         this.showError = true;
         this.isLoading = false;
       }

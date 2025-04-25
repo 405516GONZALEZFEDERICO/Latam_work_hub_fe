@@ -78,6 +78,13 @@
   background-color: var(--color-primary);
 }
 
+.profile-photo {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 /* Main Content */
 .main-content {
   flex: 1;

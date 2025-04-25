@@ -1,0 +1,38 @@
+<div class="search-spaces-container">
+  <div class="search-header">
+    <h1 class="search-title">Buscar espacios</h1>
+  </div>
+  
+  <div class="search-content">
+    <div class="filter-container">
+      <app-space-filter (filtersChanged)="handleFiltersChanged($event)"></app-space-filter>
+    </div>
+    
+    <div class="results-container">
+      <div *ngIf="isLoading" class="loading-container">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Cargando espacios...</p>
+      </div>
+      
+      <ng-container *ngIf="!isLoading">
+        <app-space-grid [spaces]="spaces"></app-space-grid>
+        
+        <div class="paginator-container" *ngIf="totalItems > 0">
+          <mat-paginator
+            [length]="totalItems"
+            [pageSize]="pageSize"
+            [pageSizeOptions]="pageSizeOptions"
+            [pageIndex]="currentPage"
+            (page)="handlePageEvent($event)"
+            aria-label="Seleccionar página">
+          </mat-paginator>
+        </div>
+        
+        <div class="no-results" *ngIf="totalItems === 0">
+          <mat-icon>search_off</mat-icon>
+          <p>No se encontraron espacios con los filtros seleccionados.</p>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</div> 

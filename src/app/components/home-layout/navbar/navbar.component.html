@@ -10,8 +10,11 @@
       
       <div class="d-flex align-items-center">
         <div class="user-mini-profile" (click)="openUserMenu()">
-          <div class="avatar-small" [ngClass]="getRoleClass()">
+          <div *ngIf="!photoUrl" class="avatar-small" [ngClass]="getRoleClass()">
             {{ userInitial }}
+          </div>
+          <div *ngIf="photoUrl" class="avatar-small">
+            <img [src]="photoUrl" alt="Profile Photo" class="profile-photo">
           </div>
         </div>
       </div>

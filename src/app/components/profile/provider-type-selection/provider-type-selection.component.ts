@@ -42,8 +42,18 @@ export class ProviderTypeSelectionComponent implements OnInit, OnChanges, AfterV
   ngOnInit(): void {
     console.log('ProviderTypeSelectionComponent - ngOnInit - initialType:', this.initialType);
     
-    // Intentar cargar el tipo desde el servicio si no fue proporcionado como input
-    if (!this.initialType) {
+    // Verificar primero si hay un tipo en localStorage
+    const localStorageType = localStorage.getItem('providerType');
+    if (localStorageType === 'INDIVIDUAL' || localStorageType === 'COMPANY') {
+      console.log('Tipo encontrado en localStorage:', localStorageType);
+      this.initialType = localStorageType as 'INDIVIDUAL' | 'COMPANY';
+      this.selectedType = localStorageType as 'INDIVIDUAL' | 'COMPANY';
+      
+      // También actualizar el servicio para asegurar coherencia
+      this.providerTypeService.setProviderType(this.selectedType, true);
+    }
+    // Si no hay en localStorage o initialType ya está establecido, continuar con la lógica normal
+    else if (!this.initialType) {
       const typeFromService = this.providerTypeService.getCurrentProviderType();
       console.log('Tipo de proveedor desde el servicio:', typeFromService);
       
@@ -57,6 +67,18 @@ export class ProviderTypeSelectionComponent implements OnInit, OnChanges, AfterV
     }
     
     this.updateSelectedType();
+    
+    // Forzar una verificación adicional después de la inicialización
+    setTimeout(() => {
+      console.log('Verificación adicional del tipo seleccionado:', this.selectedType);
+      if (!this.selectedType) {
+        const storedType = localStorage.getItem('providerType');
+        if (storedType === 'INDIVIDUAL' || storedType === 'COMPANY') {
+          console.log('Recuperando tipo desde localStorage en verificación tardía:', storedType);
+          this.selectedType = storedType as 'INDIVIDUAL' | 'COMPANY';
+        }
+      }
+    }, 1000);
   }
   
   ngAfterViewInit(): void {
@@ -102,18 +124,48 @@ export class ProviderTypeSelectionComponent implements OnInit, OnChanges, AfterV
   }
 
   private updateSelectedType(): void {
-    if (this.initialType) {
+    console.log('updateSelectedType: initialType =', this.initialType, 'selectedType =', this.selectedType);
+    
+    // Verificar primero localStorage como fuente prioritaria
+    const storedType = localStorage.getItem('providerType');
+    if (storedType === 'INDIVIDUAL' || storedType === 'COMPANY') {
+      console.log('Usando tipo desde localStorage en updateSelectedType:', storedType);
+      this.selectedType = storedType as 'INDIVIDUAL' | 'COMPANY';
+      
+      // Si no hay initialType, también actualizarlo
+      if (!this.initialType) {
+        this.initialType = this.selectedType;
+      }
+    }
+    // Si hay initialType pero no selectedType o son diferentes
+    else if (this.initialType && (!this.selectedType || this.initialType !== this.selectedType)) {
       console.log('Setting selectedType to initialType:', this.initialType);
       this.selectedType = this.initialType;
-      
-      // Forzar la detección inmediata para que la UI se actualice
-      setTimeout(() => {
-        // Verificar que la selección fue efectiva
-        console.log('Verificando selección efectiva, selectedType ahora es:', this.selectedType);
-      }, 0);
-    } else {
-      console.log('No initialType provided, selectedType remains:', this.selectedType);
     }
+    
+    // Verificar tipo en el servicio como respaldo
+    const typeFromService = this.providerTypeService.getCurrentProviderType();
+    if (typeFromService && !this.selectedType) {
+      console.log('Recuperando tipo desde servicio como último recurso:', typeFromService);
+      this.selectedType = typeFromService;
+    }
+    
+    // Forzar la detección inmediata para que la UI se actualice
+    setTimeout(() => {
+      // Verificar que la selección fue efectiva
+      console.log('Verificando selección efectiva, selectedType ahora es:', this.selectedType);
+      
+      // Actualizar DOM para forzar re-renderizado
+      if (this.selectedType) {
+        const cards = document.querySelectorAll('.card');
+        cards.forEach(card => {
+          if (card.classList.contains('selected')) {
+            // Forzar reflujo del DOM usando HTMLElement
+            void (card as HTMLElement).offsetWidth;
+          }
+        });
+      }
+    }, 0);
   }
 
   selectType(type: 'INDIVIDUAL' | 'COMPANY'): void {
@@ -130,8 +182,9 @@ export class ProviderTypeSelectionComponent implements OnInit, OnChanges, AfterV
 
   isSelected(type: 'INDIVIDUAL' | 'COMPANY'): boolean {
     const result = this.selectedType === type;
-    // Log para depuración
-    console.log(`Checking if ${type} is selected:`, result, 'Current selectedType:', this.selectedType);
+    // Log detallado para depuración
+    console.log(`Checking if ${type} is selected. Current selectedType:`, this.selectedType, 'Result:', result);
+    console.log('Stored provider type in localStorage:', localStorage.getItem('providerType'));
     return result;
   }
 
@@ -148,29 +201,53 @@ export class ProviderTypeSelectionComponent implements OnInit, OnChanges, AfterV
     this.isLoading = true;
     this.error = null;
 
+    // Guardar explícitamente en localStorage para asegurar persistencia
+    localStorage.setItem('providerType', this.selectedType);
+    console.log(`Tipo de proveedor "${this.selectedType}" guardado en localStorage`);
+
     // For individual provider type, we need to submit to the backend directly
     if (this.selectedType === 'INDIVIDUAL') {
-      // Create minimal company data with provider type
+      // Create minimal company data with provider type - Make sure it has all required fields
       const emptyCompanyData = {
-        name: '',
-        legalName: '',
+        name: 'Individual Provider', // Provide a default name for the backend
+        legalName: currentUser.displayName || 'Individual Provider',
         taxId: '',
         phone: '',
         email: currentUser.email || '',
         website: '',
-        contactPerson: '',
+        contactPerson: currentUser.displayName || '',
         country: 0,
-        providerType: 'INDIVIDUAL' as 'INDIVIDUAL' // Type assertion to match expected type
+        providerType: 'INDIVIDUAL' as 'INDIVIDUAL'
       };
 
-      console.log('Saving INDIVIDUAL provider type to backend');
+      console.log('Saving INDIVIDUAL provider type to backend with data:', emptyCompanyData);
       // Submit directly to backend to store provider type
       this.companyService.createOrUpdateCompanyInfo(currentUser.uid, emptyCompanyData)
         .subscribe({
-          next: () => {
-            console.log('Successfully saved INDIVIDUAL provider type');
-            // Actualizar también el servicio
+          next: (response) => {
+            console.log('Successfully saved INDIVIDUAL provider type, response:', response);
+            // Save to localStorage to ensure persistence
             this.providerTypeService.setProviderType('INDIVIDUAL', true);
+            
+            // Mostrar información de depuración adicional
+            console.log('Estado actual:');
+            console.log('- localStorage providerType:', localStorage.getItem('providerType'));
+            console.log('- Servicio providerType:', this.providerTypeService.getCurrentProviderType());
+            console.log('- Componente selectedType:', this.selectedType);
+            
+            // Force reload from backend to verify it was saved
+            setTimeout(() => {
+              this.providerTypeService.loadProviderType();
+              
+              // Verificar que la card se actualizó correctamente
+              setTimeout(() => {
+                console.log('Verificación final:');
+                console.log('- localStorage providerType:', localStorage.getItem('providerType'));
+                console.log('- Servicio providerType:', this.providerTypeService.getCurrentProviderType());
+                console.log('- Componente selectedType:', this.selectedType);
+              }, 500);
+            }, 500);
+            
             // Emit the selected type on success
             this.typeSelected.emit(this.selectedType!); // Non-null assertion
             this.isLoading = false;

@@ -60,6 +60,16 @@ export const routes: Routes = [
         data: { title: 'Bienvenido' }
       },
       {
+        path: 'search-spaces',
+        loadComponent: () =>
+          import('./components/search-spaces/search-spaces.component').then(m => m.SearchSpacesComponent),
+        canActivate: [SecurityWardGuard],
+        data: { 
+          allowedRoles: ['CLIENTE'],
+          title: 'Buscar Espacios' 
+        }
+      },
+      {
         path: 'profile',
         children: [
           {
@@ -106,6 +116,12 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./components/spaces/space-form/space-form.component').then(m => m.SpaceFormComponent),
             data: { title: 'Crear Espacio' }
+          },
+          {
+            path: ':id',
+            loadComponent: () =>
+              import('./components/spaces/space-details/space-details.component').then(m => m.SpaceDetailsComponent),
+            data: { title: 'Detalles del Espacio' }
           },
           {
             path: ':id/edit',

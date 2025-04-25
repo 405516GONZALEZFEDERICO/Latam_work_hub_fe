@@ -305,61 +305,83 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
   
   // Cargar datos del usuario
   loadUserData(): void {
-    this.isLoading = true;
-    console.log('PersonalDataFormComponent: Cargando datos del usuario:', this.currentUserId);
+    console.log('Cargando datos de usuario');
     
-    this.profileService.getPersonalData(this.currentUserId)
-      .pipe(
-        takeUntil(this.destroy$),
-        catchError(error => {
-          // Solo mostrar error si no es 404 (no encontrado)
-          if (error.status !== 404) {
-            console.error('Error al cargar datos del usuario:', error);
-            this.snackBar.open('Error al cargar los datos personales', 'Cerrar', {
-              duration: 3000,
+    // Activar indicador de carga
+    this.isLoading = true;
+    this.dataLoaded = false;
+    
+    // Obtener el usuario actual
+    this.authService.currentUser$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(user => {
+      if (user && user.uid) {
+        console.log('Usuario actual encontrado:', user.uid);
+        this.currentUserId = user.uid;
+        
+        // Cargar datos personales
+        console.log('Solicitando datos personales desde el servidor');
+        this.profileService.getPersonalData(this.currentUserId).pipe(
+          takeUntil(this.destroy$),
+          finalize(() => {
+            // Finalizar carga después de obtener datos o error
+            setTimeout(() => {
+              this.isLoading = false;
+              this.dataLoaded = true;
+            }, 300); // Pequeño delay para mostrar el spinner
+          })
+        ).subscribe({
+          next: (personalData) => {
+            console.log('Datos personales recibidos:', personalData);
+            
+            if (personalData) {
+              // Rellenar formulario con datos recibidos
+              if (personalData.photoUrl) {
+                this.profilePicture = this.ensureCompleteUrl(personalData.photoUrl);
+              }
+              
+              this.personalDataForm.patchValue({
+                fullName: personalData.name || '',
+                email: personalData.email || user.email || '',
+                birthDate: personalData.birthDate ? new Date(personalData.birthDate) : null,
+                documentType: personalData.documentType || '',
+                documentNumber: personalData.documentNumber || '',
+                jobTitle: personalData.jobTitle || '',
+                department: personalData.department || ''
+              });
+              
+              // Emitir evento de datos cargados
+              this.profileDataLoaded.emit(personalData);
+            } else {
+              // No hay datos personales, llenar solo el email desde el usuario
+              this.personalDataForm.patchValue({
+                email: user.email || ''
+              });
+            }
+            
+            // Continuar con la carga de dirección
+            this.loadAddress();
+          },
+          error: (error) => {
+            console.error('Error al cargar datos personales:', error);
+            // Llenar solo el email en caso de error
+            this.personalDataForm.patchValue({
+              email: user.email || ''
+            });
+            
+            // Mostrar mensaje de error
+            this.snackBar.open('Error al cargar datos personales', 'Cerrar', {
+              duration: 5000,
               panelClass: ['snackbar-error']
             });
-          } else {
-            console.log('No se encontraron datos personales - Iniciando formulario vacío');
           }
-          return EMPTY;
-        }),
-        finalize(() => {
-          this.isLoading = false;
-          this.dataLoaded = true;
-        })
-      )
-      .subscribe(data => {
-        console.log('PersonalDataFormComponent: Datos recibidos del backend:', data);
-        
-        // Convertir la fecha a un objeto Date para que funcione correctamente con el datepicker
-        let birthDateObj = null;
-        if (data.birthDate) {
-          try {
-            birthDateObj = new Date(data.birthDate);
-          } catch (error) {
-            console.error('Error al convertir la fecha:', error);
-          }
-        }
-        
-        // Actualizar el formulario con los datos recibidos
-        this.personalDataForm.patchValue({
-          fullName: data.name,
-          email: data.email,
-          birthDate: birthDateObj,
-          documentType: data.documentType,
-          documentNumber: data.documentNumber,
-          jobTitle: data.jobTitle,
-          department: data.department
         });
-
-        if (data.photoUrl) {
-          this.profilePicture = this.ensureCompleteUrl(data.photoUrl);
-        }
-        
-        // Emitir los datos cargados al componente padre
-        this.profileDataLoaded.emit(data);
-      });
+      } else {
+        console.error('No hay usuario autenticado o falta UID');
+        this.isLoading = false;
+        this.dataLoaded = true;
+      }
+    });
   }
 
   loadAddress(): void {
@@ -477,74 +499,62 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
   }
   
   onSubmit(): void {
-    console.log('Método onSubmit() llamado');
-    if (this.personalDataForm.valid) {
-      this.isLoading = true;
-
-      const user = this.authService.getCurrentUserSync();
-      if (!user || !user.uid) {
-        this.snackBar.open('No se pudo identificar el usuario actual', 'Cerrar', {
-          duration: 3000,
-          panelClass: ['snackbar-error']
-        });
-        return;
-      }
-
-      // Obtener todos los valores del formulario, incluyendo los campos deshabilitados
-      const formValues = this.personalDataForm.getRawValue();
-
-      // Formatear la fecha para el backend (YYYY-MM-DD)
-      let formattedBirthDate: string | null = null;
-      const birthDate = formValues.birthDate;
-      if (birthDate) {
-        try {
-          formattedBirthDate = birthDate.toISOString().split('T')[0];
-        } catch (error) {
-          console.error('Error al formatear la fecha:', error);
-        }
-      }
-
-      // Preparar los datos para enviar al backend
-      const personalData: PersonalDataUserDto = {
-        uid: user.uid,
-        name: formValues.fullName, // Usar 'name' en lugar de 'fullName' para el backend
-        email: formValues.email,
-        birthDate: formattedBirthDate || undefined,
-        documentType: formValues.documentType,
-        documentNumber: formValues.documentNumber,
-        jobTitle: formValues.jobTitle,
-        department: formValues.department
-      };
-      
-      console.log('Datos a enviar al backend:', personalData);
-
-      this.profileService.updateOrCreatePersonalData(user.uid, personalData)
-        .pipe(
-          takeUntil(this.destroy$),
-          catchError(error => {
+    if (this.personalDataForm.invalid) {
+      return;
+    }
+    
+    // Activar spinner durante el envío
+    this.isLoading = true;
+    
+    // Obtener valores del formulario
+    const formValues = this.personalDataForm.value;
+    
+    // Construir objeto de datos personales
+    const personalData: PersonalDataUserDto = {
+      uid: this.currentUserId,
+      name: formValues.fullName,
+      email: formValues.email,
+      birthDate: formValues.birthDate ? formValues.birthDate.toISOString().split('T')[0] : null,
+      documentType: formValues.documentType,
+      documentNumber: formValues.documentNumber,
+      jobTitle: formValues.jobTitle || '',
+      department: formValues.department || '',
+    };
+    
+    console.log('Enviando datos personales:', personalData);
+    
+    // Enviar datos al servicio
+    this.profileService.updateOrCreatePersonalData(this.currentUserId, personalData)
+      .pipe(
+        finalize(() => {
+          // Añadir un pequeño retraso para que el spinner sea visible
+          setTimeout(() => {
             this.isLoading = false;
-            console.error('Error al guardar los datos personales:', error);
-            this.snackBar.open('Error al guardar los datos personales', 'Cerrar', {
-              duration: 3000,
-              panelClass: ['snackbar-error']
-            });
-            return EMPTY;
-          }),
-          finalize(() => {
-            this.isLoading = false;
-          })
-        )
-        .subscribe(response => {
-          console.log('Respuesta del backend:', response);
-          this.snackBar.open('Datos personales guardados correctamente', 'Cerrar', {
-            duration: 3000
+          }, 300);
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          console.log('Datos personales guardados exitosamente:', response);
+          
+          // Notificar al usuario
+          this.snackBar.open('Información personal guardada correctamente', 'Cerrar', {
+            duration: 3000,
           });
           
+          // Emitir evento de formulario enviado
           this.formSubmitted.emit(personalData);
-        });
-    } else {
-      console.log('Formulario inválido:', this.personalDataForm.errors);
-    }
+        },
+        error: (error) => {
+          console.error('Error al guardar datos personales:', error);
+          
+          // Notificar al usuario
+          this.snackBar.open('Error al guardar la información personal', 'Cerrar', {
+            duration: 5000,
+            panelClass: ['snackbar-error']
+          });
+        }
+      });
   }
 
   toggleAddressSection(): void {

@@ -172,7 +172,7 @@ export class AuthService {
               uid: user.uid,
               email: user.email!,
               emailVerified: user.emailVerified,
-              role: 'DEFAULT',
+              role: 'DEFAULT' as UserRole,
               refreshToken: user.refreshToken,
               photoURL: user.photoURL || '',
               idToken: '' 
@@ -285,7 +285,7 @@ export class AuthService {
               // Solo actualizar si el rol cambió
               this.currentUserData = {
                 ...this.currentUserData,
-                role: response.role
+                role: response.role as UserRole
               } as User;
               this.userSubject.next(this.currentUserData);
               
@@ -321,7 +321,7 @@ export class AuthService {
             uid: this.auth.currentUser.uid,
             email: this.auth.currentUser.email!,
             emailVerified: this.auth.currentUser.emailVerified,
-            role: role,
+            role: role as UserRole,
             idToken: idToken,
             refreshToken: this.auth.currentUser.refreshToken,
             photoURL: photoUrl
@@ -335,8 +335,10 @@ export class AuthService {
           localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
           localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
           
-          // Si estamos en select-rol pero el rol no es DEFAULT, redirigir a home
-          if (currentPath.includes('/select-role') && role !== 'DEFAULT') {
+          // Redireccionar según el rol
+          if (role === 'DEFAULT') {
+            this.navigateToRoleSelection();
+          } else {
             this.router.navigate(['/home']);
           }
         }
@@ -347,44 +349,78 @@ export class AuthService {
     });
   }
 
-  async loginWithGoogle(): Promise<void> {
+  async loginWithGoogle(isRegistration: boolean = false): Promise<void> {
+    console.log(`Iniciando ${isRegistration ? 'REGISTRO' : 'LOGIN'} con Google`);
     try {
       // Obtenemos las credenciales con Firebase (OAuth)
       const provider = new GoogleAuthProvider();
+      
+      // Si es registro, pedimos permisos adicionales para asegurar una cuenta nueva
+      if (isRegistration) {
+        provider.setCustomParameters({ prompt: 'select_account' });
+      }
+      
+      console.log('Abriendo popup de autenticación Google...');
       const result = await signInWithPopup(this.auth, provider);
-      const idToken = await result.user.getIdToken();
+      console.log('Popup Google completado con éxito');
+      
+      const user = result.user;
+      console.log(`Usuario Google autenticado: ${user.email} (${user.uid})`);
+      
+      // Obtener token para comunicación con backend
+      const idToken = await user.getIdToken();
+      console.log('Token de ID obtenido correctamente');
       
       // Verificar si hay un usuario diferente en localStorage y limpiarlo
       const cachedUser = this.getUserFromLocalStorage();
-      if (cachedUser && cachedUser.uid !== result.user.uid) {
-        console.log('Detectado cambio de usuario en login Google. Limpiando datos del usuario anterior.');
+      if (cachedUser && cachedUser.uid !== user.uid) {
+        console.log('DIFERENCIA DETECTADA: Usuario Google diferente al almacenado en localStorage');
+        console.log(`Google UID: ${user.uid}, localStorage UID: ${cachedUser.uid}`);
         localStorage.removeItem('currentUserData');
         localStorage.removeItem('userDataTimestamp');
+        console.log('Datos previos en localStorage eliminados para prevenir conflictos');
       }
       
+      console.log(`Enviando solicitud al backend (${isRegistration ? 'registro' : 'login'})...`);
       // Notificar al backend para verificar/asignar rol
       this.http.post<any>(`${this.API_BASE_URL}/google/login`, null, {
-        params: new HttpParams().set('idToken', idToken),
+        params: new HttpParams()
+          .set('idToken', idToken)
+          .set('isRegistration', isRegistration ? 'true' : 'false'),
         headers: { 'Content-Type': 'application/json' }
       }).subscribe({
         next: (response) => {
+          console.log(`Respuesta del backend recibida: ${JSON.stringify(response)}`);
+          
           if (this.auth.currentUser) {
             // Verificar si ya existe un rol en localStorage
             const cachedUser = this.getUserFromLocalStorage(this.auth.currentUser.uid);
             const roleFromBackend = response.role || 'DEFAULT';
             const persistedRole = cachedUser?.role;
             
+            console.log(`Rol del backend: ${roleFromBackend}, Rol en localStorage: ${persistedRole || 'no hay'}`);
+            
             // Priorizar el rol persistido si es diferente a DEFAULT y el backend devuelve DEFAULT
-            const finalRole = (roleFromBackend === 'DEFAULT' && persistedRole && persistedRole !== 'DEFAULT')
-              ? persistedRole
-              : roleFromBackend;
+            let finalRole: string;
+            
+            if (isRegistration) {
+              // Si es registro, siempre usar DEFAULT para forzar selección de rol
+              finalRole = 'DEFAULT';
+              console.log('Registro: asignando rol DEFAULT para forzar selección de rol');
+            } else {
+              // Si es login, usar lógica normal
+              finalRole = (roleFromBackend === 'DEFAULT' && persistedRole && persistedRole !== 'DEFAULT')
+                ? persistedRole
+                : roleFromBackend;
+              console.log(`Login: rol final determinado: ${finalRole}`);
+            }
               
             // Actualizar usuario con los datos del backend
             this.currentUserData = {
               uid: this.auth.currentUser.uid,
               email: this.auth.currentUser.email!,
               emailVerified: this.auth.currentUser.emailVerified,
-              role: finalRole,
+              role: finalRole as UserRole,
               idToken: idToken,
               refreshToken: this.auth.currentUser.refreshToken,
               photoURL: response.photoUrl || this.auth.currentUser.photoURL || ''
@@ -394,30 +430,81 @@ export class AuthService {
             this.authStateSubject.next(true);
             
             // Guardar en localStorage siempre
-            console.log('Guardando datos de usuario en localStorage con rol:', finalRole);
+            console.log(`Guardando datos de usuario en localStorage con rol: ${finalRole}`);
             localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
             localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
             
-            // Redireccionar según el rol
-            if (finalRole === 'DEFAULT') {
-              this.router.navigate(['/select-rol']);
+            // Si es un registro o tiene rol DEFAULT, redirigir a selección de rol
+            if (isRegistration || finalRole === 'DEFAULT') {
+              console.log(`Redirigiendo a selección de rol (${isRegistration ? 'registro' : 'login'} con rol DEFAULT)`);
+              // Usar método directo para evitar problemas de ruteo
+              this.navigateToRoleSelection();
             } else {
+              console.log('Redirigiendo a home (login con rol existente)');
               this.router.navigate(['/home']);
             }
+          } else {
+            console.error('ERROR CRÍTICO: No hay usuario en Firebase después de autenticación');
+            throw new Error('No se pudo completar el proceso de autenticación.');
           }
         },
         error: (error) => {
           console.error('Error en autenticación con backend:', error);
+          // Verificar si es un error de ruta
+          if (error && error.message && (error.message.includes('select-rol') || error.message.includes('select-role'))) {
+            console.log('Detectado error específico de ruta, manejando explícitamente');
+            this.handleRouteError(error);
+          } else {
+            // Manejo genérico de errores
+            console.error('Error desconocido en proceso de autenticación:', error);
+            
+            // Incluso con error, intentar navegar según corresponda
+            const user = this.auth.currentUser;
+            if (user) {
+              console.log('A pesar del error, hay usuario autenticado. Intentando continuar...');
+              
+              // Crear datos mínimos del usuario
+              this.currentUserData = {
+                uid: user.uid,
+                email: user.email!,
+                emailVerified: user.emailVerified,
+                role: 'DEFAULT' as UserRole, // Asignar DEFAULT como fallback
+                refreshToken: user.refreshToken,
+                photoURL: user.photoURL || '',
+                idToken: '' 
+              };
+              
+              // Actualizar el estado
+              this.userSubject.next(this.currentUserData);
+              this.authStateSubject.next(true);
+              
+              // Guardar en localStorage
+              localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
+              localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
+              
+              // Redirigir a selección de rol en caso de error
+              console.log('Redirigiendo a selección de rol (manejo de error)');
+              this.navigateToRoleSelection();
+            } else {
+              throw new Error('Error en autenticación y no hay usuario disponible');
+            }
+          }
         }
       });
     } catch (error: any) {
-      console.error('Google login error:', error);
-      let errorMessage = 'Error al iniciar sesión con Google';
+      console.error('Error crítico en proceso de Google auth:', error);
+      
+      let errorMessage = 'Error al procesar la autenticación con Google';
       
       if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = 'Inicio de sesión cancelado. La ventana fue cerrada.';
+        errorMessage = 'Proceso cancelado. La ventana fue cerrada.';
       } else if (error.code === 'auth/popup-blocked') {
         errorMessage = 'El navegador bloqueó la ventana emergente. Por favor, permita ventanas emergentes e intente nuevamente.';
+      } else if (error.message && (error.message.includes('select-rol') || error.message.includes('select-role'))) {
+        // Error de ruta - intentar redirigir a la ruta correcta
+        console.log('Detectado error de ruta en catch principal, redirigiendo a select-role');
+        this.navigateToRoleSelection();
+        return;
       }
       
       throw new Error(errorMessage);
@@ -557,7 +644,7 @@ export class AuthService {
                       uid: userCredential.user.uid,
                       email: userCredential.user.email!,
                       emailVerified: userCredential.user.emailVerified,
-                      role: finalRole,
+                      role: finalRole as UserRole,
                       idToken: idToken,
                       refreshToken: userCredential.user.refreshToken,
                       photoURL: response.photoUrl || userCredential.user.photoURL || ''
@@ -571,8 +658,11 @@ export class AuthService {
                     localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
 
                     // Determinar la ruta basada en el rol
-                    const redirectPath = finalRole === 'DEFAULT' ? '/select-role' : '/home';
-                    this.router.navigate([redirectPath]);
+                    if (finalRole === 'DEFAULT') {
+                      this.navigateToRoleSelection();
+                    } else {
+                      this.router.navigate(['/home']);
+                    }
                     
                     return { 
                       success: true, 
@@ -901,4 +991,30 @@ updateCurrentUser(user: User): void {
     
     console.log('Caché de autenticación limpiado correctamente');
   }
+
+  // Método para manejar errores de ruta conocidos
+  handleRouteError(error: any): void {
+    if (error && error.message && (error.message.includes('select-rol') || error.message.includes('select-role'))) {
+      console.log('Manejando error de ruta para select-role');
+      // Forzar redirección a la URL correcta
+      this.navigateToRoleSelection();
+    }
+  }
+
+navigateToRoleSelection(): void {
+  console.log('Navegando a la página de selección de rol');
+  
+  setTimeout(() => {
+    console.log('Intentando navegación retrasada a select-role');
+    this.router.navigate(['/select-role']).then(success => { // Changed from '/select-rol' to '/select-role'
+      if (!success) {
+        console.warn('Navegación con Angular Router falló, usando redirección directa');
+        window.location.href = window.location.origin + '/select-role';
+      }
+    }).catch(err => {
+      console.error('Error al navegar con router:', err);
+      window.location.href = window.location.origin + '/select-role';
+    });
+  }, 100);
+}
 }

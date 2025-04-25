@@ -21,6 +21,7 @@
       <div class="selection-indicator" *ngIf="isSelected('INDIVIDUAL')">
         <mat-icon>check_circle</mat-icon>
       </div>
+      <div class="selection-text" *ngIf="isSelected('INDIVIDUAL')">Seleccionado</div>
     </div>
 
     <!-- Company Provider Card -->
@@ -33,6 +34,7 @@
       <div class="selection-indicator" *ngIf="isSelected('COMPANY')">
         <mat-icon>check_circle</mat-icon>
       </div>
+      <div class="selection-text" *ngIf="isSelected('COMPANY')">Seleccionado</div>
     </div>
   </div>
 

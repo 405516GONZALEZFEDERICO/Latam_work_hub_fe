@@ -1,0 +1,182 @@
+<mat-card class="filter-card">
+  <mat-card-content>
+    <div class="filter-header" (click)="toggleFilters()">
+      <h2 class="filter-title">Filtros de Búsqueda</h2>
+      <mat-icon class="filter-icon">{{ isExpanded ? 'expand_less' : 'filter_list' }}</mat-icon>
+    </div>
+
+    <div class="filter-content" [ngClass]="{'filter-collapsed': !isExpanded}">
+      <div class="filter-row">
+        <!-- Country -->
+        <div class="filter-item">
+          <label class="filter-label">
+            <mat-icon class="filter-label-icon">public</mat-icon>
+            País
+          </label>
+          <mat-form-field appearance="outline" class="filter-form-field">
+            <mat-select [(ngModel)]="filters.countryId" name="country" placeholder="Seleccionar país" (selectionChange)="onCountryChange()">
+              <mat-option [value]="null">Todos</mat-option>
+              <mat-option *ngFor="let country of countries" [value]="country.id">{{ country.name }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <!-- City (only shows if country is selected) -->
+        <div class="filter-item" *ngIf="filters.countryId">
+          <label class="filter-label">
+            <mat-icon class="filter-label-icon">location_city</mat-icon>
+            Ciudad
+          </label>
+          <mat-form-field appearance="outline" class="filter-form-field">
+            <mat-select [(ngModel)]="filters.cityId" name="city" placeholder="Seleccionar ciudad">
+              <mat-option [value]="null">Todas</mat-option>
+              <mat-option *ngFor="let city of cities" [value]="city.id">{{ city.name }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        
+        <!-- Space Type -->
+        <div class="filter-item">
+          <label class="filter-label">
+            <mat-icon class="filter-label-icon">category</mat-icon>
+            Tipo de Espacio
+          </label>
+          <mat-form-field appearance="outline" class="filter-form-field">
+            <mat-select [(ngModel)]="filters.spaceTypeId" name="spaceType" placeholder="Seleccionar tipo">
+              <mat-option [value]="null">Todos</mat-option>
+              <mat-option *ngFor="let type of spaceTypes" [value]="type.id">{{ type.name }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+      
+      <div class="filter-row">
+        <!-- Capacity -->
+        <div class="filter-item">
+          <label class="filter-label">
+            <mat-icon class="filter-label-icon">people</mat-icon>
+            Capacidad
+          </label>
+          <mat-slider
+            class="filter-slider"
+            [min]="0"
+            [max]="100"
+            [step]="1"
+            [discrete]="true"
+            [displayWith]="formatCapacity"
+            thumbLabel
+            [(ngModel)]="filters.capacity">
+            <input matSliderThumb (valueChange)="updateCapacity($event)" name="capacity">
+          </mat-slider>
+          <div class="slider-value">{{ filters.capacity || 0 }} personas</div>
+        </div>
+
+        <!-- Area -->
+        <div class="filter-item">
+          <label class="filter-label">
+            <mat-icon class="filter-label-icon">square_foot</mat-icon>
+            Área
+          </label>
+          <mat-slider
+            class="filter-slider"
+            [min]="0"
+            [max]="500"
+            [step]="5"
+            [discrete]="true"
+            [displayWith]="formatArea"
+            thumbLabel
+            [(ngModel)]="filters.area">
+            <input matSliderThumb (valueChange)="updateArea($event)" name="area">
+          </mat-slider>
+          <div class="slider-value">{{ filters.area || 0 }} m²</div>
+        </div>
+      </div>
+
+      <div class="filter-row">
+        <!-- Hourly Price -->
+        <div class="filter-item">
+          <label class="filter-label">
+            <mat-icon class="filter-label-icon">attach_money</mat-icon>
+            Precio por Hora
+          </label>
+          <mat-slider
+            class="filter-slider"
+            [min]="0"
+            [max]="1000"
+            [step]="10"
+            [discrete]="true"
+            [displayWith]="formatPrice"
+            thumbLabel
+            [(ngModel)]="filters.pricePerHour">
+            <input matSliderThumb (valueChange)="updateHourlyPrice($event)" name="pricePerHour">
+          </mat-slider>
+          <div class="slider-value">${{ filters.pricePerHour || 0 }}/hora</div>
+        </div>
+        
+        <!-- Daily Price -->
+        <div class="filter-item">
+          <label class="filter-label">
+            <mat-icon class="filter-label-icon">attach_money</mat-icon>
+            Precio por Día
+          </label>
+          <mat-slider
+            class="filter-slider"
+            [min]="0"
+            [max]="5000"
+            [step]="50"
+            [discrete]="true"
+            [displayWith]="formatPrice"
+            thumbLabel
+            [(ngModel)]="filters.pricePerDay">
+            <input matSliderThumb (valueChange)="updateDailyPrice($event)" name="pricePerDay">
+          </mat-slider>
+          <div class="slider-value">${{ filters.pricePerDay || 0 }}/día</div>
+        </div>
+
+        <!-- Monthly Price -->
+        <div class="filter-item">
+          <label class="filter-label">
+            <mat-icon class="filter-label-icon">attach_money</mat-icon>
+            Precio por Mes
+          </label>
+          <mat-slider
+            class="filter-slider"
+            [min]="0"
+            [max]="50000"
+            [step]="500"
+            [discrete]="true"
+            [displayWith]="formatPrice"
+            thumbLabel
+            [(ngModel)]="filters.pricePerMonth">
+            <input matSliderThumb (valueChange)="updateMonthlyPrice($event)" name="pricePerMonth">
+          </mat-slider>
+          <div class="slider-value">${{ filters.pricePerMonth || 0 }}/mes</div>
+        </div>
+      </div>
+
+      <!-- Amenities -->
+      <div class="filter-amenities">
+        <label class="filter-label">
+          <mat-icon class="filter-label-icon">stars</mat-icon>
+          Amenidades
+        </label>
+        <app-select-button 
+          [options]="amenityOptions"
+          placeholder="Seleccionar amenidades"
+          (selectionChange)="onAmenitiesSelectionChange($event)">
+        </app-select-button>
+      </div>
+
+      <!-- Botón de aplicar filtros -->
+      <div class="filter-actions">
+        <button 
+          mat-raised-button 
+          color="primary"
+          class="apply-button"
+          (click)="applyFilters()">
+          Aplicar Filtros
+        </button>
+      </div>
+    </div>
+  </mat-card-content>
+</mat-card> 

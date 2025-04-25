@@ -5,152 +5,157 @@
       <p class="form-subtitle">Completa tus datos personales para continuar</p>
     </div>
     
-    <div class="form-flex-row" style="justify-content: center; align-items: center; margin-bottom: 16px;">
-      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-        <div class="profile-image">
-          <img *ngIf="profilePicture" [src]="profilePicture" alt="Profile picture" style="width: 100%; height: 100%; object-fit: cover;">
-          <div *ngIf="!profilePicture" style="color: #666; font-size: 13px;">Foto</div>
-        </div>
-        <button type="button" mat-stroked-button color="primary" (click)="fileInput.click()">
-          Cambiar foto
-        </button>
-      </div>
-      <input #fileInput type="file" (change)="onFileSelected($event)" accept="image/*" style="display: none;">
+    <!-- Spinner de carga centrado mientras se cargan los datos -->
+    <div *ngIf="isLoading && !dataLoaded" class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Cargando datos personales...</p>
     </div>
-
-    <form [formGroup]="personalDataForm" (ngSubmit)="onSubmit()" style="overflow: visible;">
-      <!-- Nombre completo -->
-      <div class="form-flex-row">
-        <div class="form-flex-col w-100">
-          <mat-form-field appearance="outline" class="ios-input w-100 custom-field" [class.field-invalid]="isFieldInvalid('fullName')">
-            <mat-label>Nombre completo</mat-label>
-            <input matInput formControlName="fullName" placeholder="Ingresa tu nombre completo">
-          </mat-form-field>
-          <div *ngIf="isFieldInvalid('fullName')" class="error-message">
-            <small>El nombre completo es requerido</small>
+    
+    <!-- Contenido del formulario (se oculta mientras se está cargando) -->
+    <div *ngIf="!isLoading || dataLoaded">
+      <div class="form-flex-row" style="justify-content: center; align-items: center; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+          <div class="profile-image">
+            <img *ngIf="profilePicture" [src]="profilePicture" alt="Profile picture" style="width: 100%; height: 100%; object-fit: cover;">
+            <div *ngIf="!profilePicture" style="color: #666; font-size: 13px;">Foto</div>
           </div>
-        </div>
-      </div>
-
-      <!-- Email y Fecha de nacimiento -->
-      <div class="form-flex-row">
-        <div class="form-flex-col">
-          <mat-form-field appearance="outline" class="ios-input w-100 custom-field" [class.field-invalid]="isFieldInvalid('email')">
-            <mat-label>Correo electrónico</mat-label>
-            <input matInput formControlName="email" type="email" placeholder="email@ejemplo.com" [disabled]="true">
-          </mat-form-field>
-          <div *ngIf="isFieldInvalid('email')" class="error-message">
-            <small>El correo electrónico debe ser válido</small>
-          </div>
-        </div>
-        <div class="form-flex-col">
-          <mat-form-field appearance="outline" class="ios-input w-100 custom-field" [class.field-invalid]="isFieldInvalid('birthDate')">
-            <mat-label>Fecha de nacimiento</mat-label>
-            <input matInput [matDatepicker]="birthDatePicker" formControlName="birthDate" placeholder="DD/MM/AAAA">
-            <mat-datepicker-toggle matSuffix [for]="birthDatePicker"></mat-datepicker-toggle>
-            <mat-datepicker #birthDatePicker></mat-datepicker>
-            <mat-hint class="smaller-hint">Debe ser mayor de 18 años</mat-hint>
-          </mat-form-field>
-          <div *ngIf="isFieldInvalid('birthDate')" class="error-message">
-            <small>{{getBirthDateErrorMessage()}}</small>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Tipo de documento y Número de documento -->
-      <div class="form-flex-row">
-        <div class="form-flex-col">
-          <mat-form-field appearance="outline" class="ios-input w-100 custom-field" [class.field-invalid]="isFieldInvalid('documentType')">
-            <mat-label>Tipo de documento</mat-label>
-            <mat-select formControlName="documentType">
-              <mat-option *ngFor="let type of documentTypes" [value]="type.value">
-                {{type.label}}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
-          <div *ngIf="isFieldInvalid('documentType')" class="error-message">
-            <small>El tipo de documento es requerido</small>
-          </div>
-        </div>
-        <div class="form-flex-col">
-          <mat-form-field appearance="outline" class="ios-input w-100 custom-field document-field" [class.field-invalid]="isFieldInvalid('documentNumber')">
-            <mat-label>Número de documento</mat-label>
-            <input matInput formControlName="documentNumber" [placeholder]="getDocumentPlaceholder()">
-            <mat-hint *ngIf="personalDataForm.get('documentType')?.value" class="smaller-hint">
-              <small>{{documentPatterns[personalDataForm.get('documentType')?.value] || 'Ingrese su número de documento'}}</small>
-            </mat-hint>
-          </mat-form-field>
-          <div *ngIf="isFieldInvalid('documentNumber')" class="error-message">
-            <small>{{getDocumentErrorMessage()}}</small>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Cargo y Departamento -->
-      <div class="form-flex-row">
-        <div class="form-flex-col">
-          <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
-            <mat-label>Cargo</mat-label>
-            <input matInput formControlName="jobTitle" placeholder="Ej: Gerente, Desarrollador, Analista">
-          </mat-form-field>
-        </div>
-        <div class="form-flex-col">
-          <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
-            <mat-label>Departamento</mat-label>
-            <input matInput formControlName="department" placeholder="Ej: Marketing, TI, Finanzas">
-          </mat-form-field>
-        </div>
-      </div>
-
-      <!-- Botones de acción -->
-      <div class="form-actions">
-        <button 
-          mat-flat-button 
-          color="primary"
-          class="submit-button"
-          type="submit" 
-          [disabled]="personalDataForm.invalid || isLoading"
-          style="border-radius: 4px !important; overflow: hidden;">
-          <ng-container *ngIf="!isLoading" class="button-content">
-            <mat-icon class="button-icon">save</mat-icon>
-            <span class="button-text">Guardar información</span>
-          </ng-container>
-          <mat-spinner *ngIf="isLoading" diameter="24"></mat-spinner>
-        </button>
-      </div>
-    </form>
-
-    <!-- Sección de dirección -->
-    <div class="address-section mat-elevation-z1">
-      <div class="address-header" (click)="toggleAddressSection()">
-        <div class="d-flex align-items-center justify-content-between">
-          <span class="section-title">Dirección</span>
-          <mat-icon class="dropdown-icon" [class.rotated]="showAddressContent">expand_more</mat-icon>
-        </div>
-      </div>
-      
-      <div class="address-content" [class.expanded]="showAddressContent">
-        <div class="address-card mat-elevation-z2" *ngIf="address">
-          <div class="address-info">
-            <p class="mb-1"><strong>{{ address.city.country.name }}, {{ address.city.name }}</strong></p>
-            <p class="mb-0">
-              {{ address.streetName }} {{ address.streetNumber }}
-              <ng-container *ngIf="address.floor">, Piso {{ address.floor }}</ng-container>
-              <ng-container *ngIf="address.apartment">, Depto {{ address.apartment }}</ng-container>
-              <ng-container *ngIf="address.postalCode">, CP: {{ address.postalCode }}</ng-container>
-            </p>
-          </div>
-          <button mat-icon-button color="primary" (click)="editAddress()">
-            <mat-icon>edit</mat-icon>
+          <button type="button" mat-stroked-button color="primary" (click)="fileInput.click()">
+            Cambiar foto
           </button>
+        </div>
+        <input #fileInput type="file" (change)="onFileSelected($event)" accept="image/*" style="display: none;">
+      </div>
+
+      <form [formGroup]="personalDataForm" (ngSubmit)="onSubmit()" style="overflow: visible;">
+        <!-- Nombre completo -->
+        <div class="form-flex-row">
+          <div class="form-flex-col w-100">
+            <mat-form-field appearance="outline" class="ios-input w-100 custom-field" [class.field-invalid]="isFieldInvalid('fullName')">
+              <mat-label>Nombre completo</mat-label>
+              <input matInput formControlName="fullName" placeholder="Ingresa tu nombre completo">
+            </mat-form-field>
+            <div *ngIf="isFieldInvalid('fullName')" class="error-message">
+              <small>El nombre completo es requerido</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Email y Fecha de nacimiento -->
+        <div class="form-flex-row">
+          <div class="form-flex-col">
+            <mat-form-field appearance="outline" class="ios-input w-100 custom-field" [class.field-invalid]="isFieldInvalid('email')">
+              <mat-label>Correo electrónico</mat-label>
+              <input matInput formControlName="email" type="email" placeholder="email@ejemplo.com" [disabled]="true">
+            </mat-form-field>
+            <div *ngIf="isFieldInvalid('email')" class="error-message">
+              <small>El correo electrónico debe ser válido</small>
+            </div>
+          </div>
+          <div class="form-flex-col">
+            <mat-form-field appearance="outline" class="ios-input w-100 custom-field" [class.field-invalid]="isFieldInvalid('birthDate')">
+              <mat-label>Fecha de nacimiento</mat-label>
+              <input matInput [matDatepicker]="birthDatePicker" formControlName="birthDate" placeholder="DD/MM/AAAA">
+              <mat-datepicker-toggle matSuffix [for]="birthDatePicker"></mat-datepicker-toggle>
+              <mat-datepicker #birthDatePicker></mat-datepicker>
+            </mat-form-field>
+            <div *ngIf="isFieldInvalid('birthDate')" class="error-message">
+              <small>{{getBirthDateErrorMessage()}}</small>
+            </div>
+          </div>
         </div>
         
-        <div *ngIf="!address" class="no-address-message">
-          <p>No hay dirección registrada</p>
-          <button mat-stroked-button color="primary" (click)="addAddress()">
-            <mat-icon>add</mat-icon>
-            Agregar dirección
+        <!-- Tipo de documento y Número de documento -->
+        <div class="form-flex-row">
+          <div class="form-flex-col">
+            <mat-form-field appearance="outline" class="ios-input w-100 custom-field" [class.field-invalid]="isFieldInvalid('documentType')">
+              <mat-label>Tipo de documento</mat-label>
+              <mat-select formControlName="documentType">
+                <mat-option *ngFor="let type of documentTypes" [value]="type.value">
+                  {{type.label}}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            <div *ngIf="isFieldInvalid('documentType')" class="error-message">
+              <small>El tipo de documento es requerido</small>
+            </div>
+          </div>
+          <div class="form-flex-col">
+            <mat-form-field appearance="outline" class="ios-input w-100 custom-field document-field" [class.field-invalid]="isFieldInvalid('documentNumber')">
+              <mat-label>Número de documento</mat-label>
+              <input matInput formControlName="documentNumber" [placeholder]="getDocumentPlaceholder()">
+            </mat-form-field>
+            <div *ngIf="isFieldInvalid('documentNumber')" class="error-message">
+              <small>{{getDocumentErrorMessage()}}</small>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Cargo y Departamento -->
+        <div class="form-flex-row">
+          <div class="form-flex-col">
+            <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
+              <mat-label>Cargo</mat-label>
+              <input matInput formControlName="jobTitle" placeholder="Ej: Gerente, Desarrollador, Analista">
+            </mat-form-field>
+          </div>
+          <div class="form-flex-col">
+            <mat-form-field appearance="outline" class="ios-input w-100 custom-field">
+              <mat-label>Departamento</mat-label>
+              <input matInput formControlName="department" placeholder="Ej: Marketing, TI, Finanzas">
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="form-actions">
+          <button 
+            mat-flat-button 
+            color="primary"
+            class="submit-button"
+            type="submit" 
+            [disabled]="personalDataForm.invalid || isLoading"
+            style="border-radius: 4px !important; overflow: hidden;">
+            <ng-container *ngIf="!isLoading" class="button-content">
+              <mat-icon class="button-icon">save</mat-icon>
+              <span class="button-text">Guardar información</span>
+            </ng-container>
+            <mat-spinner *ngIf="isLoading" diameter="24"></mat-spinner>
           </button>
+        </div>
+      </form>
+
+      <!-- Sección de dirección -->
+      <div class="address-section mat-elevation-z1">
+        <div class="address-header" (click)="toggleAddressSection()">
+          <div class="d-flex align-items-center justify-content-between">
+            <span class="section-title">Dirección</span>
+            <mat-icon class="dropdown-icon" [class.rotated]="showAddressContent">expand_more</mat-icon>
+          </div>
+        </div>
+        
+        <div class="address-content" [class.expanded]="showAddressContent">
+          <div class="address-card mat-elevation-z2" *ngIf="address">
+            <div class="address-info">
+              <p class="mb-1"><strong>{{ address.city.country.name }}, {{ address.city.name }}</strong></p>
+              <p class="mb-0">
+                {{ address.streetName }} {{ address.streetNumber }}
+                <ng-container *ngIf="address.floor">, Piso {{ address.floor }}</ng-container>
+                <ng-container *ngIf="address.apartment">, Depto {{ address.apartment }}</ng-container>
+                <ng-container *ngIf="address.postalCode">, CP: {{ address.postalCode }}</ng-container>
+              </p>
+            </div>
+            <button mat-icon-button color="primary" (click)="editAddress()">
+              <mat-icon>edit</mat-icon>
+            </button>
+          </div>
+          
+          <div *ngIf="!address" class="no-address-message">
+            <p>No hay dirección registrada</p>
+            <button mat-stroked-button color="primary" (click)="addAddress()">
+              <mat-icon>add</mat-icon>
+              Agregar dirección
+            </button>
+          </div>
         </div>
       </div>
     </div>
