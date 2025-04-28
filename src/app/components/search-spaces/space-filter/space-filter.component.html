@@ -5,7 +5,7 @@
       <mat-icon class="filter-icon">{{ isExpanded ? 'expand_less' : 'filter_list' }}</mat-icon>
     </div>
 
-    <div class="filter-content" [ngClass]="{'filter-collapsed': !isExpanded}">
+    <div class="filter-content" [ngClass]="{'filter-collapsed': !isExpanded}" (scroll)="onFilterScroll()">
       <div class="filter-row">
         <!-- Country -->
         <div class="filter-item">
@@ -158,25 +158,27 @@
       <div class="filter-amenities">
         <label class="filter-label">
           <mat-icon class="filter-label-icon">stars</mat-icon>
-          Amenidades
+          <strong>Amenidades</strong>
         </label>
-        <app-select-button 
+        <div class="amenities-selector">
+        <app-material-select 
           [options]="amenityOptions"
           placeholder="Seleccionar amenidades"
+          [multiple]="true"
           (selectionChange)="onAmenitiesSelectionChange($event)">
-        </app-select-button>
+        </app-material-select>
       </div>
+      </div>
+    </div>
 
-      <!-- Botón de aplicar filtros -->
-      <div class="filter-actions">
-        <button 
-          mat-raised-button 
-          color="primary"
-          class="apply-button"
-          (click)="applyFilters()">
-          Aplicar Filtros
-        </button>
-      </div>
+    <!-- Botón de aplicar filtros - Movido fuera del filter-content -->
+    <div class="filter-actions">
+      <button mat-raised-button color="primary" class="apply-button" (click)="applyFilters()">
+        Aplicar Filtros
+      </button>
+      <button mat-icon-button class="reset-button" (click)="resetFilters()" matTooltip="Borrar filtros">
+        <mat-icon>refresh</mat-icon>
+      </button>
     </div>
   </mat-card-content>
 </mat-card> 

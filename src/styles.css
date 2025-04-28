@@ -63,4 +63,52 @@ app-provider-type-selection {
   display: flex !important;
   justify-content: center !important;
   width: 100% !important;
+}
+
+/* Estilos para diálogos sin scrollbar */
+.no-scroll-dialog .mat-mdc-dialog-surface {
+  overflow: hidden !important;
+}
+
+.no-scroll-dialog .mat-mdc-dialog-content {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* Estilos para snackbars */
+.success-snackbar {
+  --mdc-snackbar-container-color: #43a047 !important;
+  --mat-mdc-snack-bar-button-color: white !important;
+  --mdc-snackbar-supporting-text-color: white !important;
+}
+
+.error-snackbar {
+  --mdc-snackbar-container-color: #d32f2f !important;
+  --mat-mdc-snack-bar-button-color: white !important;
+  --mdc-snackbar-supporting-text-color: white !important;
+}
+
+.info-snackbar {
+  --mdc-snackbar-container-color: #1976d2 !important;
+  --mat-mdc-snack-bar-button-color: white !important;
+  --mdc-snackbar-supporting-text-color: white !important;
+}
+
+/* Estilos para el contenedor del diálogo de reserva */
+.reservation-dialog-container .mat-mdc-dialog-container {
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.reservation-dialog-container .mat-mdc-dialog-container .mdc-dialog__surface {
+  overflow: hidden !important;
+  display: flex !important;
+}
+
+.reservation-dialog-container .mat-mdc-dialog-content {
+  max-height: none !important;
+  display: flex !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
 } 

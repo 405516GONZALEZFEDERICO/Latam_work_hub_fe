@@ -3,16 +3,6 @@
   <div class="register-container">
     <h1>Crear una cuenta</h1>
 
-    <!-- Mensaje de error -->
-    <div class="alert-danger" *ngIf="showError">
-      {{ errorMessage }}
-    </div>
-
-    <!-- Mensaje de éxito -->
-    <div class="alert-success" *ngIf="successMessage">
-      {{ successMessage }}
-    </div>
-
     <!-- Formulario -->
     <form [formGroup]="registerForm" (ngSubmit)="register()">
       <!-- Email -->
@@ -88,9 +78,17 @@
           <p class="error-message" *ngIf="registerForm.get('password')?.errors?.['required']">
             <mat-icon>error_outline</mat-icon> La contraseña es obligatoria
           </p>
-          <p class="error-message" *ngIf="registerForm.get('password')?.errors?.['minlength']">
-            <mat-icon>error_outline</mat-icon> La contraseña debe tener al menos 6 caracteres
-          </p>
+          <div *ngIf="passwordErrors?.['passwordStrength'] as strengthErrors">
+            <p class="error-message" *ngIf="!strengthErrors.hasMinLength">
+              <mat-icon>error_outline</mat-icon> Debe tener al menos 8 caracteres
+            </p>
+            <p class="error-message" *ngIf="!strengthErrors.hasNumber">
+              <mat-icon>error_outline</mat-icon> Debe contener al menos un número
+            </p>
+            <p class="error-message" *ngIf="!strengthErrors.hasSpecial">
+              <mat-icon>error_outline</mat-icon> Debe contener al menos un caracter especial
+            </p>
+          </div>
         </div>
         
         <!-- Validaciones de confirmar contraseña -->

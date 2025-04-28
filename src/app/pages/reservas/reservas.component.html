@@ -1,0 +1,116 @@
+<div class="container mt-4">
+  <div class="card shadow-sm">
+    <div class="card-header">
+      <h3 class="mb-0">Mis Reservas y Alquileres</h3>
+    </div>
+    <div class="card-body">
+      <!-- Filtros -->
+      <div class="row mb-4">
+        <div class="col-md-12">
+          <div class="filter-container p-3 bg-light rounded">
+            <h5>Filtros</h5>
+            <div class="row">
+              <div class="col-md-4 mb-2">
+                <label for="startDate" class="form-label">Fecha Inicio</label>
+                <input type="date" class="form-control" id="startDate">
+              </div>
+              <div class="col-md-4 mb-2">
+                <label for="endDate" class="form-label">Fecha Fin</label>
+                <input type="date" class="form-control" id="endDate">
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <button class="btn btn-primary w-100">Aplicar Filtros</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs para diferenciar Reservas y Alquileres -->
+      <ul class="nav nav-tabs mb-3" id="reservasTab" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="reservas-tab" data-bs-toggle="tab" data-bs-target="#reservas" type="button" role="tab" aria-controls="reservas" aria-selected="true">
+            Reservas
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="alquileres-tab" data-bs-toggle="tab" data-bs-target="#alquileres" type="button" role="tab" aria-controls="alquileres" aria-selected="false">
+            Alquileres
+          </button>
+        </li>
+      </ul>
+
+      <!-- Contenido de las Tabs -->
+      <div class="tab-content" id="reservasTabContent">
+        <!-- Tab de Reservas -->
+        <div class="tab-pane fade show active" id="reservas" role="tabpanel" aria-labelledby="reservas-tab">
+          <div class="row">
+            <!-- Tarjeta de Reserva (Repetir según la cantidad de reservas) -->
+            <div class="col-md-6 mb-4">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title">Espacio de Coworking - Palermo</h5>
+                  <h6 class="card-subtitle mb-2 text-muted">Reserva #12345</h6>
+                  <p class="card-text">
+                    <strong>Fecha:</strong> 28/04/2023<br>
+                    <strong>Horario:</strong> 09:00 - 18:00<br>
+                    <strong>Estado:</strong> <span class="badge bg-success">Confirmado</span><br>
+                    <strong>Precio:</strong> $5000
+                  </p>
+                  <div class="d-flex justify-content-between mt-3">
+                    <button class="btn btn-outline-primary">Ver Detalles</button>
+                    <button class="btn btn-outline-danger">Cancelar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Ejemplo de otra reserva -->
+            <div class="col-md-6 mb-4">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title">Sala de Reuniones - Microcentro</h5>
+                  <h6 class="card-subtitle mb-2 text-muted">Reserva #12346</h6>
+                  <p class="card-text">
+                    <strong>Fecha:</strong> 30/04/2023<br>
+                    <strong>Horario:</strong> 14:00 - 16:00<br>
+                    <strong>Estado:</strong> <span class="badge bg-warning">Pendiente de Pago</span><br>
+                    <strong>Precio:</strong> $3000
+                  </p>
+                  <div class="d-flex justify-content-between mt-3">
+                    <button class="btn btn-outline-primary">Ver Detalles</button>
+                    <button class="btn btn-outline-danger">Cancelar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab de Alquileres -->
+        <div class="tab-pane fade" id="alquileres" role="tabpanel" aria-labelledby="alquileres-tab">
+          <div class="row">
+            <!-- Tarjeta de Alquiler (Repetir según la cantidad de alquileres) -->
+            <div class="col-md-6 mb-4">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title">Oficina Privada - Belgrano</h5>
+                  <h6 class="card-subtitle mb-2 text-muted">Alquiler #54321</h6>
+                  <p class="card-text">
+                    <strong>Periodo:</strong> 01/04/2023 - 30/04/2023<br>
+                    <strong>Estado:</strong> <span class="badge bg-success">Activo</span><br>
+                    <strong>Precio Mensual:</strong> $75000
+                  </p>
+                  <div class="d-flex justify-content-between mt-3">
+                    <button class="btn btn-outline-primary">Ver Detalles</button>
+                    <button class="btn btn-outline-warning">Renovar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

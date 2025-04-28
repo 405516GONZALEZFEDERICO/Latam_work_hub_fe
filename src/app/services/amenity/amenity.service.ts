@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { Amenity, AmenityDto } from '../../models/space.model';
 import { environment } from '../../../environment/environment';
+import { catchError, tap } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -30,16 +31,26 @@ export class AmenityService {
    * Get predefined amenities
    */
   getPredefinedAmenities(): Observable<Amenity[]> {
-    // For now, return the predefined list
-    // In a production environment, this would likely be fetched from an API
-    return of(this.predefinedAmenities);
+    // Intentar obtener amenidades del API y usar las predefinidas como fallback
+    console.log('Obteniendo amenidades predefinidas de:', `${this.apiUrl}/all`);
+    return this.http.get<Amenity[]>(`${this.apiUrl}/all`).pipe(
+      tap(amenities => console.log('Amenidades obtenidas del API:', amenities)),
+      catchError(error => {
+        console.error('Error obteniendo amenidades del API:', error);
+        console.log('Utilizando lista predefinida como fallback');
+        return of(this.predefinedAmenities);
+      })
+    );
   }
 
   /**
    * Get amenities from the API
    */
   getAmenities(): Observable<AmenityDto[]> {
-    return this.http.get<AmenityDto[]>(`${this.apiUrl}/all`);
+    console.log('Obteniendo amenidades de:', `${this.apiUrl}/all`);
+    return this.http.get<AmenityDto[]>(`${this.apiUrl}/all`).pipe(
+      tap(amenities => console.log('Amenidades obtenidas:', amenities))
+    );
   }
 
   /**

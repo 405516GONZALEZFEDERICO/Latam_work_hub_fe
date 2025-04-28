@@ -1,23 +1,24 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, OnInit, Output, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSliderModule } from '@angular/material/slider';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatSliderModule } from '@angular/material/slider';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { FilterState } from '../../../models/search-space.model';
-import { AddressService } from '../../../services/address/address.service';
-import { AmenityService } from '../../../services/amenity/amenity.service';
-import { SpaceTypeService } from '../../../services/space/space-type.service';
 import { Country } from '../../../models/country.model';
 import { City } from '../../../models/city.model';
 import { AmenityDto } from '../../../models/space.model';
 import { SpaceType } from '../../../models/space-type.model';
-import { SelectButtonComponent, OptionItem } from '../../shared/select-button/select-button.component';
+import { MaterialSelectComponent, OptionItem } from '../../shared/material-select/material-select.component';
+import { AddressService } from '../../../services/address/address.service';
+import { AmenityService } from '../../../services/amenity/amenity.service';
+import { SpaceTypeService } from '../../../services/space/space-type.service';
 
 @Component({
   selector: 'app-space-filter',
@@ -26,20 +27,22 @@ import { SelectButtonComponent, OptionItem } from '../../shared/select-button/se
     CommonModule,
     FormsModule,
     MatFormFieldModule,
-    MatInputModule,
     MatSelectModule,
-    MatSliderModule,
-    MatButtonModule,
-    MatIconModule,
+    MatInputModule,
     MatCardModule,
+    MatIconModule,
+    MatButtonModule,
+    MatSliderModule,
     MatCheckboxModule,
-    SelectButtonComponent
+    MaterialSelectComponent,
+    MatTooltipModule
   ],
   templateUrl: './space-filter.component.html',
   styleUrls: ['./space-filter.component.css']
 })
 export class SpaceFilterComponent implements OnInit {
   @Output() filtersChanged = new EventEmitter<FilterState>();
+  @ViewChild(MaterialSelectComponent) selectButton?: MaterialSelectComponent;
   
   // Control de expansión de filtros
   isExpanded = true;
@@ -183,8 +186,8 @@ export class SpaceFilterComponent implements OnInit {
     this.filters.area = event;
   }
 
-  // Método para manejar la selección de amenidades desde el componente SelectButton
-  onAmenitiesSelectionChange(selectedIds: number[]): void {
+  // Método para manejar la selección de amenidades desde el componente MaterialSelect
+  onAmenitiesSelectionChange(selectedIds: any[]): void {
     console.log('Amenidades seleccionadas:', selectedIds);
     this.filters.amenityIds = selectedIds.length > 0 ? selectedIds : null;
   }
@@ -192,5 +195,42 @@ export class SpaceFilterComponent implements OnInit {
   applyFilters(): void {
     console.log('Aplicando filtros:', this.filters);
     this.filtersChanged.emit({...this.filters});
+  }
+
+  resetFilters() {
+    // Restablecer todos los filtros a sus valores predeterminados
+    this.filters = {
+      pricePerHour: null,
+      pricePerDay: null,
+      pricePerMonth: null,
+      area: null,
+      capacity: null,
+      spaceTypeId: null,
+      cityId: null,
+      countryId: null,
+      amenityIds: null,
+      address: ''
+    };
+
+    // Reiniciar las opciones de amenidades
+    if (this.amenityOptions && this.amenityOptions.length > 0) {
+      this.amenityOptions = this.amenityOptions.map(option => ({
+        ...option,
+        selected: false
+      }));
+    }
+
+    // Vaciar las ciudades al resetear
+    if (this.filters.countryId) {
+      this.cities = [];
+    }
+    
+    // Emitir los filtros restablecidos
+    this.filtersChanged.emit({...this.filters});
+  }
+
+  onFilterScroll(): void {
+    // Esta lógica ya no es necesaria con el nuevo componente de Material
+    // pero podemos mantenerla por compatibilidad si es necesario
   }
 } 

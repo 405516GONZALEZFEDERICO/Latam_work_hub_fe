@@ -1,0 +1,171 @@
+<div class="reservation-modal">
+  <div class="modal-header">
+    <h2>Reservar Espacio</h2>
+    <button mat-icon-button (click)="onCancel()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="modal-content">
+    <div class="content-layout">
+      <div class="main-column">
+        <div class="space-info">
+          <h3>{{ space.title || space.name }}</h3>
+          <p class="space-location" *ngIf="space.address">
+            <mat-icon>location_on</mat-icon>
+            <span>{{ space.city || 'Ciudad no especificada' }}, {{ space.country || 'País no especificado' }}</span>
+          </p>
+        </div>
+
+        <form [formGroup]="reservationForm">
+          <!-- Tipo de reserva -->
+          <div class="form-section">
+            <h4>Tipo de reserva</h4>
+            <mat-button-toggle-group formControlName="reservationType" class="reservation-type-toggle" (change)="onReservationTypeChange()">
+              <mat-button-toggle value="hour">
+                <div class="toggle-content">
+                  <mat-icon>schedule</mat-icon>
+                  <div>
+                    <div>Por hora</div>
+                    <div class="price-label">${{ getHourlyPrice() }}/hora</div>
+                  </div>
+                </div>
+              </mat-button-toggle>
+              <mat-button-toggle value="day">
+                <div class="toggle-content">
+                  <mat-icon>today</mat-icon>
+                  <div>
+                    <div>Por día</div>
+                    <div class="price-label">${{ getDailyPrice() }}/día</div>
+                  </div>
+                </div>
+              </mat-button-toggle>
+              <mat-button-toggle value="month">
+                <div class="toggle-content">
+                  <mat-icon>calendar_month</mat-icon>
+                  <div>
+                    <div>Por mes</div>
+                    <div class="price-label">${{ getMonthlyPrice() }}/mes</div>
+                  </div>
+                </div>
+              </mat-button-toggle>
+            </mat-button-toggle-group>
+          </div>
+
+          <div class="form-section">
+            <h4>Fecha y Hora</h4>
+            <div class="date-time-section">
+              <!-- Fecha inicial -->
+              <mat-form-field appearance="outline" [ngClass]="{'full-width': reservationForm.get('reservationType')?.value === 'month'}">
+                <mat-label>Fecha</mat-label>
+                <input matInput [matDatepicker]="startPicker" formControlName="startDate" 
+                      [min]="minDate" [max]="maxDate">
+                <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+                <mat-datepicker #startPicker></mat-datepicker>
+              </mat-form-field>
+
+              <!-- Rango de fechas para reserva mensual -->
+              <div *ngIf="reservationForm.get('reservationType')?.value === 'month'" class="date-range-info">
+                <mat-icon>date_range</mat-icon>
+                <span>Rango de contrato: {{ getMonthDateRange() }}</span>
+              </div>
+
+              <!-- Hora inicio -->
+              <mat-form-field appearance="outline" *ngIf="showTimeFields()">
+                <mat-label>Hora inicio</mat-label>
+                <input matInput type="time" formControlName="startTime">
+              </mat-form-field>
+
+              <!-- Hora fin -->
+              <mat-form-field appearance="outline" *ngIf="showTimeFields()">
+                <mat-label>Hora fin</mat-label>
+                <input matInput type="time" formControlName="endTime">
+              </mat-form-field>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h4>Información adicional</h4>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Número de personas</mat-label>
+              <input matInput type="number" formControlName="numberOfPeople" min="1" 
+                    [max]="space.capacity || 10">
+            </mat-form-field>
+          </div>
+
+          <!-- Servicios adicionales -->
+          <div class="amenities-section" *ngIf="hasAmenities()">
+            <h4>Servicios extras</h4>
+            <p class="amenities-note">Todos los servicios extras están incluidos por defecto en el precio.</p>
+            
+            <div class="amenities-grid">
+              <div class="amenity-card" 
+                  *ngFor="let amenity of getAmenities()" 
+                  [class.selected]="isAmenitySelected(amenity.name)"
+                  (click)="toggleAmenity(amenity.name)">
+                <mat-icon class="amenity-icon">{{ getAmenityIcon(amenity.name) }}</mat-icon>
+                <div class="amenity-name">{{ amenity.name }}</div>
+                <div class="amenity-price">+${{ amenityPrices[amenity.name] | number:'1.0-0' }}</div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="price-column">
+        <!-- Resumen de precios -->
+        <div class="price-summary">
+          <h4>Resumen de la reserva</h4>
+          
+          <div class="price-details">
+            <div class="price-detail">
+              <span class="price-label">Tipo de reserva:</span>
+              <span class="price-value">{{ getReservationTypeLabel() }}</span>
+            </div>
+            
+            <div class="price-detail" *ngIf="getBasePrice() > 0">
+              <span class="price-label">Precio base:</span>
+              <span class="price-value">${{ getBasePrice() }}</span>
+            </div>
+            
+            <div class="price-detail amenity-prices" *ngIf="selectedAmenities.length > 0">
+              <span class="price-label">Servicios adicionales:</span>
+              <span class="price-value">${{ getAmenitiesPrice() }}</span>
+              
+              <!-- Lista detallada de amenities -->
+              <div class="amenities-detail">
+                <div class="amenity-line" *ngFor="let amenity of selectedAmenities">
+                  <span>{{ amenity }}</span>
+                  <span>${{ amenityPrices[amenity] | number:'1.0-0' }}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="price-detail total">
+              <span class="price-label">Precio total:</span>
+              <span class="price-value">${{ totalPrice }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Métodos de pago (movido al final) -->
+    <div class="payment-options">
+      <h5>Métodos de pago</h5>
+      
+      <button type="button" class="mercadopago-button" (click)="onSubmit()" [disabled]="isLoading">
+        <div class="mp-button-content">
+          <mat-spinner *ngIf="isLoading" diameter="20"></mat-spinner>
+          <img *ngIf="!isLoading" src="/public/mercado-pago-logo-0 (1).png" alt="Mercado Pago" class="mp-logo">
+          <span>{{ isLoading ? 'Procesando...' : 'Pagar con Mercado Pago' }}</span>
+        </div>
+      </button>
+      
+      <p class="secure-payment-note">
+        <mat-icon>lock</mat-icon>
+        Pago seguro procesado por Mercado Pago
+      </p>
+    </div>
+  </div>
+</div>

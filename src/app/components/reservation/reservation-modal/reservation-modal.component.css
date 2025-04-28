@@ -1,0 +1,471 @@
+.reservation-modal-container {
+  width: 1200px;
+  height: 100%;
+}
+
+.reservation-modal {
+  background-color: white;
+  border-radius: 8px;
+  width: 100%;
+  height: 100%;
+  max-height: 150vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  position: relative;
+  margin: 0;
+  transform: translateZ(0);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background-color: var(--color-primary);
+  color: white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  width: 100%;
+  z-index: 10;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.modal-content {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+  max-height: calc(98vh - 60px);
+  display: flex;
+  flex-direction: column;
+}
+
+.content-layout {
+  display: flex;
+  flex: 1;
+  min-height: 500px;
+  width: 100%;
+}
+
+.main-column {
+  flex: 1;
+  padding: 24px;
+  min-width: 0;
+  overflow-y: auto;
+  border-right: 1px solid #eee;
+  position: relative;
+}
+
+.price-column {
+  width: 350px;
+  background-color: #f9f9f9;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  position: relative;
+}
+
+.space-info {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.space-info h3 {
+  margin: 0 0 10px 0;
+  color: var(--color-primary-dark);
+  font-size: 1.4rem;
+  font-weight: 500;
+}
+
+.space-location {
+  display: flex;
+  align-items: center;
+  color: var(--color-text-light);
+  font-size: 0.9rem;
+  margin: 8px 0;
+}
+
+.space-location mat-icon {
+  font-size: 16px;
+  height: 16px;
+  width: 16px;
+  margin-right: 8px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-section {
+  margin-bottom: 16px;
+}
+
+.form-section h4 {
+  margin: 0 0 12px 0;
+  color: var(--color-primary-dark);
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+/* Reservation Type Toggle */
+.reservation-type-toggle {
+  display: flex;
+  width: 100%;
+  margin-bottom: 15px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.reservation-type-toggle .mat-button-toggle {
+  flex: 1;
+  height: 100px;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.toggle-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 15px 8px;
+  text-align: center;
+  height: 100%;
+}
+
+.toggle-content mat-icon {
+  margin-bottom: 6px;
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+}
+
+.price-label {
+  font-size: 12px;
+  opacity: 0.8;
+  margin-top: 5px;
+}
+
+.date-time-section {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+@media (min-width: 768px) {
+  .date-time-section {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+.full-width {
+  width: 100%;
+}
+
+/* Amenities */
+.amenities-section {
+  margin-top: 5px;
+}
+
+.amenities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.amenity-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 15px 10px;
+  border-radius: 8px;
+  background-color: #f5f5f5;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-align: center;
+  border: 2px solid transparent;
+}
+
+.amenity-card.selected {
+  background-color: rgba(var(--color-primary-rgb), 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.amenity-icon {
+  font-size: 24px;
+  height: 24px;
+  width: 24px;
+  margin-bottom: 8px;
+  color: var(--color-primary);
+}
+
+.amenity-name {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.amenity-price {
+  font-size: 12px;
+  color: var(--color-success);
+  font-weight: 500;
+}
+
+/* Price Summary */
+.price-summary {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  border: 1px solid #eee;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+}
+
+.price-summary h4 {
+  font-size: 1.2rem;
+  font-weight: 500;
+  margin: 0;
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+  color: var(--color-primary-dark);
+  text-align: center;
+}
+
+.price-details {
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.price-detail {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.price-detail:last-child {
+  margin-bottom: 0;
+}
+
+.price-detail.total {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #ddd;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+/* Payment Options (ajustado para nueva posición) */
+.payment-options {
+  padding: 20px;
+  margin-top: 20px;
+  background-color: #fff;
+  border-top: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.payment-options h5 {
+  margin: 0 0 15px 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--color-primary-dark);
+  text-align: center;
+}
+
+.mercadopago-button {
+  width: 100%;
+  max-width: 400px;
+  height: 48px;
+  background-color: #009ee3; /* Color oficial de Mercado Pago */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: background-color 0.2s ease;
+}
+
+.mercadopago-button:hover {
+  background-color: #008ecf;
+}
+
+.mp-button-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mp-logo {
+  height: 24px;
+  margin-right: 10px;
+}
+
+.secure-payment-note {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: var(--color-text-light);
+  margin-top: 10px;
+  text-align: center;
+}
+
+.secure-payment-note mat-icon {
+  font-size: 14px;
+  height: 14px;
+  width: 14px;
+  margin-right: 5px;
+  color: var(--color-success);
+}
+
+/* Media Queries actualizado para nuevo layout */
+@media (max-width: 960px) {
+  .reservation-modal {
+    width: 95vw;
+  }
+
+  .content-layout {
+    flex-direction: column;
+  }
+
+  .main-column,
+  .price-column {
+    width: 100%;
+  }
+
+  .price-column {
+    border-left: none;
+    border-top: 1px solid #eee;
+  }
+
+  .payment-options {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 600px) {
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .action-buttons button {
+    width: 100%;
+  }
+
+  .modal-header {
+    padding: 12px 16px;
+  }
+
+  .main-column,
+  .price-column {
+    padding: 16px;
+  }
+  
+  .reservation-type-toggle {
+    flex-direction: column;
+    height: auto;
+  }
+  
+  .reservation-type-toggle .mat-button-toggle {
+    height: 60px;
+  }
+
+  .payment-options {
+    padding: 10px;
+  }
+}
+
+/* Mejorar la visibilidad del estado seleccionado */
+.reservation-type-toggle .mat-button-toggle-checked {
+  background-color: rgba(var(--color-primary-rgb), 0.1) !important;
+  border: 2px solid var(--color-primary) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.reservation-type-toggle .mat-button-toggle-label-content {
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Estilos para rango de fechas en reserva mensual */
+.date-range-info {
+  display: flex;
+  align-items: center;
+  background-color: rgba(var(--color-primary-rgb), 0.05);
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin: 5px 0 15px;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+}
+
+.date-range-info mat-icon {
+  color: var(--color-primary);
+  margin-right: 10px;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.date-range-info span {
+  font-size: 14px;
+  color: var(--color-text);
+}
+
+/* Estilos para detalles de amenities */
+.amenity-prices {
+  flex-direction: column;
+  align-items: flex-start !important;
+}
+
+.amenity-prices .price-value {
+  align-self: flex-end;
+  margin-top: -20px;
+}
+
+.amenities-detail {
+  width: 100%;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #e0e0e0;
+}
+
+.amenity-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #666;
+  padding: 3px 0;
+}
+
+.amenities-note {
+  font-size: 14px;
+  color: var(--color-primary);
+  margin-bottom: 12px;
+  font-style: italic;
+  padding-left: 5px;
+  border-left: 3px solid var(--color-primary);
+  background-color: rgba(var(--color-primary-rgb), 0.05);
+  padding: 8px 12px;
+  border-radius: 4px;
+}

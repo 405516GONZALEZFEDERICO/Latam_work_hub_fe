@@ -1,0 +1,84 @@
+.deactivate-account-container {
+  margin: 20px 0;
+  max-width: 800px;
+}
+
+.danger-zone-card {
+  border: 1px solid rgba(255, 68, 68, 0.2);
+  border-radius: 6px;
+  background-color: rgba(255, 68, 68, 0.03);
+}
+
+.danger-icon {
+  color: #ff4444;
+  margin-right: 16px;
+  font-size: 24px;
+  height: 24px;
+  width: 24px;
+}
+
+mat-card-header {
+  margin-bottom: 16px;
+}
+
+mat-card-title {
+  color: #d73a49;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.warning-text {
+  color: #666;
+  margin-bottom: 16px;
+}
+
+mat-divider {
+  margin: 16px 0;
+}
+
+.action-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.action-info {
+  flex: 1;
+  
+  h3 {
+    color: #24292e;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  
+  p {
+    color: #666;
+    font-size: 14px;
+    margin: 0;
+  }
+}
+
+.action-button {
+  background-color: #d73a49;
+  color: white;
+  
+  &:hover:not([disabled]) {
+    background-color: #cb2431;
+  }
+  
+  &[disabled] {
+    background-color: rgba(215, 58, 73, 0.6);
+  }
+}
+
+.loading-icon {
+  margin-left: 8px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+} 

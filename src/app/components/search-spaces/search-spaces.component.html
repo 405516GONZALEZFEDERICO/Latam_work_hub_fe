@@ -15,7 +15,7 @@
       </div>
       
       <ng-container *ngIf="!isLoading">
-        <app-space-grid [spaces]="spaces"></app-space-grid>
+        <app-space-grid [spaces]="spaces" *ngIf="totalItems > 0"></app-space-grid>
         
         <div class="paginator-container" *ngIf="totalItems > 0">
           <mat-paginator
@@ -28,9 +28,11 @@
           </mat-paginator>
         </div>
         
-        <div class="no-results" *ngIf="totalItems === 0">
+        <div class="no-results-centered" *ngIf="totalItems === 0">
+          <div class="no-results-content">
           <mat-icon>search_off</mat-icon>
           <p>No se encontraron espacios con los filtros seleccionados.</p>
+          </div>
         </div>
       </ng-container>
     </div>

@@ -38,8 +38,16 @@ export interface SpaceDto {
   pricePerMonth: number;
   uid: string;
   amenities: AmenityDto[];
-  type: SpaceTypeDto;
-  address: AddressEntity;
+  type: {
+    name: string;
+  };
+  cityId: number;
+  countryId: number;
+  streetName: string;
+  streetNumber: string;
+  floor?: string;
+  apartment?: string;
+  postalCode: string;
 }
 
 export interface AmenityDto {

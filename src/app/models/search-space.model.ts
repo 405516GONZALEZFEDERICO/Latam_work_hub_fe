@@ -3,12 +3,19 @@ import { AddressEntity } from './space.model';
 export interface SearchSpace {
   id: string;
   title: string;
+  name?: string;
   imageUrl: string;
   address: string | AddressEntity;
   hourlyPrice: number;
   monthlyPrice: number;
   capacity: number;
   providerType: 'COMPANY' | 'INDIVIDUAL';
+  photoUrl?: string[];
+  photos?: Array<{url: string} | string>;
+  pricePerHour?: number;
+  pricePerDay?: number;
+  pricePerMonth?: number;
+  description?: string;
 }
 
 export interface FilterState {

@@ -8,6 +8,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { passwordStrengthValidator } from '../../validators/password-strength.validator';
 
 @Component({
   selector: 'app-login',
@@ -20,7 +22,8 @@ import { MatButtonModule } from '@angular/material/button';
     MatFormFieldModule,
     MatInputModule,
     MatIconModule,
-    MatButtonModule
+    MatButtonModule,
+    MatSnackBarModule
   ],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
@@ -29,17 +32,19 @@ export class LoginComponent implements OnInit {
   hidePassword = true;
   loginForm: FormGroup;
   isLoading = false;
-  showError = false;
-  errorMessage = 'Error al iniciar sesión. Verifique sus credenciales.';
   
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private snackBar = inject(MatSnackBar);
   
   constructor() {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
+      password: ['', [
+        Validators.required, 
+        passwordStrengthValidator()
+      ]]
     });
   }
 
@@ -58,8 +63,7 @@ export class LoginComponent implements OnInit {
       // La redirección la maneja el servicio de autenticación
     } catch (error) {
       console.error('Error al iniciar sesión con Google:', error);
-      this.showError = true;
-      this.errorMessage = 'Error en la autenticación con Google. Por favor intente nuevamente.';
+      this.showErrorSnackbar('Error en la autenticación con Google. Por favor intente nuevamente.');
     }
   }
 
@@ -69,7 +73,6 @@ export class LoginComponent implements OnInit {
     }
 
     this.isLoading = true;
-    this.showError = false;
 
     const { email, password } = this.loginForm.value;
 
@@ -80,8 +83,14 @@ export class LoginComponent implements OnInit {
       },
       error: (error) => {
         this.isLoading = false;
-        this.showError = true;
-        this.errorMessage = error?.message || 'Error al iniciar sesión. Verifique sus credenciales.';
+        
+        // Verificar si es un error 401 (Unauthorized)
+        if (error.status === 401) {
+          this.showErrorSnackbar('Credenciales incorrectas. Por favor verifica tu email y contraseña.');
+        } else {
+          this.showErrorSnackbar('Error al iniciar sesión. Por favor, intenta nuevamente más tarde.');
+        }
+        
         console.error('Login error:', error);
       }
     });
@@ -91,8 +100,7 @@ export class LoginComponent implements OnInit {
     const email = this.loginForm.get('email')?.value;
     
     if (!email) {
-      this.showError = true;
-      this.errorMessage = 'Por favor, ingrese su correo electrónico para recuperar su contraseña.';
+      this.showErrorSnackbar('Por favor, ingrese su correo electrónico para recuperar su contraseña.');
       return;
     }
     
@@ -101,15 +109,36 @@ export class LoginComponent implements OnInit {
     this.authService.recuperarContrasenia(email).subscribe({
       next: () => {
         this.isLoading = false;
-        this.showError = false;
-        alert('Se ha enviado un correo para restablecer su contraseña.');
+        this.showSuccessSnackbar('Se ha enviado un correo para restablecer su contraseña.');
       },
       error: (error: any) => {
         this.isLoading = false;
-        this.showError = true;
-        this.errorMessage = 'No se pudo enviar el correo de recuperación. Verifique que el correo sea correcto.';
+        this.showErrorSnackbar('No se pudo enviar el correo de recuperación. Verifique que el correo sea correcto.');
         console.error('Password reset error:', error);
       }
     });
+  }
+
+  private showErrorSnackbar(message: string): void {
+    this.snackBar.open(message, 'Cerrar', {
+      duration: 5000,
+      panelClass: 'error-snackbar',
+      horizontalPosition: 'center',
+      verticalPosition: 'bottom'
+    });
+  }
+
+  private showSuccessSnackbar(message: string): void {
+    this.snackBar.open(message, 'Cerrar', {
+      duration: 5000,
+      panelClass: 'success-snackbar',
+      horizontalPosition: 'center',
+      verticalPosition: 'bottom'
+    });
+  }
+
+  // Getter para acceder fácilmente a los errores de contraseña
+  get passwordErrors() {
+    return this.loginForm.get('password')?.errors;
   }
 }

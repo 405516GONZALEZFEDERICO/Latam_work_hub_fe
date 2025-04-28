@@ -70,6 +70,16 @@ export const routes: Routes = [
         }
       },
       {
+        path: 'space-details/:id',
+        loadComponent: () =>
+          import('./components/spaces/space-details/space-details.component').then(m => m.SpaceDetailsComponent),
+        canActivate: [SecurityWardGuard],
+        data: { 
+          allowedRoles: ['CLIENTE'],
+          title: 'Detalles del Espacio' 
+        }
+      },
+      {
         path: 'profile',
         children: [
           {
@@ -130,6 +140,22 @@ export const routes: Routes = [
             data: { title: 'Editar Espacio' }
           }
         ]
+      },
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('./views/settings/settings.component').then(m => m.SettingsComponent),
+        data: { title: 'Configuración' }
+      },
+      {
+        path: 'reservas',
+        loadComponent: () =>
+          import('./pages/reservas/reservas.component').then(m => m.ReservasComponent),
+        canActivate: [SecurityWardGuard],
+        data: { 
+          allowedRoles: ['CLIENTE', 'PROVEEDOR'],
+          title: 'Mis Reservas y Alquileres' 
+        }
       }
     ]
   }

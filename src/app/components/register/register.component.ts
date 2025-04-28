@@ -12,9 +12,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { HttpParams } from '@angular/common/http';
 import { map, catchError } from 'rxjs/operators';
 import { Observable, throwError } from 'rxjs';
+import { passwordStrengthValidator } from '../../validators/password-strength.validator';
 
 @Component({
   selector: 'app-register',
@@ -29,16 +31,14 @@ import { Observable, throwError } from 'rxjs';
     MatIconModule, 
     MatButtonModule, 
     MatCheckboxModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatSnackBarModule
   ],
   templateUrl: './register.component.html',
   styleUrl: './register.component.css'
 })
 export class RegisterComponent {
   registerForm: FormGroup;
-  showError: boolean = false;
-  errorMessage: string | null = null;
-  successMessage: string | null = null;
   isLoading: boolean = false;
   hidePassword: boolean = true;
   hideConfirmPassword: boolean = true;
@@ -46,11 +46,15 @@ export class RegisterComponent {
   constructor(
     private fb: FormBuilder,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private snackBar: MatSnackBar
   ) {
     this.registerForm = new FormGroup({
       email: new FormControl('', {nonNullable: true, validators: [Validators.required, Validators.email]}),
-      password: new FormControl('', {nonNullable: true, validators: [Validators.required, Validators.minLength(6)]}),
+      password: new FormControl('', {nonNullable: true, validators: [
+        Validators.required, 
+        passwordStrengthValidator()
+      ]}),
       confirmPassword: new FormControl('', {nonNullable: true, validators: [Validators.required]}),
       termsCheck: new FormControl(false, {nonNullable: true, validators: [Validators.requiredTrue]})
     }, {
@@ -76,9 +80,6 @@ export class RegisterComponent {
     if (this.registerForm.invalid) return;
 
     this.isLoading = true;
-    this.showError = false;
-    this.errorMessage = null;
-    this.successMessage = null;
 
     // Desestructuramos email y password desde el formulario
     const { email, password } = this.registerForm.value;
@@ -87,7 +88,7 @@ export class RegisterComponent {
     this.authService.register(email, password).subscribe({
       next: (response: string) => {
         console.log('Usuario registrado:', response);
-        this.successMessage = 'Registro exitoso. Redirigiendo...';
+        this.showSuccessSnackbar('Registro exitoso. Redirigiendo...');
 
         // Pequeña pausa para mostrar el mensaje antes de redirigir
         setTimeout(() => {
@@ -96,8 +97,14 @@ export class RegisterComponent {
       },
       error: (error: any) => {
         console.error('Error en el registro:', error);
-        this.errorMessage = this.getErrorMessage(error);
-        this.showError = true;
+        
+        // Si es un error de autenticación o autorización
+        if (error.status === 401 || error.status === 403) {
+          this.showErrorSnackbar('No se pudo completar el registro. Verifica tus datos e intenta nuevamente.');
+        } else {
+          this.showErrorSnackbar(this.getErrorMessage(error));
+        }
+        
         this.isLoading = false;
       },
       complete: () => {
@@ -106,12 +113,8 @@ export class RegisterComponent {
     });
   }
 
-
-  
   registerWithGoogle(): void {
     this.isLoading = true;
-    this.showError = false;
-    this.errorMessage = null;
     
     // Limpiar posibles datos conflictivos en localStorage
     localStorage.removeItem('currentUserData');
@@ -122,13 +125,12 @@ export class RegisterComponent {
     from(this.authService.loginWithGoogle(true)).subscribe({
       next: () => {
         // loginWithGoogle ya maneja la redirección a la página correspondiente
-        this.successMessage = 'Registro con Google exitoso';
+        this.showSuccessSnackbar('Registro con Google exitoso');
         this.isLoading = false;
       },
       error: (error) => {
         console.error('Error al registrarse con Google:', error);
-        this.errorMessage = 'Error en el registro con Google. Por favor, intenta nuevamente.';
-        this.showError = true;
+        this.showErrorSnackbar('Error en el registro con Google. Por favor, intenta nuevamente.');
         this.isLoading = false;
       }
     });
@@ -152,4 +154,26 @@ export class RegisterComponent {
     return 'Error en el registro. Por favor, intenta nuevamente.';
   }
 
+  private showErrorSnackbar(message: string): void {
+    this.snackBar.open(message, 'Cerrar', {
+      duration: 5000,
+      panelClass: 'error-snackbar',
+      horizontalPosition: 'center',
+      verticalPosition: 'bottom'
+    });
+  }
+
+  private showSuccessSnackbar(message: string): void {
+    this.snackBar.open(message, 'Cerrar', {
+      duration: 5000,
+      panelClass: 'success-snackbar',
+      horizontalPosition: 'center',
+      verticalPosition: 'bottom'
+    });
+  }
+
+  // Getter para acceder fácilmente a los errores de contraseña
+  get passwordErrors() {
+    return this.registerForm.get('password')?.errors;
+  }
 }

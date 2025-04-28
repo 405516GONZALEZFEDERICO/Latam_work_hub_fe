@@ -1,0 +1,26 @@
+<div class="deactivate-account-container">
+  <mat-card class="danger-zone-card">
+    <mat-card-header>
+      <mat-icon class="danger-icon">warning</mat-icon>
+      <mat-card-title>Zona de peligro</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <mat-divider></mat-divider>
+      
+      <div class="action-section">
+        <div class="action-info">
+          <h3>Desactivar cuenta</h3>
+        </div>
+        <button 
+          mat-flat-button 
+          color="warn" 
+          class="action-button"
+          [disabled]="isLoading"
+          (click)="openDeactivateDialog()">
+          Desactivar cuenta
+          <mat-icon *ngIf="isLoading" class="loading-icon">refresh</mat-icon>
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div> 

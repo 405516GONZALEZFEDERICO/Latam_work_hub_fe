@@ -1,6 +1,7 @@
 import { Component, OnInit, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, FormControl } from '@angular/forms';
+import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, FormControl, AbstractControl, ValidatorFn } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -9,8 +10,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
-import { Space } from '../../../models/space.model';
-import { Amenity, AmenityDto, SpaceDto, AddressEntity } from '../../../models/space.model';
+import { Space } from '../../../models/space';
 import { Country, City } from '../../../models/address.model';
 import { AmenityItemComponent } from '../amenity-item/amenity-item.component';
 import { AuthService } from '../../../services/auth-service/auth.service';
@@ -19,9 +19,8 @@ import { AmenityService } from '../../../services/amenity/amenity.service';
 import { SpaceTypeService } from '../../../services/space/space-type.service';
 import { SpaceType } from '../../../models/space-type.model';
 import { Observable, map, startWith } from 'rxjs';
-
-// Importación del SpaceService ajustada según la ubicación en el proyecto
 import { SpaceService } from '../../../services/space/space.service';
+import { AmenityDto, SpaceDto, AddressEntity, Amenity } from '../../../models/space.model';
 
 @Component({
   selector: 'app-space-form',
@@ -29,6 +28,7 @@ import { SpaceService } from '../../../services/space/space.service';
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
@@ -51,11 +51,9 @@ export class SpaceFormComponent implements OnInit {
   images: File[] = [];
   imagePreviewUrls: string[] = ['', '', ''];
   
-  // Amenity autocomplete properties
-  amenityCtrl = new FormControl('');
-  filteredAmenities: Observable<any[]> = new Observable<any[]>();
+  // Nueva propiedad para el mat-select de amenidades
+  selectedAmenityId: number | null = null;
   predefinedAmenities: any[] = [];
-  selectedAmenity: any = null;
   
   // Datos para selección de dirección
   currentStep = 0;
@@ -106,13 +104,15 @@ export class SpaceFormComponent implements OnInit {
   
   ngOnInit(): void {
     // Get current user ID
-    this.authService.getUserProfile().subscribe(
-      (profile: any) => {
+    this.authService.getUserProfile().subscribe({
+      next: (profile: any) => {
         if (profile) {
           this.currentUserId = profile.uid || '';
+          console.log('Usuario actual ID:', this.currentUserId);
         }
-      }
-    );
+      },
+      error: (err) => console.error('Error al obtener perfil de usuario:', err)
+    });
     
     // Initialize form
     this.initForm();
@@ -133,10 +133,41 @@ export class SpaceFormComponent implements OnInit {
         this.isEdit = true;
         this.spaceId = params['id'];
         if (this.spaceId) {
+          console.log('Cargando espacio con ID:', this.spaceId);
           this.loadSpace(this.spaceId);
         }
       }
     });
+    
+    // Configurar validadores adicionales dinámicos para el formulario
+    this.setupDynamicValidators();
+  }
+  setupDynamicValidators(): void {
+    // Agregar validadores adicionales según necesidades
+    const priceHourControl = this.spaceForm.get('priceHour');
+    const priceDayControl = this.spaceForm.get('priceDay');
+    const priceMonthControl = this.spaceForm.get('priceMonth');
+    
+    // Asegurar que al menos un precio esté definido
+    const priceValidator = (control: AbstractControl): { [key: string]: boolean } | null => {
+      const priceHour = this.spaceForm?.get('priceHour')?.value;
+      const priceDay = this.spaceForm?.get('priceDay')?.value;
+      const priceMonth = this.spaceForm?.get('priceMonth')?.value;
+      
+      const hasAtLeastOnePrice = 
+        (priceHour && priceHour > 0) || 
+        (priceDay && priceDay > 0) || 
+        (priceMonth && priceMonth > 0);
+      
+      return hasAtLeastOnePrice ? null : { 'noPriceSpecified': true };
+    };
+    
+    // Aplicar validador personalizado
+    if (priceHourControl && priceDayControl && priceMonthControl) {
+      priceHourControl.addValidators(priceValidator);
+      priceDayControl.addValidators(priceValidator);
+      priceMonthControl.addValidators(priceValidator);
+    }
   }
   
   initForm(): void {
@@ -150,60 +181,77 @@ export class SpaceFormComponent implements OnInit {
       priceDay: [0, [Validators.min(0)]],
       priceMonth: [0, [Validators.min(0)]],
       amenities: this.fb.array([])
-    });
+    }, { validators: this.atLeastOnePriceValidator() });
+  }
+  
+  // Validador personalizado para precios
+  atLeastOnePriceValidator(): ValidatorFn {
+    return (control: AbstractControl): {[key: string]: any} | null => {
+      const priceHour = control.get('priceHour')?.value;
+      const priceDay = control.get('priceDay')?.value;
+      const priceMonth = control.get('priceMonth')?.value;
+      
+      const hasAtLeastOnePrice = 
+        (priceHour && priceHour > 0) || 
+        (priceDay && priceDay > 0) || 
+        (priceMonth && priceMonth > 0);
+      
+      return hasAtLeastOnePrice ? null : { 'noPriceSpecified': true };
+    };
   }
   
   loadPredefinedAmenities(): void {
-    this.amenityService.getPredefinedAmenities().subscribe(amenities => {
-      this.predefinedAmenities = amenities;
-      this.setupAmenityFilter();
-    });
-  }
-  
-  setupAmenityFilter(): void {
-    this.filteredAmenities = this.amenityCtrl.valueChanges.pipe(
-      startWith(''),
-      map((value: any) => {
-        const name = typeof value === 'string' ? value : (value ? value.name : '');
-        return name ? this._filterAmenities(name) : this.predefinedAmenities.slice();
-      }),
-    );
-  }
-  
-  private _filterAmenities(value: string): any[] {
-    const filterValue = value.toLowerCase();
-    return this.predefinedAmenities.filter(amenity => 
-      amenity.name.toLowerCase().includes(filterValue));
-  }
-  
-  displayAmenity(amenity: any): string {
-    return amenity && amenity.name ? amenity.name : '';
-  }
-  
-  onSelectAmenity(event: any): void {
-    this.selectedAmenity = event.option.value;
-    // Add the predefined amenity to the form
-    if (this.selectedAmenity) {
-      this.addSelectedAmenity();
-      // Reset the control
-      setTimeout(() => {
-        this.amenityCtrl.setValue('');
-        this.selectedAmenity = null;
-      }, 0);
-    }
-  }
-  
-  addSelectedAmenity(): void {
-    const amenityGroup = this.fb.group({
-      name: [this.selectedAmenity.name, Validators.required],
-      price: [this.selectedAmenity.price, [Validators.required, Validators.min(0)]]
-    });
-    (this.spaceForm.get('amenities') as FormArray).push(amenityGroup);
+    console.log('Solicitando amenidades predefinidas...');
     
-    // Show success message
-    this.snackBar.open(`Comodidad "${this.selectedAmenity.name}" agregada`, 'Cerrar', {
+    this.amenityService.getPredefinedAmenities().subscribe({
+      next: (amenities) => {
+        console.log('Amenidades recibidas:', amenities);
+        if (amenities && amenities.length > 0) {
+          // Asegurar que cada amenidad tenga un ID
+          this.predefinedAmenities = amenities.map((amenity, index) => ({
+            ...amenity,
+            id: amenity.id || index + 1
+          }));
+        } else {
+          console.warn('No se recibieron amenidades del servidor');
+        }
+      },
+      error: (error) => {
+        console.error('Error al cargar amenidades:', error);
+        this.snackBar.open('Error al cargar amenidades predefinidas', 'Cerrar', {
+          duration: 3000
+        });
+      }
+    });
+  }
+  // Nuevo método para agregar la amenidad seleccionada desde el mat-select
+  addSelectedAmenityFromSelect(): void {
+    if (!this.selectedAmenityId) {
+      this.snackBar.open('Por favor seleccione una comodidad primero', 'Cerrar', {
+        duration: 3000
+      });
+      return;
+    }
+    
+    const selectedAmenity = this.predefinedAmenities.find(a => a.id === this.selectedAmenityId);
+    if (!selectedAmenity) {
+      return;
+    }
+    
+    const amenityGroup = this.fb.group({
+      name: [selectedAmenity.name, Validators.required],
+      price: [selectedAmenity.price, [Validators.required, Validators.min(0)]]
+    });
+    
+    this.amenities.push(amenityGroup);
+    
+    // Mostrar mensaje de éxito
+    this.snackBar.open(`Comodidad "${selectedAmenity.name}" agregada`, 'Cerrar', {
       duration: 2000
     });
+    
+    // Reiniciar la selección
+    this.selectedAmenityId = null;
   }
   
   initAddressForm(): void {
@@ -220,50 +268,77 @@ export class SpaceFormComponent implements OnInit {
     // Configurar listener para el cambio de país
     this.addressForm.get('countryId')?.valueChanges.subscribe(countryId => {
       if (countryId) {
+        console.log('País seleccionado ID:', countryId, 'tipo:', typeof countryId);
         this.loadCitiesByCountry(countryId);
         this.addressForm.get('cityId')?.setValue('');
       } else {
         this.filteredCities = [];
       }
     });
+    
+    console.log('Formulario de dirección inicializado');
   }
-  
   // Cargar países desde el servicio
   loadCountries(): void {
     this.loading.countries = true;
-    this.addressService.getAllCountries().subscribe(
-      (data: Country[]) => {
+    console.log('Solicitando lista de países...');
+    
+    this.addressService.getAllCountries().subscribe({
+      next: (data: Country[]) => {
         this.countries = data;
+        console.log(`${this.countries.length} países cargados`);
         this.loading.countries = false;
       },
-      (error) => {
+      error: (error) => {
         console.error('Error loading countries:', error);
         this.loading.countries = false;
         this.snackBar.open('Error al cargar países', 'Cerrar', {
           duration: 3000
         });
       }
-    );
+    });
   }
   
-  // Cargar ciudades por país desde el servicio
-  loadCitiesByCountry(countryId: number): void {
+  loadCitiesByCountry(countryId: number | string): void {
+    // Asegurar que countryId sea un número válido
+    let id: number;
+    
+    if (typeof countryId === 'string') {
+      id = parseInt(countryId, 10);
+      if (isNaN(id)) {
+        console.error('ID de país inválido (string):', countryId);
+        this.snackBar.open('ID de país inválido, intente de nuevo', 'Cerrar', {
+          duration: 3000
+        });
+        return;
+      }
+    } else {
+      id = countryId;
+    }
+    
+    if (id <= 0) {
+      console.error('ID de país debe ser mayor a 0:', id);
+      return;
+    }
+    
     this.loading.cities = true;
-    this.addressService.getCitiesByCountry(countryId).subscribe(
-      (data: City[]) => {
+    console.log(`Cargando ciudades para el país ID: ${id}, tipo: ${typeof id}`);
+    
+    this.addressService.getCitiesByCountry(id).subscribe({
+      next: (data: City[]) => {
         this.filteredCities = data;
+        console.log(`${this.filteredCities.length} ciudades cargadas para país ID ${id}`);
         this.loading.cities = false;
       },
-      (error) => {
+      error: (error) => {
         console.error('Error loading cities:', error);
         this.loading.cities = false;
         this.snackBar.open('Error al cargar ciudades', 'Cerrar', {
           duration: 3000
         });
       }
-    );
+    });
   }
-  
   get amenities(): FormArray {
     return this.spaceForm.get('amenities') as FormArray;
   }
@@ -289,69 +364,98 @@ export class SpaceFormComponent implements OnInit {
     this.amenities.at(event.index).setValue(updatedAmenity);
   }
   
-  loadSpace(id: string): void {
-    this.spaceService.getSpaceById(id).subscribe({
-      next: (space) => {
-        if (space) {
-          // Populate form with space data
-          this.spaceForm.patchValue({
-            name: space.name || space.title,
-            description: space.description || '',
-            type: space.type || '',
-            capacity: space.capacity,
-            area: space.area,
-            priceHour: space.priceHour || space.hourlyPrice,
-            priceDay: space.priceDay || 0,
-            priceMonth: space.priceMonth || space.monthlyPrice
-          });
+ 
+loadSpace(id: string): void {
+  console.log(`Cargando datos del espacio ID: ${id}`);
+  
+  this.spaceService.getSpaceById(id).subscribe({
+    next: (space: any) => {
+      if (space) {
+        console.log('Datos del espacio recibidos:', space);
+        
+        // Populate form with space data
+        this.spaceForm.patchValue({
+          name: space.name || space.title,
+          description: space.description || '',
+          type: space.type || '',
+          capacity: space.capacity,
+          area: space.area,
+          priceHour: space.priceHour || space.hourlyPrice,
+          priceDay: space.priceDay || 0,
+          priceMonth: space.priceMonth || space.monthlyPrice
+        });
 
-          // Load amenities if any
-          if (space.amenities && space.amenities.length > 0) {
-            // Clear existing amenities
-            while (this.amenities.length) {
-              this.removeAmenity(0);
-            }
-            
-            // Add each amenity
-            space.amenities.forEach((amenity) => {
-              const amenityGroup = this.fb.group({
-                name: [amenity.name, Validators.required],
-                price: [amenity.price, [Validators.required, Validators.min(0)]]
-              });
-              this.amenities.push(amenityGroup);
-            });
+        // Load amenities if any
+        if (space.amenities && space.amenities.length > 0) {
+          console.log(`Cargando ${space.amenities.length} amenidades`);
+          
+          // Clear existing amenities
+          while (this.amenities.length) {
+            this.removeAmenity(0);
           }
+          
+          // Add each amenity
+          space.amenities.forEach((amenity: any) => {
+            const amenityGroup = this.fb.group({
+              name: [amenity.name, Validators.required],
+              price: [amenity.price, [Validators.required, Validators.min(0)]]
+            });
+            this.amenities.push(amenityGroup);
+          });
+        }
 
-          // Load address if available
-          if (space.address) {
-            this.addressData = space.address;
-            this.hasAddress = true;
-            
-            // Cargar datos en el formulario de dirección
-            if (this.addressData.countryId) {
-              this.addressForm.patchValue({
-                countryId: this.addressData.countryId,
-                cityId: this.addressData.cityId,
-                streetName: this.addressData.streetName,
-                streetNumber: this.addressData.streetNumber,
-                floor: this.addressData.floor || '',
-                apartment: this.addressData.apartment || '',
-                postalCode: this.addressData.postalCode
-              });
+        // Load address if available
+        if (space.address) {
+          console.log('Dirección del espacio:', space.address);
+          this.addressData = space.address;
+          this.hasAddress = true;
+          
+          // Cargar datos en el formulario de dirección
+          if (this.addressData.countryId) {
+            // Asegurar que los IDs sean números
+            const countryId = typeof this.addressData.countryId === 'string' 
+              ? parseInt(this.addressData.countryId, 10) 
+              : this.addressData.countryId;
               
-              // Cargar las ciudades del país seleccionado
-              this.loadCitiesByCountry(this.addressData.countryId);
-            }
+            const cityId = typeof this.addressData.cityId === 'string' 
+              ? parseInt(this.addressData.cityId, 10) 
+              : this.addressData.cityId;
+            
+            // Actualizar el objeto addressData con los valores convertidos
+            this.addressData.countryId = countryId;
+            this.addressData.cityId = cityId;
+            
+            console.log('Valores de dirección procesados:', {
+              countryId: countryId,
+              cityId: cityId,
+              tipo_countryId: typeof countryId,
+              tipo_cityId: typeof cityId
+            });
+            
+            this.addressForm.patchValue({
+              countryId: countryId,
+              cityId: cityId,
+              streetName: this.addressData.streetName,
+              streetNumber: this.addressData.streetNumber,
+              floor: this.addressData.floor || '',
+              apartment: this.addressData.apartment || '',
+              postalCode: this.addressData.postalCode
+            });
+            
+            // Cargar las ciudades del país seleccionado
+            this.loadCitiesByCountry(countryId);
           }
         }
-      },
-      error: (error) => {
-        this.snackBar.open('Error al cargar el espacio', 'Cerrar', {
-          duration: 3000
-        });
       }
-    });
-  }
+    },
+    error: (error: any) => {
+      console.error('Error al cargar el espacio:', error);
+      this.snackBar.open('Error al cargar el espacio', 'Cerrar', {
+        duration: 3000
+      });
+    }
+  });
+}
   
   onSubmit(): void {
     if (this.spaceForm.invalid) {
@@ -364,24 +468,51 @@ export class SpaceFormComponent implements OnInit {
 
     const formValue = this.spaceForm.getRawValue();
     
+    // Asegurar que los countryId y cityId sean números
+    if (this.addressData) {
+      // Convertir IDs a números si vienen como strings
+      if (typeof this.addressData.countryId === 'string') {
+        this.addressData.countryId = parseInt(this.addressData.countryId, 10);
+      }
+      if (typeof this.addressData.cityId === 'string') {
+        this.addressData.cityId = parseInt(this.addressData.cityId, 10);
+      }
+    }
+
+    // Validar que tengamos los IDs de ciudad y país
+    if (!this.hasAddress || !this.addressData || !this.addressData.countryId || !this.addressData.cityId) {
+      this.snackBar.open('Por favor complete la información de dirección con país y ciudad', 'Cerrar', {
+        duration: 3000
+      });
+      return;
+    }
+
+    // Log para depuración
+    console.log('Datos de dirección a enviar:', this.addressData);
+    
+    // Crear SpaceDto con formato plano (propiedades de dirección directamente en el objeto principal)
     const spaceDto: SpaceDto = {
-      title: formValue.name,
       name: formValue.name,
       description: formValue.description,
       capacity: formValue.capacity,
       area: formValue.area,
-      hourlyPrice: formValue.priceHour,
-      monthlyPrice: formValue.priceMonth,
       pricePerHour: formValue.priceHour,
       pricePerDay: formValue.priceDay,
       pricePerMonth: formValue.priceMonth,
-      providerType: 'COMPANY',
       uid: this.currentUserId,
       type: {
         name: formValue.type
       },
-      address: this.addressForm.getRawValue(),
-      amenities: formValue.amenities.map((amenity: AmenityDto) => ({
+      // Propiedades de dirección planas según el formato del backend
+      cityId: Number(this.addressData.cityId),
+      countryId: Number(this.addressData.countryId),
+      streetName: this.addressData.streetName,
+      streetNumber: this.addressData.streetNumber,
+      floor: this.addressData.floor || '',
+      apartment: this.addressData.apartment || '',
+      postalCode: this.addressData.postalCode,
+      // Amenidades con precio como número
+      amenities: formValue.amenities.map((amenity: any) => ({
         name: amenity.name,
         price: Number(amenity.price)
       }))
@@ -395,22 +526,17 @@ export class SpaceFormComponent implements OnInit {
       return;
     }
 
-    // Validar que se haya ingresado una dirección
-    if (!this.hasAddress) {
-      this.snackBar.open('Por favor ingrese la dirección del espacio', 'Cerrar', {
-        duration: 3000
-      });
-      return;
-    }
+    // Log para depuración
+    console.log('SpaceDto a enviar:', spaceDto);
 
     this.spaceService.createSpace(spaceDto, this.images).subscribe({
-      next: (response) => {
+      next: (response: any) => {
         this.snackBar.open('Espacio creado correctamente', 'Cerrar', {
           duration: 3000
         });
         this.router.navigate(['/home/spaces']);
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error al crear el espacio:', error);
         this.snackBar.open('Error al crear el espacio: ' + error.message, 'Cerrar', {
           duration: 3000
@@ -538,17 +664,52 @@ export class SpaceFormComponent implements OnInit {
       this.currentStep--;
     }
   }
-  
   saveAddress(): void {
     if (this.addressForm.invalid) {
       this.addressForm.markAllAsTouched();
+      console.warn('Formulario de dirección inválido');
       return;
     }
     
     // Preparar los datos de la dirección
     const formValues = this.addressForm.value;
-    const selectedCountry = this.countries.find(c => c.id === formValues.countryId);
-    const selectedCity = this.filteredCities.find(c => c.id === formValues.cityId);
+    
+    // Convertir explícitamente a números
+    const countryId = Number(formValues.countryId);
+    const cityId = Number(formValues.cityId);
+    
+    // Validar que sean números válidos
+    if (isNaN(countryId) || countryId <= 0) {
+      console.error('ID de país inválido:', formValues.countryId);
+      this.snackBar.open('ID de país inválido', 'Cerrar', {
+        duration: 3000
+      });
+      return;
+    }
+    
+    if (isNaN(cityId) || cityId <= 0) {
+      console.error('ID de ciudad inválido:', formValues.cityId);
+      this.snackBar.open('ID de ciudad inválido', 'Cerrar', {
+        duration: 3000
+      });
+      return;
+    }
+    
+    const selectedCountry = this.countries.find(c => c.id === countryId);
+    const selectedCity = this.filteredCities.find(c => c.id === cityId);
+    
+    if (!selectedCountry || !selectedCity) {
+      console.error('País o ciudad no encontrados:', {
+        countryId,
+        cityId,
+        selectedCountry,
+        selectedCity
+      });
+      this.snackBar.open('País o ciudad no encontrados', 'Cerrar', {
+        duration: 3000
+      });
+      return;
+    }
     
     this.addressData = {
       streetName: formValues.streetName,
@@ -556,12 +717,19 @@ export class SpaceFormComponent implements OnInit {
       floor: formValues.floor,
       apartment: formValues.apartment,
       postalCode: formValues.postalCode,
-      countryId: formValues.countryId,
-      countryName: selectedCountry?.name || '',
-      cityId: formValues.cityId,
-      cityName: selectedCity?.name || '',
+      countryId: countryId, // Número validado
+      countryName: selectedCountry.name,
+      cityId: cityId, // Número validado
+      cityName: selectedCity.name,
       userId: this.currentUserId
     };
+    
+    // Log para depuración
+    console.log('Dirección guardada:', this.addressData);
+    console.log('Tipos de IDs:', {
+      countryId: typeof this.addressData.countryId,
+      cityId: typeof this.addressData.cityId
+    });
     
     this.hasAddress = true;
     this.closeAddressModal();
@@ -570,18 +738,22 @@ export class SpaceFormComponent implements OnInit {
     });
   }
   
+  
   cancelAddress(): void {
     this.closeAddressModal();
   }
   
   loadSpaceTypes(): void {
     this.isLoadingSpaceTypes = true;
+    console.log('Solicitando tipos de espacios...');
+    
     this.spaceTypeService.getAllSpaceTypes().subscribe({
       next: (types: SpaceType[]) => {
         this.spaceTypes = types.map(type => ({
           value: type.name,
           label: this.formatSpaceTypeName(type.name)
         }));
+        console.log(`${this.spaceTypes.length} tipos de espacios cargados`);
         this.isLoadingSpaceTypes = false;
       },
       error: (error) => {
@@ -593,7 +765,37 @@ export class SpaceFormComponent implements OnInit {
       }
     });
   }
-  
+  private debugAddressData(): void {
+    console.group('Depuración de datos de dirección');
+    
+    if (!this.addressData) {
+      console.error('addressData es null');
+      console.groupEnd();
+      return;
+    }
+    
+    console.log('addressData completo:', this.addressData);
+    console.log('countryId:', this.addressData.countryId);
+    console.log('tipo de countryId:', typeof this.addressData.countryId);
+    console.log('cityId:', this.addressData.cityId);
+    console.log('tipo de cityId:', typeof this.addressData.cityId);
+    
+    // Verificar si los valores son realmente números válidos
+    const countryIdNum = Number(this.addressData.countryId);
+    const cityIdNum = Number(this.addressData.cityId);
+    
+    console.log('countryId como número:', countryIdNum, '¿es número válido?', !isNaN(countryIdNum));
+    console.log('cityId como número:', cityIdNum, '¿es número válido?', !isNaN(cityIdNum));
+    
+    // Verificar referencias a los objetos originales
+    const selectedCountry = this.countries.find(c => c.id === countryIdNum);
+    const selectedCity = this.filteredCities.find(c => c.id === cityIdNum);
+    
+    console.log('País correspondiente:', selectedCountry);
+    console.log('Ciudad correspondiente:', selectedCity);
+    
+    console.groupEnd();
+  }
   /**
    * Formatea el nombre del tipo de espacio para mostrarlo en la UI
    */

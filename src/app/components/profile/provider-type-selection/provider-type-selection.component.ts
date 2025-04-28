@@ -9,6 +9,8 @@ import { AuthService } from '../../../services/auth-service/auth.service';
 import { Router } from '@angular/router';
 import { ProfileTab } from '../../../models/profile-tab.enum';
 import { ProviderTypeService } from '../../../services/provider.service/provider-type.service';
+import { ProfileService } from '../../../services/profile/profile.service';
+import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-provider-type-selection',
@@ -36,50 +38,54 @@ export class ProviderTypeSelectionComponent implements OnInit, OnChanges, AfterV
     private companyService: CompanyService,
     private authService: AuthService,
     private providerTypeService: ProviderTypeService,
+    private profileService: ProfileService,
     private router: Router
   ) {}
 
-  ngOnInit(): void {
-    console.log('ProviderTypeSelectionComponent - ngOnInit - initialType:', this.initialType);
+ // ...existing code...
+
+ngOnInit(): void {
+  console.log('ProviderTypeSelectionComponent - ngOnInit');
+  
+  // Obtener usuario actual
+  const currentUser = this.authService.getCurrentUserSync();
+  if (currentUser?.uid) {
+    this.isLoading = true;
     
-    // Verificar primero si hay un tipo en localStorage
-    const localStorageType = localStorage.getItem('providerType');
-    if (localStorageType === 'INDIVIDUAL' || localStorageType === 'COMPANY') {
-      console.log('Tipo encontrado en localStorage:', localStorageType);
-      this.initialType = localStorageType as 'INDIVIDUAL' | 'COMPANY';
-      this.selectedType = localStorageType as 'INDIVIDUAL' | 'COMPANY';
-      
-      // También actualizar el servicio para asegurar coherencia
-      this.providerTypeService.setProviderType(this.selectedType, true);
-    }
-    // Si no hay en localStorage o initialType ya está establecido, continuar con la lógica normal
-    else if (!this.initialType) {
-      const typeFromService = this.providerTypeService.getCurrentProviderType();
-      console.log('Tipo de proveedor desde el servicio:', typeFromService);
-      
-      if (typeFromService) {
-        this.initialType = typeFromService;
-        console.log('Utilizando tipo desde servicio:', this.initialType);
-      } else {
-        // Si no hay tipo en el servicio, intentar cargar datos de empresa para inferir
-        this.checkCompanyData();
-      }
-    }
-    
-    this.updateSelectedType();
-    
-    // Forzar una verificación adicional después de la inicialización
-    setTimeout(() => {
-      console.log('Verificación adicional del tipo seleccionado:', this.selectedType);
-      if (!this.selectedType) {
-        const storedType = localStorage.getItem('providerType');
-        if (storedType === 'INDIVIDUAL' || storedType === 'COMPANY') {
-          console.log('Recuperando tipo desde localStorage en verificación tardía:', storedType);
-          this.selectedType = storedType as 'INDIVIDUAL' | 'COMPANY';
+    // Primero intentar obtener el tipo del backend
+    this.profileService.getProviderType(currentUser.uid)
+      .pipe(
+        finalize(() => this.isLoading = false)
+      )
+      .subscribe({
+        next: (response) => {
+          if (response.providerType) {
+            console.log('Tipo de proveedor obtenido del backend:', response.providerType);
+            this.selectedType = response.providerType;
+            this.providerTypeService.setProviderType(response.providerType, true);
+            localStorage.setItem('providerType', response.providerType);
+          } else {
+            // Si no hay tipo en el backend, intentar obtener de localStorage
+            const storedType = localStorage.getItem('providerType');
+            if (storedType === 'INDIVIDUAL' || storedType === 'COMPANY') {
+              console.log('Tipo de proveedor obtenido de localStorage:', storedType);
+              this.selectedType = storedType;
+              this.providerTypeService.setProviderType(storedType, true);
+            }
+          }
+        },
+        error: (error) => {
+          console.error('Error al obtener tipo de proveedor:', error);
+          // En caso de error, intentar obtener de localStorage
+          const storedType = localStorage.getItem('providerType');
+          if (storedType === 'INDIVIDUAL' || storedType === 'COMPANY') {
+            this.selectedType = storedType;
+            this.providerTypeService.setProviderType(storedType, true);
+          }
         }
-      }
-    }, 1000);
+      });
   }
+}
   
   ngAfterViewInit(): void {
     // Forzar actualización visual después de que la vista esté lista

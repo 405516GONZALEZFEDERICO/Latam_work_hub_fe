@@ -1,0 +1,25 @@
+<h2 mat-dialog-title class="dialog-title">
+  <mat-icon class="warning-icon">warning</mat-icon>
+  ¿Estás seguro?
+</h2>
+
+<mat-dialog-content>
+  <p class="confirm-instructions">
+    Escribe <strong>desactivar cuenta</strong> para confirmar:
+  </p>
+
+  <mat-form-field class="confirm-input" appearance="outline">
+    <input matInput [(ngModel)]="confirmText" placeholder="desactivar cuenta">
+  </mat-form-field>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancelar</button>
+  <button 
+    mat-flat-button 
+    color="warn" 
+    [disabled]="!canConfirm()" 
+    (click)="onConfirm()">
+    Desactivar cuenta
+  </button>
+</mat-dialog-actions> 

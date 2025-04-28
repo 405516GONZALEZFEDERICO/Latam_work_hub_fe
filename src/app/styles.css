@@ -1,0 +1,26 @@
+/* Agregar estilos para notificación de pago */
+.payment-snackbar {
+  background-color: #0c4da2 !important;
+  color: white !important;
+  font-size: 16px !important;
+  min-width: 350px !important;
+  max-width: 600px !important;
+}
+
+.payment-snackbar .mat-simple-snackbar-action {
+  color: #ffffff !important;
+  background-color: #4CAF50 !important;
+  padding: 5px 15px !important;
+  border-radius: 4px !important;
+  font-weight: bold !important;
+}
+
+.success-snackbar {
+  background-color: #4CAF50 !important;
+  color: white !important;
+}
+
+.error-snackbar {
+  background-color: #f44336 !important;
+  color: white !important;
+} 

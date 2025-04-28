@@ -371,26 +371,41 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 0;
 }
 
-.amenity-autocomplete {
+/* Estilos para el nuevo selector de amenidades */
+.amenity-select {
   min-width: 250px;
   margin-right: 10px;
 }
 
-/* Make the autocomplete field match other form inputs */
-:host ::ng-deep .amenity-autocomplete {
+/* Make the select field match other form inputs */
+:host ::ng-deep .amenity-select {
   margin-bottom: 0;
 }
 
-:host ::ng-deep .amenity-autocomplete .mat-mdc-form-field-infix {
+:host ::ng-deep .amenity-select .mat-mdc-form-field-infix {
   padding-top: 14px;
   padding-bottom: 8px;
 }
 
-:host ::ng-deep .amenity-autocomplete .mat-form-field-wrapper {
+:host ::ng-deep .amenity-select .mat-form-field-wrapper {
   padding-bottom: 0;
 }
 
-/* Make the autocomplete and button display properly aligned */
+/* Asegurarnos que el dropdown del select tenga un buen z-index */
+:host ::ng-deep .mat-mdc-select-panel {
+  z-index: var(--select-z-index) !important;
+  max-height: 256px !important;
+}
+
+/* Estilos para opciones del select */
+:host ::ng-deep .mat-mdc-option {
+  height: auto !important;
+  line-height: 1.5 !important;
+  min-height: 48px !important;
+  padding: 8px 16px !important;
+}
+
+/* Header de comodidades */
 .amenities-header {
   display: flex;
   justify-content: space-between;
@@ -404,12 +419,13 @@ h1, h2, h3, h4, h5, h6 {
   gap: 10px;
 }
 
-/* Make button consistent with the height of the autocomplete dropdown */
+/* Ajustar el botón para que coincida con la altura del select */
 .amenities-controls button {
   height: 56px;
   margin-top: 0;
 }
 
+/* Ajustes para móviles */
 @media (max-width: 768px) {
   .amenities-controls {
     flex-direction: column;
@@ -417,7 +433,7 @@ h1, h2, h3, h4, h5, h6 {
     width: 100%;
   }
   
-  .amenity-autocomplete {
+  .amenity-select {
     width: 100%;
     margin-bottom: 1rem;
     margin-right: 0;
@@ -428,7 +444,7 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* Amenity Items Styling */
+/* Estilos para los items de amenidades agregados */
 :host ::ng-deep .amenity-item {
   border-radius: 8px;
   background-color: #f9f9f9;
@@ -455,4 +471,29 @@ h1, h2, h3, h4, h5, h6 {
   background-color: #f9f9f9;
   border-radius: 8px;
   border: 1px dashed #ccc;
+} 
+
+/* Asegurar que los dropdowns aparezcan sobre todos los elementos */
+::ng-deep .mat-select-panel {
+  z-index: 9999 !important;
+}
+
+::ng-deep .cdk-overlay-container {
+  z-index: 10000 !important;
+}
+
+/* Aumentar la altura máxima de los paneles de selección para mostrar más opciones */
+::ng-deep .mat-select-panel {
+  max-height: 350px !important;
+}
+
+/* Estilos para mejorar la visualización de dropdowns en el formulario */
+.mat-form-field {
+  width: 100%;
+}
+
+/* Asegurar que otros elementos no causen superposición con z-index más altos */
+.container-fluid {
+  position: relative;
+  z-index: 1;
 } 

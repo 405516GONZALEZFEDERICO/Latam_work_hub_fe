@@ -1,104 +1,187 @@
-<div class="container-fluid py-4">
-  <!-- Spinner de carga -->
-  <div *ngIf="isLoading" class="text-center py-5">
-    <mat-spinner class="mx-auto"></mat-spinner>
-    <p class="mt-3">Cargando detalles del espacio...</p>
+<div class="space-details-container">
+  <!-- Loading state -->
+  <div *ngIf="isLoading" class="loading-spinner">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Cargando detalles del espacio...</p>
   </div>
 
-  <!-- Contenido cuando se ha cargado el espacio -->
-  <div *ngIf="!isLoading && space" class="space-details-container">
-    <div class="row mb-4">
-      <div class="col-md-8">
-        <h1 class="text-2xl font-bold mb-2">{{ space.title }}</h1>
-        <p class="text-muted">{{ space.address }}</p>
-      </div>
-      <div class="col-md-4 d-flex justify-content-end align-items-center">
-        <button mat-button color="primary" (click)="goBack()" class="me-2">
-          <mat-icon>arrow_back</mat-icon> Volver
-        </button>
-        <button mat-raised-button color="accent" (click)="editSpace()">
-          <mat-icon>edit</mat-icon> Editar
-        </button>
-      </div>
+  <!-- Error state -->
+  <div *ngIf="error && !isLoading" class="error-container">
+    <mat-icon color="warn">error</mat-icon>
+    <p>{{ error }}</p>
+    <button mat-raised-button color="primary" (click)="goBack()">Volver</button>
+  </div>
+
+  <!-- Space details content -->
+  <div *ngIf="space && !isLoading && !error" class="space-content">
+    <div class="space-header">
+      <button mat-icon-button (click)="goBack()" class="back-button">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <h1 class="space-title">{{ space.title || space.name }}</h1>
     </div>
 
-    <div class="row">
-      <div class="col-md-8">
-        <mat-card>
-          <img [src]="getMainImageUrl()" alt="{{ space.title }}" class="img-fluid w-100" style="max-height: 400px; object-fit: cover;">
+    <div class="space-details-layout">
+      <!-- Primera Card: Imagen principal con galería -->
+      <mat-card class="image-gallery-card">
+        <mat-card-content>
+          <div class="main-image-container">
+            <div class="zoom-container">
+              <img [src]="selectedImage || (space.photoUrl && space.photoUrl.length > 0 ? space.photoUrl[0] : space.imageUrl) || 'https://via.placeholder.com/800x600?text=Sin+Imagen'" 
+                  [alt]="space.title || space.name || 'Espacio'" 
+                  class="main-image" 
+                  loading="lazy"
+                  (mousemove)="handleZoom($event)" 
+                  (mouseenter)="showZoom = true" 
+                  (mouseleave)="showZoom = false">
+              <div class="zoom-icon" *ngIf="!isMobile">
+                <mat-icon>zoom_in</mat-icon>
+              </div>
+            </div>
+          </div>
           
-          <mat-card-content class="py-4">
-            <mat-tab-group [selectedIndex]="activeTab" (selectedIndexChange)="changeTab($event)">
-              <mat-tab label="Detalles">
-                <div class="p-3">
-                  <h3 class="mb-3">Información del Espacio</h3>
-                  
-                  <div class="row mb-3">
-                    <div class="col-md-6">
-                      <h4>Tipo de proveedor</h4>
-                      <p>{{ space.providerType }}</p>
-                    </div>
-                    <div class="col-md-6">
-                      <h4>Capacidad</h4>
-                      <p>{{ space.capacity }} personas</p>
-                    </div>
-                  </div>
-                  
-                  <h3 class="mb-3">Precios</h3>
-                  <div class="row">
-                    <div class="col-md-6 mb-3">
-                      <div class="card bg-light">
-                        <div class="card-body">
-                          <h5 class="card-title">Por hora</h5>
-                          <p class="card-text h3">{{ formatPrice(space.hourlyPrice) }}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                      <div class="card bg-light">
-                        <div class="card-body">
-                          <h5 class="card-title">Por mes</h5>
-                          <p class="card-text h3">{{ formatPrice(space.monthlyPrice) }}</p>
-                        </div>
-                      </div>
-                    </div>
+          <!-- Galería de miniaturas -->
+          <div class="thumbnail-gallery">
+            <ng-container *ngIf="space.photoUrl && space.photoUrl.length > 0">
+              <div class="thumbnail-container" 
+                   *ngFor="let image of space.photoUrl" 
+                   [class.active]="selectedImage === image || (!selectedImage && image === space.photoUrl[0])"
+                   (click)="selectedImage = image">
+                <img [src]="image" 
+                    [alt]="space.title || space.name || 'Espacio'"
+                    class="thumbnail"
+                    loading="lazy">
+              </div>
+            </ng-container>
+            
+            <div class="thumbnail-container" 
+                 *ngIf="space.imageUrl && (!space.photoUrl || space.photoUrl.length === 0)"
+                 [class.active]="selectedImage === space.imageUrl || !selectedImage"
+                 (click)="selectedImage = space.imageUrl">
+              <img [src]="space.imageUrl" 
+                  [alt]="space.title || space.name || 'Imagen principal'"
+                  class="thumbnail"
+                  loading="lazy">
+            </div>
+            
+            <ng-container *ngIf="(!space.photoUrl || space.photoUrl.length === 0) && (!space.imageUrl) && space.images && space.images.length > 0">
+              <div class="thumbnail-container"
+                   *ngFor="let image of space.images"
+                   [class.active]="selectedImage === image"
+                   (click)="selectedImage = image">
+                <img [src]="image" 
+                    [alt]="space.title || space.name || 'Espacio'"
+                    class="thumbnail"
+                    loading="lazy">
+              </div>
+            </ng-container>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Segunda Card: Tabs para detalles -->
+      <mat-card class="details-card">
+        <mat-card-content>
+          <mat-tab-group class="details-tabs">
+            <mat-tab label="Descripción">
+              <div class="tab-content">
+                <div class="description" *ngIf="space.description">
+                  <p>{{ space.description }}</p>
+                </div>
+                <div class="no-description" *ngIf="!space.description">
+                  <p>No hay descripción disponible para este espacio.</p>
+                </div>
+              </div>
+            </mat-tab>
+            
+            <mat-tab label="Comodidades">
+              <div class="tab-content">
+                <div class="amenities-list">
+                  <div class="amenity-item" *ngFor="let amenity of space.amenities">
+                    <mat-icon class="amenity-icon">{{ getAmenityIcon(amenity.name) }}</mat-icon>
+                    <span>{{ amenity.name }}</span>
                   </div>
                 </div>
-              </mat-tab>
-              <mat-tab label="Ubicación">
-                <div class="p-3">
-                  <h3 class="mb-3">Dirección</h3>
-                  <p>{{ space.address }}</p>
+              </div>
+            </mat-tab>
+            
+            <mat-tab label="Tipo de Espacio">
+              <div class="tab-content">
+                <p><strong>Tipo:</strong> {{ space.type || space.spaceType?.name || 'No especificado' }}</p>
+                <p><strong>Capacidad:</strong> {{ space.capacity }} personas</p>
+                <p><strong>Área:</strong> {{ space.area }} m²</p>
+              </div>
+            </mat-tab>
+            
+            <mat-tab label="Ubicación">
+              <div class="tab-content">
+                <div class="location-info" *ngIf="space">
+                  <h3>Ubicación</h3>
+                  <p><strong>Dirección:</strong> {{ formattedAddress }}</p>
+                  <p><strong>Ciudad:</strong> {{ getCityName() }}</p>
+                  <p><strong>País:</strong> {{ getCountryName() }}</p>
+                  <div class="map-actions">
+                    <a [href]="getGoogleMapsUrl()" target="_blank" mat-raised-button color="primary">
+                      <mat-icon>map</mat-icon> Ver en Google Maps
+                    </a>
+                    <a [href]="getGoogleMapsDirectionsUrl()" target="_blank" mat-raised-button color="accent">
+                      <mat-icon>directions</mat-icon> Cómo llegar
+                    </a>
+                  </div>
                 </div>
-              </mat-tab>
-            </mat-tab-group>
-          </mat-card-content>
-        </mat-card>
-      </div>
+              </div>
+            </mat-tab>
+          </mat-tab-group>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Tercera Card: Información de precios y botón de reserva -->
+      <mat-card class="booking-card">
+        <mat-card-header>
+          <mat-card-title>Información de precios</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="price-info" *ngIf="space.hourlyPrice || space.priceDay || space.priceMonth || space.pricePerHour || space.pricePerDay || space.pricePerMonth">
+            <div *ngIf="space.hourlyPrice || space.pricePerHour" class="price-item">
+              <span class="price-label">Precio por hora:</span>
+              <span class="price-value">${{ space.hourlyPrice || space.pricePerHour }}</span>
+            </div>
+            <div *ngIf="space.priceDay || space.pricePerDay" class="price-item">
+              <span class="price-label">Precio por día:</span>
+              <span class="price-value">${{ space.priceDay || space.pricePerDay }}</span>
+            </div>
+            <div *ngIf="space.priceMonth || space.pricePerMonth" class="price-item">
+              <span class="price-label">Precio por mes:</span>
+              <span class="price-value">${{ space.priceMonth || space.pricePerMonth }}</span>
+            </div>
+          </div>
+        </mat-card-content>
+        <mat-card-actions>
+          <button mat-raised-button color="primary" class="reserve-button" (click)="reserveSpace()">
+            <mat-icon>calendar_today</mat-icon> Reservar este espacio
+          </button>
+        </mat-card-actions>
+      </mat-card>
       
-      <div class="col-md-4">
-        <mat-card>
-          <mat-card-header>
-            <mat-card-title>Contacto del proveedor</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <p>Para más información sobre este espacio, puedes contactar directamente con el proveedor.</p>
-            <button mat-raised-button color="primary" class="w-100 mt-3">
-              <mat-icon>email</mat-icon> Contactar
-            </button>
-          </mat-card-content>
-        </mat-card>
+      <!-- Espacios similares si los hay -->
+      <div class="similar-spaces" *ngIf="similarSpaces && similarSpaces.length > 0">
+        <h3>Espacios similares</h3>
+        <div class="similar-spaces-grid">
+          <mat-card *ngFor="let similarSpace of similarSpaces" class="similar-space-card" (click)="goToSimilarSpace(similarSpace)">
+            <div class="similar-image-container">
+              <img [src]="(similarSpace.photoUrl && similarSpace.photoUrl.length > 0 ? similarSpace.photoUrl[0] : similarSpace.imageUrl) || 'https://via.placeholder.com/300x200?text=Sin+Imagen'" 
+                   alt="{{ similarSpace.title || similarSpace.name }}" 
+                   mat-card-image
+                   loading="lazy">
+            </div>
+            <mat-card-content>
+              <h4>{{ similarSpace.title || similarSpace.name }}</h4>
+              <p>{{ getFormattedAddress(similarSpace) }}</p>
+            </mat-card-content>
+          </mat-card>
+        </div>
       </div>
     </div>
-  </div>
-
-  <!-- Mensaje si no hay espacio seleccionado -->
-  <div *ngIf="!isLoading && !space" class="text-center py-5">
-    <mat-icon class="text-muted" style="font-size: 48px; width: 48px; height: 48px;">error_outline</mat-icon>
-    <h3 class="mt-3">Espacio no encontrado</h3>
-    <p class="text-muted">El espacio que buscas no existe o ha sido eliminado</p>
-    <button mat-raised-button color="primary" class="mt-3" (click)="goBack()">
-      <mat-icon>arrow_back</mat-icon> Volver a la lista
-    </button>
   </div>
 </div>
+

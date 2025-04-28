@@ -5,6 +5,7 @@ export interface Space {
   description?: string;
   imageUrl: string;
   additionalImages?: string[];
+  photoUrl?: string[];
   address: string | AddressEntity;
   hourlyPrice: number;
   monthlyPrice: number;
@@ -16,6 +17,10 @@ export interface Space {
   priceHour?: number;
   priceDay?: number;
   priceMonth?: number;
+  spaceType?: { id?: number | string; name?: string } | string;
+  pricePerHour?: number;
+  pricePerDay?: number;
+  pricePerMonth?: number;
 }
 
 export interface FilterState {
@@ -26,34 +31,39 @@ export interface FilterState {
   address: string;
 }
 
+// Interface ajustada para coincidir con el DTO del backend (propiedades planas)
 export interface SpaceDto {
-  title: string;
-  name?: string;
-  description?: string;
-  address: string | AddressEntity;
-  hourlyPrice: number;
-  monthlyPrice: number;
+  name: string;
+  description: string;
   capacity: number;
-  providerType: 'COMPANY' | 'INDIVIDUAL';
-  amenities?: string[] | Amenity[];
-  
-  // Campos para compatibilidad con el formulario
-  area?: number;
-  pricePerHour?: number;
-  pricePerDay?: number;
-  pricePerMonth?: number;
-  uid?: string;
-  type?: any;
+  area: number;
+  pricePerHour: number;
+  pricePerDay: number;
+  pricePerMonth: number;
+  uid: string;
+  amenities: AmenityDto[];
+  type: {
+    name: string;
+  };
+  // Propiedades de dirección (planas como requiere el backend)
+  cityId: number;
+  countryId: number;
+  streetName: string;
+  streetNumber: string;
+  floor?: string;
+  apartment?: string;
+  postalCode: string;
 }
 
 export interface AmenityDto {
   id?: number;
   name: string;
   description?: string;
-  price?: number;
+  price: number;
 }
 
 export interface Amenity {
+  id?: number;
   name: string;
   price?: string | number;
   icon?: string;

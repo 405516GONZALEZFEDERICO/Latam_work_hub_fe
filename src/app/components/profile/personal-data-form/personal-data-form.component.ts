@@ -480,7 +480,14 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
         });
         // Actualizar la URL de la imagen si el servidor devuelve una
         if (response && response.photoUrl) {
-          this.profilePicture = this.ensureCompleteUrl(response.photoUrl);
+          const photoUrl = this.ensureCompleteUrl(response.photoUrl);
+          this.profilePicture = photoUrl;
+          
+          // Actualizar el usuario en el AuthService para que se refleje en toda la aplicación
+          if (user) {
+            const updatedUser = { ...user, photoURL: photoUrl };
+            this.authService.updateCurrentUser(updatedUser);
+          }
         }
       });
   }

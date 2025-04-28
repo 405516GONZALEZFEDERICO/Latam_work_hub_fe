@@ -27,12 +27,30 @@ export const httpErrorInterceptor: HttpInterceptorFn = (
   return next(request).pipe(
     catchError((error: HttpErrorResponse) => {
       let errorMsg = '';
-      
+      let showGenericSnackbar = true; // Por defecto, mostrar snackbar
+
+      // URLs donde NO queremos mostrar snackbar si fallan (especialmente por datos no encontrados)
+      const suppressSnackbarUrls = [
+        '/users/get-personal-data',
+        '/companies/my-company',
+        '/users/get-provider-type',
+        '/location/addresses' // Incluye la carga de dirección
+        // Agrega aquí otras URLs de carga inicial si es necesario
+      ];
+
+      // Comprobar si la URL actual está en la lista de supresión
+      const shouldSuppressSnackbar = suppressSnackbarUrls.some(url => request.url.includes(url));
+
+      if (shouldSuppressSnackbar) {
+        console.warn(`Error en URL ${request.url} (status: ${error.status}). Snackbar suprimido para esta ruta.`);
+        showGenericSnackbar = false; // No mostrar snackbar para estas rutas
+      }
+
       // No mostrar errores para URLs de recursos estáticos (imágenes, etc.)
       if (request.url.endsWith('.jpg') || request.url.endsWith('.png') || 
           request.url.endsWith('.svg') || request.url.endsWith('.gif')) {
-        console.warn('Recurso no encontrado:', request.url);
-        return throwError(() => error);
+        console.warn('Recurso no encontrado (imagen/estático):', request.url);
+        showGenericSnackbar = false; // Tampoco mostrar snackbar para recursos estáticos
       }
       
       if (error.error instanceof ErrorEvent) {
@@ -46,74 +64,80 @@ export const httpErrorInterceptor: HttpInterceptorFn = (
             break;
           case 401:
             // Manejar errores de autorización con reintentos
-            if (authRetryAttempts < MAX_AUTH_RETRIES) {
+            if (request.url.includes('/api/auth/login')) {
+              errorMsg = 'Las credenciales ingresadas no son válidas';
+              showGenericSnackbar = true; // Asegurar mostrar este error específico
+              // Propagar el error inmediatamente para este caso
+              return throwError(() => error);
+            } else if (authRetryAttempts < MAX_AUTH_RETRIES) {
               authRetryAttempts++;
               console.log(`Intento ${authRetryAttempts} de recuperar autenticación`);
-              
+              showGenericSnackbar = false; // Suprimir snackbar durante el reintento
               // Intentar refrescar el token
               return authService.refreshToken().pipe(
                 switchMap(token => {
                   if (token) {
-                    // Si se pudo obtener un nuevo token, reintentar la solicitud
                     const newReq = request.clone({
-                      setHeaders: {
-                        'Authorization': `Bearer ${token}`
-                      }
+                      setHeaders: { 'Authorization': `Bearer ${token}` }
                     });
-                    // Reiniciar el contador de intentos para la próxima vez
-                    authRetryAttempts = 0;
-                    return next(newReq);
+                    authRetryAttempts = 0; // Resetear al tener éxito
+                    return next(newReq); // Reintentar la petición
                   } else {
-                    // Si no hay token, redirigir al login
-                    errorMsg = 'No autorizado. Por favor inicia sesión nuevamente';
-                    router.navigate(['/login']);
-                    return throwError(() => error);
+                    // No se pudo refrescar, propagar error y se manejará más abajo
+                    return throwError(() => new Error('No se pudo refrescar el token'));
                   }
                 }),
-                catchError(() => {
-                  // Si hay error al refrescar el token, redirigir al login
-                  errorMsg = 'La sesión ha expirado. Por favor inicia sesión nuevamente';
-                  router.navigate(['/login']);
-                  return throwError(() => error);
+                catchError(refreshError => {
+                  // Error al intentar refrescar, propagar y se manejará más abajo
+                  return throwError(() => refreshError);
                 })
               );
             } else {
-              // Si ya se han agotado los reintentos, mostrar mensaje y redirigir
+              // Agotados los reintentos o fallo al refrescar
               errorMsg = 'No autorizado. Por favor inicia sesión nuevamente';
-              // Reiniciar contador para futuras peticiones
+              showGenericSnackbar = true; // Mostrar después de agotar reintentos
               authRetryAttempts = 0;
-              // Cerrar sesión y redirigir al login
-              authService.logout().then(() => {
-                router.navigate(['/login']);
-              });
+              authService.logout().then(() => router.navigate(['/login']));
+              // Propagar el error original después de la lógica de logout
+              return throwError(() => error);
             }
             break;
           case 403:
             errorMsg = 'No tienes permisos para acceder a este recurso';
             break;
           case 404:
-            errorMsg = 'Recurso no encontrado';
+            // Ya cubierto por la lógica de suppressSnackbarUrls, pero podemos poner un mensaje por defecto
+            if (showGenericSnackbar) {
+              errorMsg = 'Recurso no encontrado'; 
+            }
             break;
           case 500:
-            // Para errores de perfil, no mostrar mensajes
+            // Para errores de perfil/logout, no mostrar mensajes (ya estaba)
             if (request.url.includes('/users/profile') || request.url.includes('/auth/logout')) {
-              console.warn('Error en el servidor para:', request.url);
-              return throwError(() => error);
+              console.warn('Error 500 en el servidor para (snackbar suprimido):', request.url);
+              showGenericSnackbar = false;
+            } else if (showGenericSnackbar) {
+              errorMsg = 'Error en el servidor. Intenta nuevamente más tarde';
             }
-            errorMsg = 'Error en el servidor. Intenta nuevamente más tarde';
             break;
           default:
-            errorMsg = 'Ocurrió un error inesperado';
+             if (showGenericSnackbar) {
+               errorMsg = 'Ocurrió un error inesperado';
+             }
         }
       }
       
-      if (errorMsg) {
-        // Mostrar mensaje de error solo para errores significativos
+      // Mostrar snackbar solo si no se suprimió y hay un mensaje
+      if (showGenericSnackbar && errorMsg) {
         snackBar.open(errorMsg, 'Cerrar', {
-          duration: 5000
+          duration: 5000,
+          panelClass: 'error-snackbar',
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom'
         });
       }
       
+      // Propagar el error original para que otros catchError puedan manejarlo si es necesario
       return throwError(() => error);
     })
   );

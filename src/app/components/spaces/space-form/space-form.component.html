@@ -118,25 +118,19 @@
         <div class="mb-4">
           <div class="amenities-header">
             <h2 class="h5 mb-0">Comodidades</h2>
-            <div class="amenities-controls amenity-input-group">
-              <!-- Amenity autocomplete dropdown -->
-              <mat-form-field appearance="outline" class="amenity-autocomplete">
+            <div class="amenities-controls">
+              <!-- Reemplazando el autocomplete por un mat-select simple -->
+              <mat-form-field appearance="outline" class="amenity-select">
                 <mat-label>Seleccionar comodidad</mat-label>
-                <input type="text"
-                       matInput
-                       [formControl]="amenityCtrl"
-                       [matAutocomplete]="auto">
-                <mat-autocomplete #auto="matAutocomplete"
-                                  [displayWith]="displayAmenity"
-                                  (optionSelected)="onSelectAmenity($event)">
-                  <mat-option *ngFor="let amenity of filteredAmenities | async" [value]="amenity">
+                <mat-select [(ngModel)]="selectedAmenityId" [ngModelOptions]="{standalone: true}">
+                  <mat-option *ngFor="let amenity of predefinedAmenities" [value]="amenity.id">
                     {{amenity.name}} (${{amenity.price}})
                   </mat-option>
-                </mat-autocomplete>
+                </mat-select>
               </mat-form-field>
               
-              <!-- Add amenity button -->
-              <button type="button" mat-flat-button color="primary" (click)="addAmenity()">
+              <!-- Botón para agregar la comodidad seleccionada -->
+              <button type="button" mat-flat-button color="primary" (click)="addSelectedAmenityFromSelect()">
                 <mat-icon>add</mat-icon> Agregar Comodidad
               </button>
             </div>
@@ -347,7 +341,7 @@
           <button type="button" mat-stroked-button (click)="cancel()">
             Cancelar
           </button>
-          <button type="submit" mat-flat-button color="primary" (click)="onSubmit()">
+          <button type="submit" mat-flat-button color="primary">
             {{ isEdit ? 'Actualizar Espacio' : 'Crear Espacio' }}
           </button>
         </div>

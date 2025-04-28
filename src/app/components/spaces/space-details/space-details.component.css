@@ -1,266 +1,378 @@
 .space-details-container {
-  width: 100%;
-  margin: 20px 0;
-}
-
-.space-details-card {
-  width: 100%;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  margin-bottom: 20px;
-}
-
-mat-card-header {
-  padding: 16px;
-  background-color: #f5f5f5;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-mat-card-title {
-  font-size: 1.5rem;
-  margin-bottom: 8px;
-}
-
-mat-card-subtitle {
-  color: #666;
-}
-
-.tab-content {
-  padding: 20px;
-}
-
-/* Estilos para la pestaña de Detalles */
-.details-content {
-  max-width: 800px;
-}
-
-.detail-row {
-  margin-bottom: 12px;
   display: flex;
   flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  background-color: #fff;
 }
 
-.detail-label {
-  font-weight: 500;
-  color: #555;
-  margin-bottom: 4px;
-}
-
-.detail-value {
-  color: #333;
-}
-
-h3 {
-  margin-top: 24px;
-  margin-bottom: 16px;
-  color: #3f51b5;
-  font-weight: 500;
-  border-bottom: 1px solid #e0e0e0;
-  padding-bottom: 8px;
-}
-
-/* Estilos para los precios */
-.price-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.price-item {
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  padding: 12px;
-  text-align: center;
-  transition: all 0.2s;
-  border: 1px solid #e0e0e0;
-}
-
-.price-item:hover {
-  background-color: #f0f0f0;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.price-label {
-  font-size: 0.9rem;
-  color: #666;
-  margin-bottom: 6px;
-}
-
-.price-value {
-  font-size: 1.2rem;
-  font-weight: 500;
-  color: #3f51b5;
-}
-
-/* Estilos para las comodidades */
-.amenities-list {
+/* Space content */
+.space-content {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 24px;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.amenity-item {
-  background-color: #e8eaf6;
-  border-radius: 20px;
-  padding: 6px 12px;
+/* Space header */
+.space-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e0e0e0;
 }
 
-.amenity-name {
-  font-size: 0.9rem;
+.back-button {
+  margin-right: 15px;
 }
 
-.amenity-price {
-  font-size: 0.8rem;
-  color: #3f51b5;
-  font-weight: 500;
+.space-title {
+  margin: 0;
+  font-size: 1.8rem;
+  color: #333;
+  flex: 1;
 }
 
-/* Estilos para la dirección */
-.address-info {
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 24px;
-  border-left: 4px solid #3f51b5;
-}
-
-.address-line {
-  margin-bottom: 4px;
-}
-
-/* Estilos para la pestaña de Fotos */
-.photos-grid {
+/* Layout vertical en tres cards */
+.space-details-layout {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
 }
 
-.main-photo {
+/* Card de imagen y galería */
+.image-gallery-card {
   width: 100%;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
-  height: 300px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-.main-photo img {
+.main-image-container {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.zoom-container {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-bottom: 60%; /* Aspecto 5:3 */
+  overflow: hidden;
+}
+
+.main-image {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  transition: transform 0.3s ease;
 }
 
-.additional-photos {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+.main-image:hover {
+  transform: scale(1.5);
+}
+
+.zoom-icon {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Galería de miniaturas */
+.thumbnail-gallery {
+  display: flex;
   gap: 12px;
+  overflow-x: auto;
+  padding: 10px 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primary) #f0f0f0;
+  margin-top: 10px;
 }
 
-.photo-thumbnail {
-  height: 120px;
+.thumbnail-gallery::-webkit-scrollbar {
+  height: 6px;
+}
+
+.thumbnail-gallery::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 10px;
+}
+
+.thumbnail-gallery::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border-radius: 10px;
+}
+
+.thumbnail-container {
+  flex: 0 0 100px;
+  height: 75px;
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.2s;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
-.photo-thumbnail:hover {
-  transform: scale(1.05);
+.thumbnail-container:hover {
+  transform: translateY(-3px);
 }
 
-.photo-thumbnail img {
+.thumbnail-container.active {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+.thumbnail {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.no-additional-photos {
-  padding: 20px;
-  text-align: center;
-  color: #666;
+/* Card de detalles con tabs */
+.details-card {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.details-tabs {
+  width: 100%;
+}
+
+.tab-content {
+  padding: 24px;
+}
+
+/* Amenities */
+.amenities-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.amenity-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
   background-color: #f5f5f5;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.amenity-item:hover {
+  background-color: #f5f5f5;
+}
+
+.amenity-icon {
+  color: var(--color-primary);
+}
+
+/* Card de reserva y precios */
+.booking-card {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.booking-card mat-card-header {
+  background-color: var(--color-primary);
+  color: white;
+  padding: 16px 24px;
+}
+
+.booking-card mat-card-title {
+  color: white;
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.booking-card mat-card-content {
+  padding: 24px;
+}
+
+.price-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.price-item {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.price-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.price-label {
+  color: #666;
+  font-size: 1rem;
+}
+
+.price-value {
+  font-weight: 600;
+  font-size: 1.2rem;
+  color: var(--color-primary);
+}
+
+.booking-card mat-card-actions {
+  padding: 0 24px 24px;
+}
+
+.reserve-button {
+  width: 100%;
+  padding: 12px;
+  font-weight: 500;
+  font-size: 1rem;
   border-radius: 8px;
 }
 
-.no-space-message {
-  padding: 40px;
-  text-align: center;
-  color: #666;
-  background-color: #f5f5f5;
-  border-radius: 8px;
-  margin: 20px 0;
+/* Espacios similares */
+.similar-spaces {
+  margin-top: 24px;
 }
 
-/* Responsive styles */
+.similar-spaces h3 {
+  font-size: 1.4rem;
+  margin-bottom: 16px;
+  color: #333;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.similar-spaces-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.similar-space-card {
+  cursor: pointer;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.similar-space-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.similar-image-container {
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+}
+
+.similar-image-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.similar-space-card:hover .similar-image-container img {
+  transform: scale(1.1);
+}
+
+.location-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.map-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
-  .detail-row {
+  .space-header {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .back-button {
+    margin-right: 10px;
+    order: 1;
+  }
+  
+  .space-title {
+    font-size: 1.5rem;
+    flex: 1;
+    order: 2;
+  }
+  
+  .main-image:hover {
+    transform: none; /* Deshabilitar zoom en móvil */
+  }
+  
+  .amenities-list {
+    grid-template-columns: 1fr;
+  }
+  
+  .map-actions {
     flex-direction: column;
   }
   
-  .price-grid {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  .map-actions a {
+    width: 100%;
   }
   
-  .main-photo {
-    height: 200px;
+  .similar-spaces-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 992px) {
+  .main-image-container {
+    height: 450px;
   }
   
-  .additional-photos {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  .zoom-container {
+    padding-bottom: 56.25%; /* Aspecto 16:9 para pantallas grandes */
   }
   
-  .photo-thumbnail {
-    height: 80px;
+  .thumbnail-container {
+    flex: 0 0 120px;
+    height: 90px;
   }
 }
 
-/* Spinner de carga */
-.mat-spinner {
-  margin: 0 auto;
+/* Loading and error states */
+.loading-spinner,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  text-align: center;
+  padding: 24px;
 }
 
-/* Estilos para las cards */
-mat-card {
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  overflow: hidden;
-  margin-bottom: 20px;
-}
-
-mat-card-content.py-4 {
-  padding-top: 1rem;
-  padding-bottom: 1rem;
-}
-
-.card.bg-light {
-  background-color: #f5f5f5;
-  border: none;
-  transition: all 0.3s ease;
-}
-
-.card.bg-light:hover {
-  background-color: #e8eaf6;
-  transform: translateY(-2px);
-}
-
-/* Botones */
-button.me-2 {
-  margin-right: 0.5rem;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .row.mb-4 {
-    margin-bottom: 1rem !important;
-  }
-  
-  .col-md-4.d-flex {
-    margin-top: 1rem;
-    justify-content: flex-start !important;
-  }
-}

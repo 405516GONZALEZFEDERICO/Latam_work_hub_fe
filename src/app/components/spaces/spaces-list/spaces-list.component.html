@@ -5,11 +5,7 @@
       <p class="text-muted">Encuentra el espacio de trabajo ideal para tus necesidades</p>
     </div>
     <div class="col-md-4 d-flex justify-content-end align-items-center gap-2">
-      <button mat-raised-button color="primary" (click)="navigateToSearchSpaces()" class="me-2">
-        <mat-icon>search</mat-icon>
-        Buscar Espacios
-      </button>
-      <button mat-raised-button color="accent" (click)="navigateToCreate()">
+      <button mat-raised-button color="basic" (click)="navigateToCreate()">
         <mat-icon>add</mat-icon>
         Añadir Espacio
       </button>
@@ -19,67 +15,33 @@
   <!-- Filters -->
   <div class="row mb-4">
     <div class="col-12">
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title mb-3">Filtrar Espacios</h5>
-          <form [formGroup]="filterForm">
-            <div class="row align-items-end">
-              <div class="col-md-4 mb-3">
-                <mat-form-field appearance="outline" class="w-100">
-                  <mat-label>Buscar por nombre</mat-label>
-                  <input matInput formControlName="name" placeholder="Ingrese nombre">
-                  <mat-icon matSuffix>search</mat-icon>
-                </mat-form-field>
-              </div>
-              <div class="col-md-3 mb-3">
-                <mat-form-field appearance="outline" class="w-100">
-                  <mat-label>Tipo de Espacio</mat-label>
-                  <mat-select formControlName="type">
-                    <mat-option *ngFor="let type of spaceTypes" [value]="type">
-                      {{type === 'All' ? 'Todos' : type === 'COMPANY' ? 'Empresa' : 'Individual'}}
-                    </mat-option>
-                  </mat-select>
-                </mat-form-field>
-              </div>
-              <div class="col-md-3 mb-3">
-                <mat-form-field appearance="outline" class="w-100">
-                  <mat-label>Estado</mat-label>
-                  <mat-select formControlName="status">
-                    <mat-option *ngFor="let status of statusOptions" [value]="status">
-                      {{status}}
-                    </mat-option>
-                  </mat-select>
-                </mat-form-field>
-              </div>
-              <div class="col-md-2 mb-3">
-                <button mat-flat-button color="primary" class="w-100" (click)="applyFilters()">
-                  Buscar
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
+      <app-space-filter (filtersChanged)="handleFiltersChanged($event)"></app-space-filter>
     </div>
   </div>
 
+  <!-- Loading Indicator -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <mat-spinner diameter="40" class="mx-auto"></mat-spinner>
+    <p class="mt-3">Cargando espacios...</p>
+  </div>
+
   <!-- Spaces Grid -->
-  <div class="row">
-    <div *ngFor="let space of filteredSpaces" class="col-md-6 col-lg-4 mb-4">
-      <div class="card h-100 shadow-sm">
+  <div *ngIf="!isLoading" class="row">
+    <div *ngFor="let space of spaces" class="col-md-6 col-lg-4 mb-4">
+      <mat-card class="h-100 shadow-sm">
         <div class="position-relative">
           <img [src]="space.imageUrl" class="card-img-top" style="height: 200px; object-fit: cover;" [alt]="space.title">
         </div>
-        <div class="card-body">
+        <mat-card-content>
           <div class="d-flex justify-content-between mb-3">
-            <h5 class="card-title mb-0">{{space.title}}</h5>
+            <h3 class="card-title mb-0">{{space.title}}</h3>
           </div>
           <p class="card-text text-muted mb-3">{{space.address}}</p>
           
           <div class="row mb-3">
             <div class="col-6">
               <small class="text-muted d-block">Tipo</small>
-              <span>{{space.providerType}}</span>
+              <span>{{space.providerType === 'COMPANY' ? 'Empresa' : 'Individual'}}</span>
             </div>
             <div class="col-6">
               <small class="text-muted d-block">Capacidad</small>
@@ -97,8 +59,8 @@
               <span>${{space.monthlyPrice}}</span>
             </div>
           </div>
-        </div>
-        <div class="card-footer bg-transparent">
+        </mat-card-content>
+        <mat-card-actions>
           <div class="d-flex justify-content-between">
             <button mat-button color="primary" (click)="navigateToView(space.id)">
               <mat-icon>visibility</mat-icon> Ver
@@ -107,17 +69,31 @@
               <mat-icon>edit</mat-icon> Editar
             </button>
           </div>
-        </div>
-      </div>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="row mt-4" *ngIf="!isLoading && totalItems > 0">
+    <div class="col-12 d-flex justify-content-center">
+      <mat-paginator
+        [length]="totalItems"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="pageSizeOptions"
+        [pageIndex]="currentPage"
+        (page)="handlePageEvent($event)"
+        aria-label="Seleccionar página">
+      </mat-paginator>
     </div>
   </div>
 
   <!-- No spaces message -->
-  <div *ngIf="filteredSpaces.length === 0" class="text-center py-5">
+  <div *ngIf="!isLoading && spaces.length === 0" class="text-center py-5">
     <mat-icon class="text-muted" style="font-size: 48px; width: 48px; height: 48px;">business</mat-icon>
     <h3 class="mt-3">No se encontraron espacios</h3>
     <p class="text-muted">Ajusta los filtros o añade un nuevo espacio</p>
-    <button mat-raised-button color="primary" class="mt-3" (click)="navigateToCreate()">
+    <button mat-raised-button color="basic" class="mt-3" (click)="navigateToCreate()">
       <mat-icon>add</mat-icon>
       Añadir Espacio
     </button>

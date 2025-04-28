@@ -21,8 +21,11 @@ export class AddressService {
     return this.http.get<Country[]>(`${this.API_BASE_URL}/countries`);
   }
 
-  getCitiesByCountry(countryId: number): Observable<City[]> {
-    return this.http.get<City[]>(`${this.API_BASE_URL}/cities/country/${countryId}`);
+  getCitiesByCountry(countryId: number | string): Observable<City[]> {
+    // Asegurarse de que el ID sea un número
+    const id = typeof countryId === 'string' ? parseInt(countryId, 10) : countryId;
+    console.log(`Enviando solicitud para obtener ciudades del país ID: ${id}`);
+    return this.http.get<City[]>(`${this.API_BASE_URL}/cities/country/${id}`);
   }
 
   saveAddress(address: Address, userId: string): Observable<Address> {

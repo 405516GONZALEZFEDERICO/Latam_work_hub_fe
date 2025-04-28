@@ -2,6 +2,10 @@
   margin-bottom: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
+  position: relative;
+  z-index: 1;
+  background-color: #fff;
+  display: block !important; /* Asegurar que siempre sea visible */
 }
 
 .filter-header {
@@ -11,6 +15,7 @@
   padding: 12px 16px;
   cursor: pointer;
   transition: background-color 0.2s;
+  border-bottom: 1px solid #f2f2f2;
 }
 
 .filter-header:hover {
@@ -31,8 +36,8 @@
 
 .filter-content {
   padding: 0 16px 16px;
-  max-height: 1000px;
-  overflow: hidden;
+  max-height: 500px;
+  overflow-y: auto;
   transition: max-height 0.3s ease-in-out, padding 0.3s;
 }
 
@@ -73,6 +78,7 @@
 .filter-form-field {
   width: 100%;
   font-size: 14px;
+  margin-bottom: 8px;
 }
 
 .filter-slider {
@@ -90,15 +96,24 @@
 
 .filter-amenities {
   margin-bottom: 16px;
-  max-width: 400px;
-  margin-left: auto;
-  margin-right: auto;
+  max-width: 100%;
+  width: 100%;
+  display: block;
+  padding: 10px 0;
+  border-top: 1px solid #f2f2f2;
 }
 
 .filter-actions {
+  padding: 12px 16px;
   display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
+  justify-content: space-between;
+  background-color: #fff;
+  border-top: 1px solid #f2f2f2;
+  z-index: 60;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+  position: sticky;
+  bottom: 0;
 }
 
 .apply-button {
@@ -106,6 +121,31 @@
   font-weight: 500;
   font-size: 14px;
   border-radius: 4px;
+  width: calc(100% - 45px); /* Ajustar ancho para dejar espacio al botón de reset */
+  max-width: 250px;
+}
+
+/* Botón para resetear filtros */
+.reset-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.reset-button:hover {
+  background-color: #e8e8e8;
+}
+
+.reset-button mat-icon {
+  color: #666;
+  font-size: 18px;
 }
 
 /* Estilos para móvil */
@@ -120,10 +160,76 @@
   }
   
   .filter-actions {
-    justify-content: center;
+    justify-content: space-between;
   }
   
   .apply-button {
-    width: 100%;
+    width: calc(100% - 45px);
   }
+}
+
+/* Mejorar los dropdowns */
+::ng-deep .filter-form-field .mat-select-panel {
+  z-index: 9999 !important;
+  max-height: 350px !important;
+}
+
+::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline {
+  z-index: 1;
+}
+
+/* Posicionar correctamente los contenedores de overlay */
+::ng-deep .cdk-overlay-container {
+  z-index: 10000 !important;
+}
+
+.amenities-selector {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  position: relative;
+  z-index: 50;
+  margin-bottom: 20px;
+}
+
+/* Estilo para asegurar que el select-button dentro del filtro sea visible */
+::ng-deep .amenities-selector .select-button {
+  background-color: #fff !important;
+  border: 1px solid #c0c0c0 !important;
+  min-height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 10px 15px !important;
+  border-radius: 6px !important;
+  color: #333 !important;
+  z-index: 5;
+}
+
+/* Estilos para el panel del dropdown */
+::ng-deep .amenities-selector .options-container {
+  max-height: 250px !important;
+  overflow-y: auto !important;
+  z-index: 10001 !important;
+  margin-top: 5px !important;
+  border-radius: 6px !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Estilo para la barra de desplazamiento */
+.filter-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.filter-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.filter-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.filter-content::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
 } 
