@@ -97,7 +97,6 @@
 }
 
 .main-content.sidebar-open {
-  margin-left: 300px;
   width: calc(100% - 300px);
 }
 
@@ -105,10 +104,11 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-  background-color: white;
+  background-color:white;
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow-light);
   min-height: calc(100vh - 140px);
+  overflow:hidden;
 }
 
 /* Título de página */

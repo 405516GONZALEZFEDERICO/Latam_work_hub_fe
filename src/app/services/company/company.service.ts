@@ -16,21 +16,17 @@ export class CompanyService {
   getCompanyInfo(uid: string): Observable<CompanyInfoDto | null> {
     const params = new HttpParams().set('uid', uid);
     
-    console.log(`CompanyService: Solicitando información de compañía para UID ${uid}`);
     
     return this.http.get<CompanyInfoDto>(`${this.apiUrl}/get-info-company`, { params })
       .pipe(
         catchError((error) => {
-          console.error('Error al obtener información de la compañía:', error);
           return of(null);
         }),
         // Verificar si la respuesta parece vacía o solo contiene providerType
         map((response) => {
-          console.log('CompanyService: Respuesta del backend:', response);
           
           // Si no hay respuesta, retornar null
           if (!response) {
-            console.log('CompanyService: No se recibió respuesta del backend');
             return null;
           }
           
@@ -40,7 +36,6 @@ export class CompanyService {
           
           // Si el objeto está vacío pero tiene providerType, preservar esa información
           if (isEmpty && response.providerType) {
-            console.log('CompanyService: Objeto con datos mínimos y providerType:', response.providerType);
             
             // Normalizar el tipo a mayúsculas para consistencia
             let typeString = typeof response.providerType === 'string' 
@@ -70,11 +65,9 @@ export class CompanyService {
           } 
           // Si está completamente vacío, tratarlo como si no existiera
           else if (isEmpty) {
-            console.log('CompanyService: Objeto completamente vacío');
             return null;
           }
           
-          console.log('CompanyService: Datos válidos de compañía recibidos');
           
           // Asegurarse de que el providerType esté correctamente normalizado
           if (response.providerType) {
@@ -95,7 +88,6 @@ export class CompanyService {
   }
 
   createOrUpdateCompanyInfo(userId: string, companyData: CompanyInfoDto): Observable<any> {
-    console.log('Enviando datos de empresa para', userId, companyData);
     
     // Asegurarse de que el providerType esté correctamente formateado
     if (companyData.providerType) {

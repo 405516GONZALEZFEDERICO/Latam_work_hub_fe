@@ -292,7 +292,6 @@ export class AddressStepperComponent implements OnInit, OnChanges {
       .subscribe({
         next: (cities) => {
           this.filteredCities = cities;
-          console.log(`Ciudades cargadas para el país ${countryId}:`, cities);
         },
         error: (error) => {
           console.error(`Error al cargar las ciudades para el país ${countryId}:`, error);
@@ -411,7 +410,6 @@ export class AddressStepperComponent implements OnInit, OnChanges {
       
       // Verificar que el userId esté definido para crear una nueva dirección
       if (!this.userId && !this.isEditMode) {
-        console.error('Error: Se requiere el ID de usuario para guardar la dirección');
         return;
       }
       
@@ -419,13 +417,11 @@ export class AddressStepperComponent implements OnInit, OnChanges {
       this.isLoading = true;
       
       if (this.isEditMode && this.existingAddress?.id) {
-        console.log('Actualizando dirección existente con ID:', this.existingAddress.id);
         // Actualizar dirección existente
         this.addressService.updateAddress(this.existingAddress.id, address)
           .pipe(finalize(() => this.isLoading = false))
           .subscribe({
             next: (updatedAddress) => {
-              console.log('Dirección actualizada correctamente:', updatedAddress);
               // Emitir evento con la dirección actualizada
               this.addressSaved.emit(updatedAddress);
             },
@@ -434,13 +430,11 @@ export class AddressStepperComponent implements OnInit, OnChanges {
             }
           });
       } else {
-        console.log('Guardando nueva dirección para usuario:', this.userId);
         // Crear nueva dirección
         this.addressService.saveAddress(address, this.userId!)
           .pipe(finalize(() => this.isLoading = false))
           .subscribe({
             next: (savedAddress) => {
-              console.log('Dirección guardada correctamente:', savedAddress);
               // Emitir evento con la dirección guardada
               this.addressSaved.emit(savedAddress);
             },

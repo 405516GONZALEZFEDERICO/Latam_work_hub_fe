@@ -42,7 +42,7 @@
             Tipo de Espacio
           </label>
           <mat-form-field appearance="outline" class="filter-form-field">
-            <mat-select [(ngModel)]="filters.spaceTypeId" name="spaceType" placeholder="Seleccionar tipo">
+            <mat-select [(ngModel)]="filters.spaceTypeId" name="spaceType" placeholder="Seleccionar tipo" (selectionChange)="onSpaceTypeChange($event)">
               <mat-option [value]="null">Todos</mat-option>
               <mat-option *ngFor="let type of spaceTypes" [value]="type.id">{{ type.name }}</mat-option>
             </mat-select>

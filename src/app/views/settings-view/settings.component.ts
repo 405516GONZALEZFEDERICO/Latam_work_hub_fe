@@ -17,5 +17,4 @@ import { DeactivateAccountComponent } from '../../components/profile/deactivate-
   styleUrls: ['./settings.component.scss']
 })
 export class SettingsComponent {
-  // Aquí pueden ir propiedades y métodos para la configuración
 } 

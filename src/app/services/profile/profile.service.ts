@@ -24,38 +24,28 @@ export class ProfileService {
       uid = currentUser.uid;
     }
 
-    console.log(`Enviando imagen al servidor para el usuario ${uid}`);
 
-    // Añadir logs para verificar el formData
-    console.log('Contenido de formData:', formData.get('image'));
 
     // Hacer la solicitud HTTP al endpoint correcto
     return this.http.post<any>(`${this.apiUrl}/users/${uid}/upload-img`, formData).pipe(
       tap(response => console.log('Respuesta de subida de imagen:', response)),
       catchError(error => {
-        console.error('Error al subir imagen de perfil:', error);
-        if (error instanceof HttpErrorResponse) {
-          console.error('Detalles HTTP:', error.status, error.statusText, error.message);
-        }
         return throwError(() => new Error(`Error al subir imagen: ${error.status} ${error.statusText}`));
       })
     );
   }
 
   getPersonalData(uid: string): Observable<any> {
-    console.log(`Solicitando datos personales para el usuario ${uid}`);
     return this.http.get<any>(`${this.apiUrl}/users/${uid}/get-personal-data`).pipe(
       tap(response => console.log('Respuesta completa del backend (datos personales):', response)),
       map(response => {
         // Verificar si la respuesta está vacía (todos los campos están vacíos)
         if (!response) {
-          console.log('ProfileService: Respuesta nula del servidor');
           return null;
         }
 
         // Verificar si es un objeto vacío
         if (Object.keys(response).length === 0) {
-          console.log('ProfileService: Objeto vacío del servidor');
           return null;
         }
 
@@ -63,13 +53,11 @@ export class ProfileService {
           !response.birthDate && !response.photoUrl;
 
         if (isEmpty) {
-          console.log('ProfileService: Datos personales están vacíos');
           return null;
         }
 
         // Verificar si hay photoUrl y añadir URL base si es necesario
         if (response.photoUrl && !response.photoUrl.startsWith('http')) {
-          console.log('Añadiendo URL base a photoUrl:', response.photoUrl);
           response.photoUrl = `${this.apiUrl}${response.photoUrl}`;
         }
 
@@ -78,7 +66,6 @@ export class ProfileService {
       catchError(error => {
         // Si es 404, significa que no hay datos todavía - eso es normal
         if (error.status === 404) {
-          console.log('No se encontraron datos personales para el usuario (normal para usuarios nuevos)');
           return of(null);
         }
 
@@ -100,8 +87,6 @@ export class ProfileService {
 
 
   updateOrCreatePersonalData(uid: string, personalData: PersonalDataUserDto): Observable<PersonalDataUserDto> {
-    console.log('Actualizando datos personales para usuario:', uid);
-    console.log('Datos a enviar:', personalData);
 
     // Convertir la Promise de getIdToken a Observable
     return from(this.authService.getIdToken()).pipe(
@@ -111,7 +96,6 @@ export class ProfileService {
           return throwError(() => new Error('No se pudo obtener el token de autenticación'));
         }
 
-        console.log('Token obtenido correctamente, enviando datos al servidor');
 
         // Configurar los headers con el token
         const headers = new HttpHeaders({
@@ -156,12 +140,10 @@ export class ProfileService {
       return of({} as ProfileData);
     }
 
-    console.log('Obteniendo datos de perfil para usuario:', currentUser.uid);
 
     // Obtener los datos personales usando el método existente
     return this.getPersonalData(currentUser.uid).pipe(
       switchMap((personalData: any) => {
-        console.log('Datos personales recibidos del backend:', personalData);
 
         // Si personalData es null, usar un objeto vacío
         const data = personalData || {};
@@ -181,7 +163,6 @@ export class ProfileService {
           providerType: data.providerType,
         };
 
-        console.log('Datos mapeados para el frontend:', profileData);
         return of(profileData);
       }),
       catchError(error => {
@@ -196,7 +177,6 @@ export class ProfileService {
           profileCompletion: 10
         };
 
-        console.log('Usando perfil básico debido al error:', basicProfile);
         return of(basicProfile);
       })
     );
@@ -205,20 +185,15 @@ export class ProfileService {
 
   // Método para forzar la recarga del perfil (útil después de actualizaciones)
   forceRefreshProfileData(): Observable<ProfileData> {
-    console.log('Forzando recarga de datos de perfil...');
-    // Primero limpiamos cualquier caché que pueda tener
-    // Y luego obtenemos datos frescos
     return this.getProfileData();
   }
 
   getProviderType(uid: string): Observable<ProviderTypeDto> {
-    console.log(`Solicitando tipo de proveedor para el usuario ${uid}`);
 
     return this.http.get<ProviderTypeDto>(`${this.apiUrl}/users/${uid}/get-provider-type`).pipe(
       tap(response => console.log('Tipo de proveedor recibido:', response)),
       map(response => {
         if (!response || !response.providerType) {
-          console.log('No se encontró tipo de proveedor');
           return { providerType: null };
         }
         return response;
@@ -227,7 +202,6 @@ export class ProfileService {
         console.error('Error al obtener tipo de proveedor:', error);
         if (error instanceof HttpErrorResponse) {
           if (error.status === 404) {
-            console.log('No se encontró tipo de proveedor (404)');
             return of({ providerType: null });
           }
           console.error('Detalles HTTP:', error.status, error.statusText);
@@ -239,7 +213,6 @@ export class ProfileService {
 
   // Método para desactivar la cuenta del usuario
   desactivateAccount(uid: string): Observable<boolean> {
-    console.log(`Solicitando desactivación de cuenta para el usuario ${uid}`);
     
     return from(this.authService.getIdToken()).pipe(
       switchMap(token => {

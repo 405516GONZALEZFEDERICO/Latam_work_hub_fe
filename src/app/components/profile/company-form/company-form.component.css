@@ -5,12 +5,23 @@
   align-items: center;
   justify-content: center;
   padding: 40px;
-  min-height: 300px;
+  min-height: 300px; /* Keep min-height to occupy space */
   width: 100%;
+  /* Remove absolute positioning from here */
+  /* position: absolute; */
+  /* top: 50%; */
+  /* left: 50%; */
+  /* transform: translate(-50%, -50%); */
+}
+
+/* New class for when loading is active */
+.loading-container.loading-active {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  background-color: white; /* Optional: Add background to hide content below */
+  z-index: 10; /* Ensure it's above the form */
 }
 
 .loading-container p {
@@ -23,8 +34,6 @@
 ::ng-deep .loading-container .mat-progress-spinner circle {
   stroke: #0071e3 !important;
 }
-
-/* Estilos específicos para company-form */
 .company-form-container {
   width: 100%;
   padding: 20px;
@@ -34,7 +43,8 @@
   flex-direction: column;
   box-sizing: border-box;
   position: relative;
-  min-height: 400px;
+  /* overflow: hidden; */ /* Might not be needed now */
+  min-height: 100%;
 }
 
 .header-section {
@@ -86,13 +96,12 @@
   margin-bottom: 16px;
   color: var(--color-text-light);
 }
-
 .form-fields {
   width: 100%;
   display: flex;
   flex-direction: column;
+  overflow: visible;
 }
-
 .form-content {
   width: 100%;
   display: flex;
@@ -172,16 +181,37 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   width: 100%;
+  opacity: 1;
+  transition: opacity 0.2s;
+}
+.submit-button.loading .button-content {
+  opacity: 0;
 }
 
 .button-icon {
   margin-right: 8px;
   vertical-align: middle;
 }
-
+.spinner-in-button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
 .button-text {
   vertical-align: middle;
+}
+.submit-button {
+  position: relative;
+  min-width: 200px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+  overflow: hidden; /* Importante para contener el spinner */
 }
 
 .continue-button {
@@ -228,12 +258,23 @@
   background-color: #cccccc;
   cursor: not-allowed;
 }
+/* Asegurar que el spinner sea blanco */
+::ng-deep .spinner-in-button circle {
+  stroke: #ffffff !important;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
 
 /* Media query para dispositivos móviles */
 @media (max-width: 768px) {
   .company-form-container {
-    max-height: 70vh;
-    overflow-y: auto;
+    height: auto; /* Permitir que crezca según el contenido */
+    max-height: 150vh;
+    overflow-y: visible; /* Cambiar de auto a visible */
     padding: 15px;
   }
   

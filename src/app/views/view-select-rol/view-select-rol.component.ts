@@ -79,7 +79,6 @@ export class RoleSelectionComponent implements OnInit {
       return;
     }
     
-    console.log(`Actualizando rol a ${this.selectedRole} para el usuario ${currentUser.uid}`);
     
     // Usar el servicio de autenticación para actualizar el rol (que manejará errores)
     this.authService.updateUserRole(currentUser.uid, this.selectedRole as UserRole)
@@ -90,7 +89,6 @@ export class RoleSelectionComponent implements OnInit {
       )
       .subscribe({
         next: (response) => {
-          console.log('Respuesta de actualización de rol:', response);
           this.snackBar.open('Rol actualizado correctamente', 'Cerrar', {
             duration: 3000
           });
@@ -98,7 +96,6 @@ export class RoleSelectionComponent implements OnInit {
           // Asegurarse de que el usuario tiene el rol correcto en localStorage
           const updatedUser = this.authService.getCurrentUserSync();
           if (updatedUser) {
-            console.log('Actualizando rol en localStorage');
             if (updatedUser.role !== this.selectedRole) {
               updatedUser.role = this.selectedRole as UserRole;
             }

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCardModule } from '@angular/material/card';
@@ -17,6 +17,7 @@ import { Space } from '../../../models/space.model';
 import { SpaceService } from '../../../services/space/space.service';
 import { Amenity } from '../../../models/amenity.model';
 import { ReservationModalComponent } from '../../reservation/reservation-modal/reservation-modal.component';
+import { AuthService } from '../../../services/auth-service/auth.service';
 
 // Tipo para Address con las propiedades que realmente usamos
 interface AddressWithCityCountry {
@@ -58,7 +59,6 @@ export interface SpaceWithType extends Space {
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    RouterModule,
     MatDialogModule
   ],
   templateUrl: './space-details.component.html',
@@ -73,17 +73,37 @@ export class SpaceDetailsComponent implements OnInit {
   formattedAddress: string = '';
   showZoom: boolean = false;
   isMobile: boolean = false;
+  userRole: string | null = null;
+  private route=inject(ActivatedRoute);
+  private router=inject(Router);
+  private location=inject(Location);
+  private spaceService=inject(SpaceService);
+  private snackBar=inject(MatSnackBar);
+  private dialog=inject(MatDialog);
+  private authService=inject(AuthService);
+
   
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private location: Location,
-    private spaceService: SpaceService,
-    private snackBar: MatSnackBar,
-    private dialog: MatDialog
-  ) {}
 
   ngOnInit(): void {
+    // Mejorar obtención del rol del usuario utilizando el servicio de autenticación
+    this.authService.getCurrentUser().subscribe(user => {
+      if (user) {
+        this.userRole = user.role;
+      } else {
+        // Si no hay usuario en el servicio, intentar recuperarlo de localStorage como fallback
+        try {
+          const userData = localStorage.getItem('currentUserData');
+          if (userData) {
+            const user = JSON.parse(userData);
+            this.userRole = user.role || null;
+          }
+        } catch (e) {
+          console.error('Error al obtener rol de usuario:', e);
+          this.userRole = null;
+        }
+      }
+    });
+
     this.checkMobile();
     this.route.paramMap.subscribe((params) => {
       // Intentar obtener el espacio desde el router state primero
@@ -91,12 +111,10 @@ export class SpaceDetailsComponent implements OnInit {
       const state = navigation?.extras?.state as { space?: SpaceWithType };
       
       if (state?.space) {
-        console.log('Espacio obtenido del router state:', state.space);
         this.setSpace(state.space);
       } else {
         // Fallback: si no hay datos en el state, intentar obtener el ID y hacer petición
         const spaceId = params.get('id');
-        console.log('Space ID from route:', spaceId);
         if (spaceId) {
           this.loadSpaceById(spaceId);
         } else {
@@ -120,26 +138,15 @@ export class SpaceDetailsComponent implements OnInit {
     // Mapear campos del DTO a los campos esperados en el frontend
     this.mapDtoFields(space);
     
-    console.log("Objeto space antes de procesar imágenes:", {
-      id: space.id,
-      title: space.title || space.name,
-      photoUrl: space.photoUrl ? [...space.photoUrl] : undefined,
-      imageUrl: space.imageUrl,
-      images: space.images
-    });
     
     // Procesamiento de imágenes prioritario
     if (space.photoUrl && space.photoUrl.length > 0) {
-      console.log("Usando photoUrl del backend:", space.photoUrl);
       this.selectedImage = space.photoUrl[0];
     } else if (space.imageUrl) {
-      console.log("Usando imageUrl como imagen principal:", space.imageUrl);
       this.selectedImage = space.imageUrl;
     } else if (space.images && space.images.length > 0) {
-      console.log("Usando la primera imagen de images:", space.images[0]);
       this.selectedImage = space.images[0];
     } else {
-      console.log("No se encontraron imágenes para el espacio");
       this.selectedImage = null;
     }
     
@@ -148,15 +155,7 @@ export class SpaceDetailsComponent implements OnInit {
     // Usar cualquier propiedad disponible para buscar espacios similares
     this.findSimilarSpacesLocally(space);
     
-    // Debug información para diagnóstico
-    console.log("Espacio configurado:", {
-      id: space.id,
-      title: space.title || space.name,
-      photoUrl: space.photoUrl,
-      imageUrl: space.imageUrl,
-      images: space.images,
-      selectedImage: this.selectedImage
-    });
+
   }
 
   formatAddress(space: SpaceWithType): void {
@@ -318,7 +317,6 @@ export class SpaceDetailsComponent implements OnInit {
   }
 
   loadSpaceById(id: string): void {
-    console.log('Cargando espacio mediante petición al API:', id);
     this.isLoading = true;
     this.error = null;
     
@@ -334,7 +332,6 @@ export class SpaceDetailsComponent implements OnInit {
       )
       .subscribe(
         (space) => {
-          console.log('Space data received:', space);
           if (space) {
             this.setSpace(space as SpaceWithType);
           } else {
@@ -347,7 +344,6 @@ export class SpaceDetailsComponent implements OnInit {
 
   // Buscar espacios similares utilizando los datos locales
   findSimilarSpacesLocally(currentSpace: SpaceWithType): void {
-    console.log('Buscando espacios similares localmente');
     this.spaceService.getSpaces().subscribe(spaces => {
       // Convertir a SpaceWithType[]
       const spacesWithType = spaces as SpaceWithType[];
@@ -391,7 +387,6 @@ export class SpaceDetailsComponent implements OnInit {
         })
         .slice(0, 3); // Limitar a 3 espacios similares
       
-      console.log(`Encontrados ${this.similarSpaces.length} espacios similares`);
     });
   }
 
@@ -457,20 +452,40 @@ export class SpaceDetailsComponent implements OnInit {
   private mapDtoFields(space: SpaceWithType): void {
     if (!space) return;
 
-    // Asegurar que amenities sea un array
-    this.space.amenities = Array.isArray(space.amenities) 
-      ? space.amenities.map(amenity => {
-          if (typeof amenity === 'string') {
-            return {
-              id: 0,  // ID por defecto
-              name: amenity,
-              createdAt: new Date(),
-              updatedAt: new Date()
-            } as Amenity;
-          }
-          return amenity;
-        })
-      : [];
+    // Mejorado el manejo de amenidades para considerar todos los posibles formatos
+    if (space.amenities === undefined) {
+      this.space.amenities = [];
+    } else if (Array.isArray(space.amenities)) {
+      this.space.amenities = space.amenities.map(amenity => {
+        // Si es un string, convertirlo a objeto Amenity
+        if (typeof amenity === 'string') {
+          return {
+            id: 0,
+            name: amenity,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          } as Amenity;
+        } 
+        // Si es un objeto pero no tiene createdAt/updatedAt (puede ser de otro formato)
+        else if (typeof amenity === 'object' && !('createdAt' in amenity)) {
+          return {
+            id: amenity.id || 0,
+            name: amenity.name || 'Amenidad sin nombre',
+            price: amenity.price,
+            description: amenity.description,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          } as Amenity;
+        }
+        
+        // Si ya es un objeto Amenity completo
+        return amenity;
+      });
+      
+    } else {
+      // Si amenities existe pero no es un array, inicializar como array vacío
+      this.space.amenities = [];
+    }
 
     // Mapear tipo de espacio
     this.space.type = typeof space.spaceType === 'string'
@@ -505,11 +520,7 @@ export class SpaceDetailsComponent implements OnInit {
       }
     }
     
-    console.log('Space después de mapear ciudad y país:', {
-      city: space.city,
-      country: space.country,
-      address: space.address
-    });
+    
   }
 
   // Método para detectar si es un dispositivo móvil basado en el ancho de la ventana
@@ -586,5 +597,10 @@ export class SpaceDetailsComponent implements OnInit {
     }
     
     return 'No especificado';
+  }
+
+  // Método para verificar si el usuario tiene permisos para reservar
+  canReserve(): boolean {
+    return this.userRole === 'CLIENTE';
   }
 }

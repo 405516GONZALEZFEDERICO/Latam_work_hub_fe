@@ -10,6 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { provideNativeDateAdapter } from '@angular/material/core';
 
 @Component({
   selector: 'app-reservas',
@@ -26,6 +27,9 @@ import { MatSnackBar } from '@angular/material/snack-bar';
     MatCardModule,
     MatBadgeModule
   ],
+  providers: [
+    provideNativeDateAdapter()
+  ],
   templateUrl: './reservas.component.html',
   styleUrls: ['./reservas.component.css']
 })
@@ -33,15 +37,14 @@ export class ReservasComponent implements OnInit {
   startDate: Date | null = null;
   endDate: Date | null = null;
   
-  // Datos de muestra
+  // Datos para las reservas (inicialmente vacío, se cargará desde el servicio)
   reservas: any[] = [];
-  alquileres: any[] = [];
 
   constructor(private snackBar: MatSnackBar) { }
 
   ngOnInit(): void {
-    // Cargar datos de muestra
-    this.cargarDatosMuestra();
+    // Cargar datos reales (aquí iría la llamada al servicio)
+    this.cargarDatosReservas();
     
     // Verificar si viene desde pago - verificar en múltiples lugares
     this.checkPaymentRedirect();
@@ -49,20 +52,12 @@ export class ReservasComponent implements OnInit {
 
   // Método específico para verificar múltiples flags de redirección de pago
   private checkPaymentRedirect(): void {
-    console.log('Verificando estado de redirección de pago...');
     
     const paymentRedirect = localStorage.getItem('paymentRedirect');
     const paymentInProgress = localStorage.getItem('paymentInProgress');
     const sessionPaymentRedirect = sessionStorage.getItem('paymentRedirect');
     
     const redirectDetected = paymentRedirect === 'true' || paymentInProgress === 'true' || sessionPaymentRedirect === 'true';
-    
-    console.log('Estado de redirección:', { 
-      paymentRedirect, 
-      paymentInProgress, 
-      sessionPaymentRedirect,
-      redirectDetected 
-    });
     
     if (redirectDetected) {
       // Limpiar todas las banderas de redirección
@@ -85,8 +80,13 @@ export class ReservasComponent implements OnInit {
     }
   }
 
-  cargarDatosMuestra(): void {
-    // Esto sería reemplazado por una llamada al servicio real
+  cargarDatosReservas(): void {
+    // Esta función se conectará al servicio para obtener las reservas reales
+    this.reservas = [];
+    // TODO: Implementar llamada al servicio de reservas
+    console.log('TODO: Cargar reservas desde el servicio');
+    // Ejemplo de cómo podría verse con datos mock (solo para desarrollo inicial si es necesario)
+    /*
     this.reservas = [
       {
         id: '12345',
@@ -107,17 +107,7 @@ export class ReservasComponent implements OnInit {
         precio: 3000
       }
     ];
-
-    this.alquileres = [
-      {
-        id: '54321',
-        titulo: 'Oficina Privada - Belgrano',
-        fechaInicio: '01/04/2023',
-        fechaFin: '30/04/2023',
-        estado: 'Activo',
-        precioMensual: 75000
-      }
-    ];
+    */
   }
 
   aplicarFiltros(): void {
@@ -125,13 +115,17 @@ export class ReservasComponent implements OnInit {
     this.snackBar.open('Funcionalidad de filtrado disponible próximamente', 'OK', {
       duration: 3000
     });
+    console.log('Filtrar desde:', this.startDate, 'hasta:', this.endDate);
+    // TODO: Implementar lógica de filtrado llamando al servicio
   }
 
-  verDetalles(id: string, tipo: string): void {
+  verDetalles(id: string): void {
     // Esta función será implementada luego cuando se conecte con el backend
-    this.snackBar.open(`Detalles de ${tipo} #${id} (próximamente)`, 'OK', {
+    this.snackBar.open(`Detalles de reserva #${id} (próximamente)`, 'OK', {
       duration: 3000
     });
+    // TODO: Navegar a la vista de detalle de la reserva
+    // this.router.navigate(['/home/reservas', id]); 
   }
 
   cancelarReserva(id: string): void {
@@ -139,12 +133,15 @@ export class ReservasComponent implements OnInit {
     this.snackBar.open(`Cancelación de reserva #${id} (próximamente)`, 'OK', {
       duration: 3000
     });
+    // TODO: Implementar lógica de cancelación llamando al servicio
   }
 
-  renovarAlquiler(id: string): void {
-    // Esta función será implementada luego cuando se conecte con el backend
-    this.snackBar.open(`Renovación de alquiler #${id} (próximamente)`, 'OK', {
+  pagarReserva(id: string): void {
+    // Esta función será implementada cuando se integre con el sistema de pagos
+    this.snackBar.open(`Procesando pago para la reserva #${id} (próximamente)`, 'OK', {
       duration: 3000
     });
+    // TODO: Implementar lógica de pago o redirección a la pasarela de pago
+    // this.router.navigate(['/pagos/reserva', id]);
   }
 }

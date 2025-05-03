@@ -34,7 +34,6 @@ export class AuthService {
       
       if (userData && timestamp) {
         const user = JSON.parse(userData);
-        console.log('Datos de usuario encontrados en localStorage:', user.role);
         
         // Verificar si los datos tienen más de 24 horas (mayor margen para ser compatible con tokens refresh)
         const now = new Date().getTime();
@@ -42,12 +41,10 @@ export class AuthService {
         const hoursElapsed = (now - parsedTimestamp) / (1000 * 60 * 60);
         
         if (hoursElapsed <= 24) {
-          console.log('Datos de usuario válidos, restaurando sesión');
           this.currentUserData = user;
           this.userSubject.next(user);
           return true;
         } else {
-          console.log('Datos de usuario expirados, limpiando localStorage');
           localStorage.removeItem('currentUserData');
           localStorage.removeItem('userDataTimestamp');
         }
@@ -69,7 +66,6 @@ export class AuthService {
       // Aplicar persistencia de forma inmediata
       setPersistence(this.auth, browserLocalPersistence)
         .then(() => {
-          console.log('Persistencia local configurada correctamente');
         })
         .catch(error => {
           console.error('Error al configurar persistencia local:', error);
@@ -83,7 +79,6 @@ export class AuthService {
     
     // Escuchar cambios en el estado de autenticación de Firebase
     onAuthStateChanged(this.auth, async (user) => {
-      console.log('Auth state changed:', user ? 'Logged in' : 'Logged out');
       this.isInitialized = true;
       
       if (user) {
@@ -93,12 +88,9 @@ export class AuthService {
           try {
             const parsedUser = JSON.parse(storedUser);
             if (parsedUser.uid !== user.uid) {
-              console.log('CONFLICTO DETECTADO: Usuario en Firebase diferente al almacenado en localStorage');
-              console.log('Firebase UID:', user.uid, 'LocalStorage UID:', parsedUser.uid);
               // Limpiar localStorage para prevenir conflictos
               localStorage.removeItem('currentUserData');
               localStorage.removeItem('userDataTimestamp');
-              console.log('LocalStorage limpiado para prevenir conflictos de usuarios');
             }
           } catch (e) {
             console.error('Error al verificar conflicto de usuarios:', e);
@@ -109,7 +101,6 @@ export class AuthService {
         const cachedUser = this.getUserFromLocalStorage(user.uid);
         
         if (cachedUser && cachedUser.uid === user.uid) {
-          console.log('Usando datos de usuario en caché con rol:', cachedUser.role);
           // Si tenemos datos en caché válidos, los usamos inmediatamente
           this.currentUserData = cachedUser;
           this.userSubject.next(cachedUser);
@@ -186,7 +177,6 @@ export class AuthService {
         const cachedUser = this.getUserFromLocalStorage();
         
         if (cachedUser && this.isTokenValid(cachedUser)) {
-          console.log('Intentando restaurar sesión desde localStorage');
           this.currentUserData = cachedUser;
           this.userSubject.next(cachedUser);
           this.authStateSubject.next(true);
@@ -196,7 +186,6 @@ export class AuthService {
         }
         
         // Si no hay usuario en caché o su token no es válido, limpiar todo
-        console.log('No hay sesión válida, limpiando datos');
         this.currentUserData = null;
         this.userSubject.next(null);
         this.authStateSubject.next(false);
@@ -213,11 +202,9 @@ export class AuthService {
       if (!userData) return null;
       
       const parsedUser = JSON.parse(userData);
-      console.log('Datos recuperados de localStorage:', parsedUser.role);
-      
+
       // Verificar que sea el mismo usuario si se proporciona un UID
       if (uid && parsedUser.uid !== uid) {
-        console.log('UID no coincide con el usuario en localStorage');
         return null;
       }
       
@@ -228,7 +215,6 @@ export class AuthService {
         const hoursElapsed = (now - parseInt(timestamp)) / (1000 * 60 * 60);
         
         if (hoursElapsed > 24) {
-          console.log('Datos de usuario expirados (más de 24h)');
           localStorage.removeItem('currentUserData');
           localStorage.removeItem('userDataTimestamp');
           return null;
@@ -247,7 +233,6 @@ export class AuthService {
     // Verificar si estamos en una ruta pública (login/register) y evitar la verificación
     const currentPath = window.location.pathname;
     if (currentPath.includes('/login') || currentPath.includes('/register')) {
-      console.log('Evitando verificación de rol en ruta pública:', currentPath);
       return;
     }
     
@@ -256,7 +241,6 @@ export class AuthService {
     const cachedUser = this.getUserFromLocalStorage();
     
     if (cachedUser && currentFirebaseUid && cachedUser.uid !== currentFirebaseUid) {
-      console.log('¡ALERTA! UID actual y UID en caché no coinciden. Limpiando caché para prevenir conflictos.');
       // Hay un usuario diferente al almacenado - limpiar localStorage para evitar confusión
       localStorage.removeItem('currentUserData');
       localStorage.removeItem('userDataTimestamp');
@@ -265,8 +249,6 @@ export class AuthService {
     // Intentar recuperar los datos de localStorage primero
     const cachedUserFromLocalStorage = this.getUserFromLocalStorage();
     if (cachedUserFromLocalStorage && cachedUserFromLocalStorage.role && cachedUserFromLocalStorage.role !== 'DEFAULT') {
-      console.log('Usando rol encontrado en localStorage:', cachedUserFromLocalStorage.role);
-      
       // Si ya tiene un rol válido en localStorage, usarlo inmediatamente
       this.currentUserData = cachedUserFromLocalStorage;
       this.userSubject.next(cachedUserFromLocalStorage);
@@ -279,9 +261,7 @@ export class AuthService {
       }).subscribe({
         next: (response) => {
           if (response && this.auth.currentUser && response.role) {
-            console.log('Verificación de backend completada, rol:', response.role);
             if (response.role !== cachedUserFromLocalStorage.role) {
-              console.log('Actualizando rol de', cachedUserFromLocalStorage.role, 'a', response.role);
               // Solo actualizar si el rol cambió
               this.currentUserData = {
                 ...this.currentUserData,
@@ -305,7 +285,6 @@ export class AuthService {
     }
     
     // Si no hay datos en caché o el rol es DEFAULT, verificar con el backend
-    console.log('No hay rol válido en localStorage, verificando con backend');
     this.http.get<any>(`${this.API_BASE_URL}/verificar-rol`, {
       params: { idToken },
       headers: { 'Content-Type': 'application/json' }
@@ -314,8 +293,6 @@ export class AuthService {
         if (response && this.auth.currentUser) {
           const role = response.role || 'DEFAULT';
           const photoUrl = response.photoUrl || this.auth.currentUser.photoURL || '';
-          
-          console.log('Rol verificado con backend:', role);
           
           this.currentUserData = {
             uid: this.auth.currentUser.uid,
@@ -350,7 +327,6 @@ export class AuthService {
   }
 
   async loginWithGoogle(isRegistration: boolean = false): Promise<void> {
-    console.log(`Iniciando ${isRegistration ? 'REGISTRO' : 'LOGIN'} con Google`);
     try {
       // Obtenemos las credenciales con Firebase (OAuth)
       const provider = new GoogleAuthProvider();
@@ -360,28 +336,20 @@ export class AuthService {
         provider.setCustomParameters({ prompt: 'select_account' });
       }
       
-      console.log('Abriendo popup de autenticación Google...');
       const result = await signInWithPopup(this.auth, provider);
-      console.log('Popup Google completado con éxito');
       
       const user = result.user;
-      console.log(`Usuario Google autenticado: ${user.email} (${user.uid})`);
       
       // Obtener token para comunicación con backend
       const idToken = await user.getIdToken();
-      console.log('Token de ID obtenido correctamente');
       
       // Verificar si hay un usuario diferente en localStorage y limpiarlo
       const cachedUser = this.getUserFromLocalStorage();
       if (cachedUser && cachedUser.uid !== user.uid) {
-        console.log('DIFERENCIA DETECTADA: Usuario Google diferente al almacenado en localStorage');
-        console.log(`Google UID: ${user.uid}, localStorage UID: ${cachedUser.uid}`);
         localStorage.removeItem('currentUserData');
         localStorage.removeItem('userDataTimestamp');
-        console.log('Datos previos en localStorage eliminados para prevenir conflictos');
       }
       
-      console.log(`Enviando solicitud al backend (${isRegistration ? 'registro' : 'login'})...`);
       // Notificar al backend para verificar/asignar rol
       this.http.post<any>(`${this.API_BASE_URL}/google/login`, null, {
         params: new HttpParams()
@@ -390,15 +358,12 @@ export class AuthService {
         headers: { 'Content-Type': 'application/json' }
       }).subscribe({
         next: (response) => {
-          console.log(`Respuesta del backend recibida: ${JSON.stringify(response)}`);
-          
+
           if (this.auth.currentUser) {
             // Verificar si ya existe un rol en localStorage
             const cachedUser = this.getUserFromLocalStorage(this.auth.currentUser.uid);
             const roleFromBackend = response.role || 'DEFAULT';
             const persistedRole = cachedUser?.role;
-            
-            console.log(`Rol del backend: ${roleFromBackend}, Rol en localStorage: ${persistedRole || 'no hay'}`);
             
             // Priorizar el rol persistido si es diferente a DEFAULT y el backend devuelve DEFAULT
             let finalRole: string;
@@ -406,13 +371,11 @@ export class AuthService {
             if (isRegistration) {
               // Si es registro, siempre usar DEFAULT para forzar selección de rol
               finalRole = 'DEFAULT';
-              console.log('Registro: asignando rol DEFAULT para forzar selección de rol');
             } else {
               // Si es login, usar lógica normal
               finalRole = (roleFromBackend === 'DEFAULT' && persistedRole && persistedRole !== 'DEFAULT')
                 ? persistedRole
                 : roleFromBackend;
-              console.log(`Login: rol final determinado: ${finalRole}`);
             }
               
             // Actualizar usuario con los datos del backend
@@ -430,21 +393,17 @@ export class AuthService {
             this.authStateSubject.next(true);
             
             // Guardar en localStorage siempre
-            console.log(`Guardando datos de usuario en localStorage con rol: ${finalRole}`);
             localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
             localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
             
             // Si es un registro o tiene rol DEFAULT, redirigir a selección de rol
             if (isRegistration || finalRole === 'DEFAULT') {
-              console.log(`Redirigiendo a selección de rol (${isRegistration ? 'registro' : 'login'} con rol DEFAULT)`);
               // Usar método directo para evitar problemas de ruteo
               this.navigateToRoleSelection();
             } else {
-              console.log('Redirigiendo a home (login con rol existente)');
               this.router.navigate(['/home']);
             }
           } else {
-            console.error('ERROR CRÍTICO: No hay usuario en Firebase después de autenticación');
             throw new Error('No se pudo completar el proceso de autenticación.');
           }
         },
@@ -452,7 +411,6 @@ export class AuthService {
           console.error('Error en autenticación con backend:', error);
           // Verificar si es un error de ruta
           if (error && error.message && (error.message.includes('select-rol') || error.message.includes('select-role'))) {
-            console.log('Detectado error específico de ruta, manejando explícitamente');
             this.handleRouteError(error);
           } else {
             // Manejo genérico de errores
@@ -461,7 +419,6 @@ export class AuthService {
             // Incluso con error, intentar navegar según corresponda
             const user = this.auth.currentUser;
             if (user) {
-              console.log('A pesar del error, hay usuario autenticado. Intentando continuar...');
               
               // Crear datos mínimos del usuario
               this.currentUserData = {
@@ -483,7 +440,6 @@ export class AuthService {
               localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
               
               // Redirigir a selección de rol en caso de error
-              console.log('Redirigiendo a selección de rol (manejo de error)');
               this.navigateToRoleSelection();
             } else {
               throw new Error('Error en autenticación y no hay usuario disponible');
@@ -502,7 +458,6 @@ export class AuthService {
         errorMessage = 'El navegador bloqueó la ventana emergente. Por favor, permita ventanas emergentes e intente nuevamente.';
       } else if (error.message && (error.message.includes('select-rol') || error.message.includes('select-role'))) {
         // Error de ruta - intentar redirigir a la ruta correcta
-        console.log('Detectado error de ruta en catch principal, redirigiendo a select-role');
         this.navigateToRoleSelection();
         return;
       }
@@ -537,7 +492,6 @@ export class AuthService {
   }
 
   updateUserRole(uid: string, role: UserRole): Observable<any> {
-    console.log('Actualizando rol de usuario:', uid, 'a', role);
     
     // Primero, obtenemos el token ID actual
     return from(this.getIdToken()).pipe(
@@ -547,7 +501,6 @@ export class AuthService {
           return throwError(() => new Error('No se pudo obtener el token de autenticación'));
         }
         
-        console.log('Token obtenido, enviando solicitud al backend');
         
         // Enviamos la solicitud al backend para actualizar el rol
         return this.http.post<any>(`${this.API_BASE_URL}/roles/assign`, 
@@ -560,7 +513,6 @@ export class AuthService {
           }
         ).pipe(
           switchMap(response => {
-            console.log('Respuesta del backend:', response);
             // Actualizar los datos del usuario local incluso si el backend falla
             if (this.currentUserData) {
               this.currentUserData.role = role;
@@ -575,7 +527,6 @@ export class AuthService {
             
             // Si hay un error 403, podemos intentar actualizar localmente de todas formas
             if (error.status === 403 || error.status === 401) {
-              console.log('Error de autorización, actualizando rol localmente');
               
               if (this.currentUserData) {
                 this.currentUserData.role = role;
@@ -622,7 +573,6 @@ export class AuthService {
                 // Verificar si hay un usuario diferente en localStorage y limpiarlo
                 const cachedUser = this.getUserFromLocalStorage();
                 if (cachedUser && cachedUser.uid !== userCredential.user.uid) {
-                  console.log('Detectado cambio de usuario. Limpiando datos del usuario anterior.');
                   localStorage.removeItem('currentUserData');
                   localStorage.removeItem('userDataTimestamp');
                 }
@@ -681,7 +631,6 @@ export class AuthService {
 
   async logout(): Promise<void> {
     try {
-      console.log('Iniciando proceso de logout completo');
       
       // 1. Obtener token antes de limpiar datos (si existe)
       const token = this.currentUserData?.idToken || await this.getIdToken();
@@ -692,7 +641,6 @@ export class AuthService {
       this.authStateSubject.next(false);
       
       // 3. Limpiar completamente localStorage
-      console.log('Limpiando localStorage');
       localStorage.removeItem('currentUserData');
       localStorage.removeItem('userDataTimestamp');
       
@@ -701,7 +649,6 @@ export class AuthService {
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && (key.includes('firebase') || key.includes('firebaseui') || key.includes('auth'))) {
-          console.log('Limpiando clave adicional de localStorage:', key);
           localStorage.removeItem(key);
           // Ajustar el índice después de eliminar
           i--;
@@ -709,28 +656,13 @@ export class AuthService {
       }
       
       // 5. Cerrar sesión en Firebase
-      console.log('Cerrando sesión en Firebase');
       await signOut(this.auth);
-      
-      // 6. Notificar al backend (solo si tenemos token)
-      if (token) {
-        console.log('Notificando logout al backend');
-        this.http.post(`${this.API_BASE_URL}/logout`, {}, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }).subscribe({
-          next: () => console.log('Backend notificado de logout exitosamente'),
-          error: () => console.log('Error al notificar backend de logout (ignorado)')
-        });
-      }
       
       // 7. Navegar a la página de login para asegurar reinicio completo
       this.router.navigate(['/login']);
       
-      console.log('Proceso de logout completado');
       return Promise.resolve();
     } catch (error) {
-      console.error('Error durante logout:', error);
-      
       // Incluso si hay error, intentar limpiar localStorage y navegar a login
       localStorage.removeItem('currentUserData');
       localStorage.removeItem('userDataTimestamp');
@@ -751,7 +683,6 @@ updateCurrentUser(user: User): void {
       // Si no hay usuario activo en Firebase, intentar obtener el token de localStorage
       const cachedUser = this.getUserFromLocalStorage();
       if (cachedUser && cachedUser.idToken && this.isTokenValid(cachedUser)) {
-        console.log('Usando token del localStorage cuando no hay usuario activo en Firebase');
         return Promise.resolve(cachedUser.idToken);
       }
       return Promise.resolve(null);
@@ -761,7 +692,6 @@ updateCurrentUser(user: User): void {
     return import('@firebase/auth').then(firebaseAuth => {
       return (this.auth.currentUser as import('@firebase/auth').User).getIdToken();
     }).catch(err => {
-      console.error('Error obteniendo token:', err);
       return null;
     });
   }
@@ -796,13 +726,11 @@ updateCurrentUser(user: User): void {
     return new Observable<string | null>(subscriber => {
       // Caso 1: Hay usuario en Firebase, intentar refrescar directamente
       if (this.auth.currentUser) {
-        console.log('Refrescando token con usuario activo en Firebase');
         
         // Usar la técnica de importación dinámica para acceder a los tipos correctos
         import('firebase/auth').then(firebaseAuth => {
           (this.auth.currentUser as import('@firebase/auth').User).getIdToken(true)
             .then(newToken => {
-              console.log('Token refrescado exitosamente en Firebase');
               
               // Actualizar el token en los datos del usuario
               if (this.currentUserData) {
@@ -837,18 +765,15 @@ updateCurrentUser(user: User): void {
   
   // Método auxiliar para intentar usar token de localStorage
   private tryRecoverFromLocalStorage(subscriber: any): void {
-    console.log('Intentando recuperar token desde localStorage');
     const cachedUser = this.getUserFromLocalStorage();
     
     if (cachedUser && cachedUser.idToken) {
-      console.log('Usando token en caché de localStorage');
       
       // No intentamos reconectar automáticamente con Firebase aquí
       // ya que requeriría la contraseña que no tenemos almacenada
       
       subscriber.next(cachedUser.idToken);
     } else {
-      console.log('No se pudo obtener token de ninguna fuente');
       subscriber.next(null);
     }
     
@@ -862,14 +787,12 @@ updateCurrentUser(user: User): void {
   
   // Método sincrónico para obtener el usuario actual (inmediato)
   getCurrentUserSync(): User | null {
-    console.log('Obteniendo usuario actual (sync):', this.currentUserData);
     // Si no hay datos, intentar cargar desde localStorage
     if (!this.currentUserData) {
       const userData = localStorage.getItem('currentUserData');
       if (userData) {
         try {
           const user = JSON.parse(userData);
-          console.log('Usuario recuperado de localStorage:', user);
           return user;
         } catch (e) {
           console.error('Error parseando datos del usuario:', e);
@@ -893,7 +816,15 @@ updateCurrentUser(user: User): void {
   }
   
   recuperarContrasenia(email: string): Observable<any> {
-    return from(sendPasswordResetEmail(this.auth, email));
+    return this.http.get<string>(`${this.API_BASE_URL}/recuperar-contrasenia`, {
+      params: { email },
+      headers: { 'Content-Type': 'application/json' }
+    }).pipe(
+      catchError(error => {
+        console.error('Error al solicitar recuperación de contraseña:', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   // Añadir checkTokenExpiration() para compatibilidad con el interceptor
@@ -906,7 +837,6 @@ updateCurrentUser(user: User): void {
     return new Observable<boolean>(subscriber => {
       // Si ya tenemos userData, devolvemos true inmediatamente
       if (this.currentUserData) {
-        console.log('Auth ready: currentUserData ya existe');
         subscriber.next(true);
         subscriber.complete();
         return;
@@ -914,7 +844,6 @@ updateCurrentUser(user: User): void {
       
       // Si el usuario en Firebase está listo, devolvemos true
       if (this.auth.currentUser) {
-        console.log('Auth ready: usuario en Firebase activo');
         subscriber.next(true);
         subscriber.complete();
         return;
@@ -923,7 +852,6 @@ updateCurrentUser(user: User): void {
       // Intentar recuperar desde localStorage
       const cachedUser = this.getUserFromLocalStorage();
       if (cachedUser && this.isTokenValid(cachedUser)) {
-        console.log('Auth ready: recuperado de localStorage');
         this.currentUserData = cachedUser;
         this.userSubject.next(cachedUser);
         this.authStateSubject.next(true);
@@ -933,10 +861,8 @@ updateCurrentUser(user: User): void {
       }
       
       // De lo contrario, esperamos a que se resuelva el estado de auth
-      console.log('Auth pendiente: esperando cambios de estado en Firebase');
       const unsubscribe = onAuthStateChanged(this.auth, user => {
         unsubscribe(); // Dejar de escuchar cambios
-        console.log('Auth ready: estado determinado por Firebase', !!user);
         subscriber.next(true); // Completar la promesa
         subscriber.complete();
       });
@@ -962,14 +888,12 @@ updateCurrentUser(user: User): void {
       // El interceptor HTTP se encargará de manejar errores si realmente expiró
       return hoursElapsed < 24;
     } catch (e) {
-      console.error('Error al verificar validez del token:', e);
       return false;
     }
   }
 
   // Método para limpiar explícitamente el caché de autenticación
   clearAuthCache(): void {
-    console.log('Limpiando manualmente el caché de autenticación');
     
     // Limpiar datos en memoria
     this.currentUserData = null;
@@ -983,29 +907,24 @@ updateCurrentUser(user: User): void {
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key && (key.includes('firebase') || key.includes('firebaseui') || key.includes('auth'))) {
-        console.log('Limpiando:', key);
         localStorage.removeItem(key);
         i--; // Ajustar índice después de eliminar
       }
     }
     
-    console.log('Caché de autenticación limpiado correctamente');
   }
 
   // Método para manejar errores de ruta conocidos
   handleRouteError(error: any): void {
     if (error && error.message && (error.message.includes('select-rol') || error.message.includes('select-role'))) {
-      console.log('Manejando error de ruta para select-role');
       // Forzar redirección a la URL correcta
       this.navigateToRoleSelection();
     }
   }
 
 navigateToRoleSelection(): void {
-  console.log('Navegando a la página de selección de rol');
   
   setTimeout(() => {
-    console.log('Intentando navegación retrasada a select-role');
     this.router.navigate(['/select-role']).then(success => { // Changed from '/select-rol' to '/select-role'
       if (!success) {
         console.warn('Navegación con Angular Router falló, usando redirección directa');

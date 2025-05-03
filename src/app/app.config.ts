@@ -9,12 +9,14 @@ import { provideFirestore } from '@angular/fire/firestore';
 import { getFirestore } from 'firebase/firestore';
 import { authInterceptor } from '../interceptor/auth-interceptor.interceptor';
 import { ProfileService } from './services/profile/profile.service';
-import { httpErrorInterceptor } from './interceptors/http-error.interceptor';
 import { MAT_SNACK_BAR_DEFAULT_OPTIONS } from '@angular/material/snack-bar';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { registerLocaleData } from '@angular/common';
 import localeEs from '@angular/common/locales/es';
 import { LOCALE_ID } from '@angular/core';
+import { httpErrorInterceptor } from '../interceptors/http-error.interceptor';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 
 // Registrar los datos de localización para español
 registerLocaleData(localeEs);
@@ -27,6 +29,10 @@ export const appConfig: ApplicationConfig = {
       httpErrorInterceptor
     ])),
     provideAnimations(),
+    importProvidersFrom(
+      MatDatepickerModule,
+      MatNativeDateModule
+    ),
     provideFirebaseApp(() => initializeApp(environment.firebase)),
     provideAuth(() => getAuth()),
     provideFirestore(() => getFirestore()),

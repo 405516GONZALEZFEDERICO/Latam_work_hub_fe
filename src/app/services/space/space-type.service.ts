@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../../environment/environment';
 import { SpaceType } from '../../models/space-type.model';
+import { SpaceDto } from '../../models/space.model';
 
 @Injectable({
   providedIn: 'root'
@@ -11,14 +12,6 @@ import { SpaceType } from '../../models/space-type.model';
 export class SpaceTypeService {
   private apiUrl = environment.apiUrl + '/space-types';
 
-  // Datos predefinidos para desarrollo en caso de fallo en la petición
-  private defaultSpaceTypes: SpaceType[] = [
-    { id: 1, name: 'Oficina' },
-    { id: 2, name: 'Sala de Reuniones' },
-    { id: 3, name: 'Espacio para Eventos' },
-    { id: 4, name: 'Coworking' },
-    { id: 5, name: 'Estudio' }
-  ];
 
   constructor(private http: HttpClient) {}
 
@@ -28,17 +21,31 @@ export class SpaceTypeService {
    */
   getAllSpaceTypes(): Observable<SpaceType[]> {
     return this.http.get<any[]>(`${this.apiUrl}/all`).pipe(
-      map(response => {
+      map((response): { id: number | null; name: string }[] => {
+        console.log('Respuesta CRUDA del API /space-types/all:', JSON.stringify(response)); // Log de la respuesta cruda
+        
         // Asegurar que cada objeto tiene la propiedad id y name
-        return response.map(item => ({
-          id: item.id || 0,
-          name: item.name || 'Desconocido'
-        }));
+        if (!Array.isArray(response)) {
+          console.error('La respuesta del API no es un array:', response);
+          return []; // Devolver array vacío si la respuesta no es válida
+        }
+        
+        return response.map(item => {
+          const itemId = item.id; // Guardar el id original
+          const processedId = itemId !== undefined && itemId !== null ? Number(itemId) : null; // Convertir a número o dejar como null si no existe
+          
+          // Log para cada item procesado
+          console.log(`Procesando tipo: ID original=${itemId}, ID procesado=${processedId}, Nombre=${item.name}`); 
+          
+          return {
+            id: processedId, // Usar el ID procesado (puede ser null)
+            name: item.name || 'Desconocido'
+          };
+        });
       }),
-      catchError(error => {
-        console.error('Error fetching space types:', error);
-        return of(this.defaultSpaceTypes);
-      })
+      map(processedTypes => processedTypes.filter(type => type.id !== null) as SpaceType[])
     );
   }
+
+
 } 

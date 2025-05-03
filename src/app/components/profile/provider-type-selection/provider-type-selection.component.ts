@@ -45,8 +45,7 @@ export class ProviderTypeSelectionComponent implements OnInit, OnChanges, AfterV
  // ...existing code...
 
 ngOnInit(): void {
-  console.log('ProviderTypeSelectionComponent - ngOnInit');
-  
+
   // Obtener usuario actual
   const currentUser = this.authService.getCurrentUserSync();
   if (currentUser?.uid) {
@@ -60,7 +59,6 @@ ngOnInit(): void {
       .subscribe({
         next: (response) => {
           if (response.providerType) {
-            console.log('Tipo de proveedor obtenido del backend:', response.providerType);
             this.selectedType = response.providerType;
             this.providerTypeService.setProviderType(response.providerType, true);
             localStorage.setItem('providerType', response.providerType);
@@ -68,7 +66,6 @@ ngOnInit(): void {
             // Si no hay tipo en el backend, intentar obtener de localStorage
             const storedType = localStorage.getItem('providerType');
             if (storedType === 'INDIVIDUAL' || storedType === 'COMPANY') {
-              console.log('Tipo de proveedor obtenido de localStorage:', storedType);
               this.selectedType = storedType;
               this.providerTypeService.setProviderType(storedType, true);
             }
@@ -90,20 +87,16 @@ ngOnInit(): void {
   ngAfterViewInit(): void {
     // Forzar actualización visual después de que la vista esté lista
     setTimeout(() => {
-      console.log('AfterViewInit - Verificando selección final:', this.selectedType);
     }, 0);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    console.log('ProviderTypeSelectionComponent - ngOnChanges', changes);
     if (changes['initialType']) {
-      console.log('initialType changed from', changes['initialType'].previousValue, 'to', changes['initialType'].currentValue);
       this.updateSelectedType();
     }
   }
 
   private checkCompanyData(): void {
-    console.log('Verificando si existen datos de empresa...');
     const currentUser = this.authService.getCurrentUserSync();
     if (!currentUser?.uid) return;
     
@@ -112,30 +105,25 @@ ngOnInit(): void {
       next: (companyData) => {
         this.isLoading = false;
         if (companyData && Object.keys(companyData).length > 0) {
-          console.log('Datos de empresa encontrados:', companyData);
           // Si hay datos de empresa, seleccionar tipo COMPANY
           this.selectedType = 'COMPANY';
           this.initialType = 'COMPANY';
           
           // También actualizar el servicio
           this.providerTypeService.setProviderType('COMPANY', true);
-          console.log('Tipo COMPANY establecido basado en datos de empresa existentes');
         }
       },
       error: () => {
         this.isLoading = false;
-        console.log('No se encontraron datos de empresa');
       }
     });
   }
 
   private updateSelectedType(): void {
-    console.log('updateSelectedType: initialType =', this.initialType, 'selectedType =', this.selectedType);
     
     // Verificar primero localStorage como fuente prioritaria
     const storedType = localStorage.getItem('providerType');
     if (storedType === 'INDIVIDUAL' || storedType === 'COMPANY') {
-      console.log('Usando tipo desde localStorage en updateSelectedType:', storedType);
       this.selectedType = storedType as 'INDIVIDUAL' | 'COMPANY';
       
       // Si no hay initialType, también actualizarlo
@@ -145,21 +133,18 @@ ngOnInit(): void {
     }
     // Si hay initialType pero no selectedType o son diferentes
     else if (this.initialType && (!this.selectedType || this.initialType !== this.selectedType)) {
-      console.log('Setting selectedType to initialType:', this.initialType);
       this.selectedType = this.initialType;
     }
     
     // Verificar tipo en el servicio como respaldo
     const typeFromService = this.providerTypeService.getCurrentProviderType();
     if (typeFromService && !this.selectedType) {
-      console.log('Recuperando tipo desde servicio como último recurso:', typeFromService);
       this.selectedType = typeFromService;
     }
     
     // Forzar la detección inmediata para que la UI se actualice
     setTimeout(() => {
       // Verificar que la selección fue efectiva
-      console.log('Verificando selección efectiva, selectedType ahora es:', this.selectedType);
       
       // Actualizar DOM para forzar re-renderizado
       if (this.selectedType) {
@@ -175,27 +160,20 @@ ngOnInit(): void {
   }
 
   selectType(type: 'INDIVIDUAL' | 'COMPANY'): void {
-    console.log('User selected type:', type);
     if (this.isLoading) return;
     if (this.selectedType === type) return; // Don't reselect same type
     
     this.selectedType = type;
     this.error = null;
     
-    // Log para confirmar la selección
-    console.log('Type successfully selected:', this.selectedType);
   }
 
   isSelected(type: 'INDIVIDUAL' | 'COMPANY'): boolean {
     const result = this.selectedType === type;
-    // Log detallado para depuración
-    console.log(`Checking if ${type} is selected. Current selectedType:`, this.selectedType, 'Result:', result);
-    console.log('Stored provider type in localStorage:', localStorage.getItem('providerType'));
     return result;
   }
 
   continue(): void {
-    console.log('Continue clicked with selectedType:', this.selectedType);
     if (!this.selectedType || this.isLoading) return;
     
     const currentUser = this.authService.getCurrentUserSync();
@@ -209,7 +187,6 @@ ngOnInit(): void {
 
     // Guardar explícitamente en localStorage para asegurar persistencia
     localStorage.setItem('providerType', this.selectedType);
-    console.log(`Tipo de proveedor "${this.selectedType}" guardado en localStorage`);
 
     // For individual provider type, we need to submit to the backend directly
     if (this.selectedType === 'INDIVIDUAL') {
@@ -226,32 +203,17 @@ ngOnInit(): void {
         providerType: 'INDIVIDUAL' as 'INDIVIDUAL'
       };
 
-      console.log('Saving INDIVIDUAL provider type to backend with data:', emptyCompanyData);
       // Submit directly to backend to store provider type
       this.companyService.createOrUpdateCompanyInfo(currentUser.uid, emptyCompanyData)
         .subscribe({
           next: (response) => {
-            console.log('Successfully saved INDIVIDUAL provider type, response:', response);
             // Save to localStorage to ensure persistence
             this.providerTypeService.setProviderType('INDIVIDUAL', true);
             
-            // Mostrar información de depuración adicional
-            console.log('Estado actual:');
-            console.log('- localStorage providerType:', localStorage.getItem('providerType'));
-            console.log('- Servicio providerType:', this.providerTypeService.getCurrentProviderType());
-            console.log('- Componente selectedType:', this.selectedType);
             
             // Force reload from backend to verify it was saved
             setTimeout(() => {
               this.providerTypeService.loadProviderType();
-              
-              // Verificar que la card se actualizó correctamente
-              setTimeout(() => {
-                console.log('Verificación final:');
-                console.log('- localStorage providerType:', localStorage.getItem('providerType'));
-                console.log('- Servicio providerType:', this.providerTypeService.getCurrentProviderType());
-                console.log('- Componente selectedType:', this.selectedType);
-              }, 500);
             }, 500);
             
             // Emit the selected type on success
@@ -265,7 +227,6 @@ ngOnInit(): void {
           }
         });
     } else {
-      console.log('Emitting COMPANY provider type selection');
       // Actualizar también el servicio
       this.providerTypeService.setProviderType('COMPANY', true);
       // For company type, just emit the type and let the company form handle it

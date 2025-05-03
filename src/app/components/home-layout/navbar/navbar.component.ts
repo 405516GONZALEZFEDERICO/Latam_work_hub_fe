@@ -39,6 +39,5 @@ export class NavbarComponent {
   }
   
   openUserMenu(): void {
-    console.log('Abrir menú de usuario');
   }
 } 

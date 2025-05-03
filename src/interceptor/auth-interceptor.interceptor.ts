@@ -49,7 +49,6 @@ export const authInterceptor: HttpInterceptorFn = (
                       return next(newRequest);
                     } else {
                       // Si no se pudo obtener un nuevo token, redirigir al login
-                      console.log('No se pudo refrescar el token, redirigiendo al login');
                       authService.logout().then(() => {
                         router.navigate(['/login']);
                       });
@@ -63,11 +62,9 @@ export const authInterceptor: HttpInterceptorFn = (
           );
         } else {
           // Si no hay token en caché, proceder sin token (posiblemente fallará)
-          console.log('No hay token disponible, intentando solicitud sin autenticación');
           return next(request).pipe(
             catchError((error: HttpErrorResponse) => {
               if (error.status === 401 || error.status === 403) {
-                console.log('Error de autenticación sin token disponible');
                 // Comprobar si realmente hay un usuario autenticado antes de cerrar sesión
                 if (authService.isAuthenticated()) {
                   // Intentar una última vez obtener un token fresco
@@ -113,7 +110,6 @@ export const authInterceptor: HttpInterceptorFn = (
         catchError((error: HttpErrorResponse) => {
           // Si hay errores de autenticación (401/403)
           if (error.status === 401 || error.status === 403) {
-            console.log('Error de autenticación:', error);
             // Intentar refrescar el token antes de cerrar sesión
             return from(authService.refreshToken()).pipe(
               switchMap(newToken => {

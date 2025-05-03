@@ -4,7 +4,6 @@
 }
 
 .reservation-modal {
-  background-color: white;
   border-radius: 8px;
   width: 100%;
   height: 100%;
@@ -16,6 +15,15 @@
   position: relative;
   margin: 0;
   transform: translateZ(0);
+  z-index: 1000;
+}
+
+::ng-deep .cdk-overlay-container {
+  z-index: 2000 !important;
+}
+
+::ng-deep .mat-datepicker-popup {
+  z-index: 2000 !important;
 }
 
 .modal-header {
@@ -316,8 +324,9 @@ form {
 }
 
 .mp-logo {
-  height: 24px;
-  margin-right: 10px;
+  height: 60px;
+  width: 60px;
+  margin-right: 50px;
 }
 
 .secure-payment-note {
@@ -468,4 +477,36 @@ form {
   background-color: rgba(var(--color-primary-rgb), 0.05);
   padding: 8px 12px;
   border-radius: 4px;
+}
+
+/* Estilos para el datepicker */
+::ng-deep .mat-datepicker-content {
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+::ng-deep .mat-calendar {
+  background-color: white;
+}
+
+/* Asegurar que el datepicker esté por encima del modal */
+::ng-deep .cdk-overlay-container {
+  z-index: 2000 !important;
+}
+
+::ng-deep .cdk-global-overlay-wrapper {
+  z-index: 2000 !important;
+}
+
+::ng-deep .cdk-overlay-connected-position-bounding-box {
+  z-index: 2000 !important;
+}
+
+/* Estilos para el campo de fecha */
+.date-time-section mat-form-field {
+  width: 100%;
+}
+
+.mat-form-field-appearance-fill .mat-form-field-flex {
+  background-color: white;
 }

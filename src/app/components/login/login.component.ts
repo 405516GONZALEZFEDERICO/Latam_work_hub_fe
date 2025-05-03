@@ -9,7 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { passwordStrengthValidator } from '../../validators/password-strength.validator';
+import { passwordStrengthValidator } from '../../../validators/password-strength.validator';
 
 @Component({
   selector: 'app-login',
@@ -56,13 +56,11 @@ export class LoginComponent implements OnInit {
       // Limpiar posibles datos conflictivos en localStorage
       localStorage.removeItem('currentUserData');
       localStorage.removeItem('userDataTimestamp');
-      console.log('Login con Google: datos de localStorage limpiados');
       
       // Especificamos que es un login (no un registro)
       await this.authService.loginWithGoogle(false);
       // La redirección la maneja el servicio de autenticación
     } catch (error) {
-      console.error('Error al iniciar sesión con Google:', error);
       this.showErrorSnackbar('Error en la autenticación con Google. Por favor intente nuevamente.');
     }
   }
@@ -95,7 +93,6 @@ export class LoginComponent implements OnInit {
       }
     });
   }
-
   forgotPassword(): void {
     const email = this.loginForm.get('email')?.value;
     
@@ -107,18 +104,36 @@ export class LoginComponent implements OnInit {
     this.isLoading = true;
     
     this.authService.recuperarContrasenia(email).subscribe({
-      next: () => {
+      next: (response) => {
         this.isLoading = false;
-        this.showSuccessSnackbar('Se ha enviado un correo para restablecer su contraseña.');
+        // Even if we get an error object, if status was 200, show success
+        if (response) {
+          this.showSuccessSnackbar('Se ha enviado un correo para restablecer su contraseña.');
+        }
       },
-      error: (error: any) => {
+      error: (error) => {
         this.isLoading = false;
-        this.showErrorSnackbar('No se pudo enviar el correo de recuperación. Verifique que el correo sea correcto.');
-        console.error('Password reset error:', error);
+        
+        // Only handle as error if it's not a 200 status
+        if (error.status !== 200) {
+          if (error.status === 404) {
+            this.showErrorSnackbar('No se encontró una cuenta con ese correo electrónico.');
+          } else if (error.status === 400) {
+            this.showErrorSnackbar('El correo electrónico ingresado no es válido.');
+          } else {
+            this.showErrorSnackbar('Error al procesar la solicitud. Por favor, intente nuevamente más tarde.');
+          }
+          console.error('Password recovery error:', error);
+        } else {
+          // If status is 200, treat it as success even if it came through error handler
+          this.showSuccessSnackbar('Se ha enviado un correo para restablecer su contraseña.');
+        }
+      },
+      complete: () => {
+        this.isLoading = false;
       }
     });
   }
-
   private showErrorSnackbar(message: string): void {
     this.snackBar.open(message, 'Cerrar', {
       duration: 5000,

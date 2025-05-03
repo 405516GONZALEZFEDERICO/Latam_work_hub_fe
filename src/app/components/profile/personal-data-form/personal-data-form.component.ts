@@ -287,10 +287,7 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
   
   // Nuevo método para cargar datos cuando cambia la tab
   loadDataIfNeeded(): void {
-    console.log('PersonalDataFormComponent: Verificando si se deben cargar datos', {
-      dataLoaded: this.dataLoaded,
-      addressDataLoaded: this.addressDataLoaded
-    });
+  
     
     // Solo cargar los datos del usuario si no se han cargado previamente
     if (!this.dataLoaded && this.currentUserId) {
@@ -305,7 +302,6 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
   
   // Cargar datos del usuario
   loadUserData(): void {
-    console.log('Cargando datos de usuario');
     
     // Activar indicador de carga
     this.isLoading = true;
@@ -316,11 +312,9 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
       takeUntil(this.destroy$)
     ).subscribe(user => {
       if (user && user.uid) {
-        console.log('Usuario actual encontrado:', user.uid);
         this.currentUserId = user.uid;
         
         // Cargar datos personales
-        console.log('Solicitando datos personales desde el servidor');
         this.profileService.getPersonalData(this.currentUserId).pipe(
           takeUntil(this.destroy$),
           finalize(() => {
@@ -332,7 +326,6 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
           })
         ).subscribe({
           next: (personalData) => {
-            console.log('Datos personales recibidos:', personalData);
             
             if (personalData) {
               // Rellenar formulario con datos recibidos
@@ -385,15 +378,12 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   loadAddress(): void {
-    console.log('PersonalDataFormComponent: Cargando dirección');
     this.addressService.getAddressByUserUid(this.currentUserId)
       .pipe(
         takeUntil(this.destroy$),
         catchError(error => {
           if (error.status !== 404) {
-            console.error('Error al cargar la dirección:', error);
           } else {
-            console.log('No se encontró dirección registrada');
           }
           return EMPTY;
         }),
@@ -452,10 +442,6 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
     // Es importante que el nombre del campo sea exactamente 'image' como espera el backend
     formData.append('image', file, file.name);
     
-    console.log('Enviando imagen al servidor:', file);
-    console.log('Nombre del archivo:', file.name);
-    console.log('Tipo de archivo:', file.type);
-    console.log('Tamaño del archivo:', file.size, 'bytes');
     
     // Llamar al servicio para subir la imagen
     this.profileService.uploadProfilePicture(user.uid, formData)
@@ -528,7 +514,6 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
       department: formValues.department || '',
     };
     
-    console.log('Enviando datos personales:', personalData);
     
     // Enviar datos al servicio
     this.profileService.updateOrCreatePersonalData(this.currentUserId, personalData)
@@ -542,7 +527,6 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
       )
       .subscribe({
         next: (response) => {
-          console.log('Datos personales guardados exitosamente:', response);
           
           // Notificar al usuario
           this.snackBar.open('Información personal guardada correctamente', 'Cerrar', {
@@ -638,12 +622,10 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
   // Detector de cambios para reaccionar cuando la pestaña se activa
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['isActiveTab'] && changes['isActiveTab'].currentValue === true && this.shouldLoadData) {
-      console.log('PersonalDataFormComponent: Tab activada, verificando si se deben cargar datos');
       this.loadDataIfNeeded();
     }
     
     if (changes['shouldLoadData'] && changes['shouldLoadData'].currentValue === true && this.isActiveTab) {
-      console.log('PersonalDataFormComponent: shouldLoadData activado, verificando si se deben cargar datos');
       this.loadDataIfNeeded();
     }
   }

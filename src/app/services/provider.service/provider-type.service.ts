@@ -44,7 +44,6 @@ export class ProviderTypeService {
    * Limpia el tipo de proveedor y lo reinicia a null
    */
   resetProviderType(): void {
-    console.log('Resetting provider type');
     this.providerTypeSubject.next(null);
     localStorage.removeItem('providerType');
   }
@@ -55,11 +54,9 @@ export class ProviderTypeService {
   loadProviderType(): void {
     const currentUser = this.authService.getCurrentUserSync();
     if (!currentUser?.uid) {
-      console.log('No user found, skipping provider type load');
       return;
     }
 
-    console.log('Loading provider type for user:', currentUser.uid);
     this.companyService.getCompanyInfo(currentUser.uid).subscribe({
       next: (companyData: CompanyInfoDto | null) => {
         if (companyData) {
@@ -70,15 +67,11 @@ export class ProviderTypeService {
           if (companyData.providerType) {
             // Normalizar a mayúsculas para asegurar consistencia
             const normalizedType = companyData.providerType.toUpperCase();
-            console.log('Provider type loaded from backend:', normalizedType);
-            
             // Use stricter checks for type values
             if (normalizedType === 'INDIVIDUAL') {
               validType = 'INDIVIDUAL';
-              console.log('Found INDIVIDUAL provider type in backend response');
             } else if (normalizedType === 'COMPANY') {
               validType = 'COMPANY';
-              console.log('Found COMPANY provider type in backend response');
             } else {
               console.warn('Unknown provider type found:', normalizedType);
             }
@@ -88,20 +81,17 @@ export class ProviderTypeService {
             
             if (hasCompanyData) {
               // Si hay datos de compañía significativos pero no type, asumir COMPANY
-              console.log('No explicit provider type found, but company data exists - assuming COMPANY type');
               validType = 'COMPANY';
             } else {
               // Si no hay datos significativos ni provider type, mantener lo almacenado en localStorage
               const storedType = this.getStoredProviderType();
               if (storedType) {
-                console.log('No company data and no provider type, keeping localStorage value:', storedType);
                 validType = storedType;
               }
             }
           }
           
           if (validType) {
-            console.log('Setting provider type to:', validType);
             this.setProviderType(validType, true);
           } else {
             console.warn('Tipo de proveedor no reconocido o no encontrado');
@@ -109,21 +99,17 @@ export class ProviderTypeService {
             // Intentar recuperar de localStorage como fallback
             const storedType = this.getStoredProviderType();
             if (storedType) {
-              console.log('Using localStorage provider type as fallback:', storedType);
               this.providerTypeSubject.next(storedType);
             }
           }
         } else {
           // No hay datos de compañía en la respuesta
-          console.log('No company data found in response');
           
           // No resetear el tipo si ya hay uno guardado en localStorage
           const storedType = this.getStoredProviderType();
           if (!storedType) {
-            console.log('No provider type found in backend or localStorage');
             this.resetProviderType();
           } else {
-            console.log('Keeping stored provider type from localStorage:', storedType);
             // Asegurarse de que el subject tenga el valor de localStorage
             this.providerTypeSubject.next(storedType);
           }
@@ -134,7 +120,6 @@ export class ProviderTypeService {
         if (err && 'status' in err && err['status'] === 404) {
           const storedType = this.getStoredProviderType();
           if (storedType) {
-            console.log('404 error but keeping stored provider type:', storedType);
             // Asegurarse de que el subject tenga el valor de localStorage
             this.providerTypeSubject.next(storedType);
             return;
@@ -145,7 +130,6 @@ export class ProviderTypeService {
         // Intento final de recuperar de localStorage antes de resetear
         const storedType = this.getStoredProviderType();
         if (storedType) {
-          console.log('Error but using localStorage as final fallback:', storedType);
           this.providerTypeSubject.next(storedType);
         } else {
           this.resetProviderType();
@@ -164,7 +148,6 @@ export class ProviderTypeService {
     
     // Always allow setting type if it's explicitly different or force is true
     if (force || type !== currentType || type === null) {
-      console.log('Setting provider type:', type, force ? '(forced)' : '');
       this.providerTypeSubject.next(type);
 
       if (type) {
@@ -173,7 +156,6 @@ export class ProviderTypeService {
         localStorage.removeItem('providerType');
       }
     } else {
-      console.log('Provider type unchanged:', type);
     }
   }
 

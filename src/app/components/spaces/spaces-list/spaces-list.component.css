@@ -50,4 +50,63 @@
 /* Button with icon spacing */
 button mat-icon {
   margin-right: 4px;
+}
+
+/* Estilos para tarjetas de espacios */
+.inactive-space {
+  opacity: 0.7;
+  border: 1px solid #ffcdd2;
+}
+
+/* Contenedor para los badges de estado */
+.status-badges {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  z-index: 10;
+}
+
+/* Estilo general para los badges */
+.status-badge {
+  display: flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Icono dentro del badge */
+.status-icon {
+  font-size: 14px;
+  height: 14px;
+  width: 14px;
+  margin-right: 4px;
+}
+
+/* Badge para estado desactivado */
+.inactive-badge {
+  background-color: #f44336; /* Rojo */
+}
+
+/* Badge para espacio no disponible */
+.unavailable-badge {
+  background-color: #ff9800; /* Naranja */
+}
+
+/* Badge para espacio disponible */
+.available-badge {
+  background-color: #4caf50; /* Verde */
+}
+
+/* Ocultar badges en pantallas muy pequeñas */
+@media (max-width: 400px) {
+  .status-badges {
+    display: none;
+  }
 } 

@@ -29,7 +29,22 @@ h1, h2, h3, h4, h5, h6 {
   overflow: hidden;
   cursor: pointer;
 }
+.spinner-button {
+  margin: 0 auto;
+}
 
+button[type="submit"] {
+  min-width: 140px;
+  position: relative;
+}
+
+button[type="submit"]:disabled {
+  cursor: not-allowed;
+}
+
+:host ::ng-deep .spinner-button circle {
+  stroke: #fff;
+}
 .photo-upload-container:hover {
   border-color: #3f51b5;
   background-color: rgba(63, 81, 181, 0.05);
@@ -415,14 +430,20 @@ h1, h2, h3, h4, h5, h6 {
 
 .amenities-controls {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 12px;
+  margin-top: 10px;
 }
 
 /* Ajustar el botón para que coincida con la altura del select */
 .amenities-controls button {
   height: 56px;
   margin-top: 0;
+  align-self: stretch;
+  white-space: nowrap;
+  min-width: 180px;
+  width: 180px;
 }
 
 /* Ajustes para móviles */
@@ -430,17 +451,12 @@ h1, h2, h3, h4, h5, h6 {
   .amenities-controls {
     flex-direction: column;
     align-items: stretch;
-    width: 100%;
+    gap: 8px;
   }
-  
-  .amenity-select {
-    width: 100%;
-    margin-bottom: 1rem;
-    margin-right: 0;
-  }
-  
   .amenities-controls button {
     width: 100%;
+    height: 48px;
+    min-width: unset;
   }
 }
 
@@ -496,4 +512,87 @@ h1, h2, h3, h4, h5, h6 {
 .container-fluid {
   position: relative;
   z-index: 1;
+}
+
+.zoom-lens-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255,255,255,0.85);
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+.zoom-lens-btn:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  background: #fff;
+}
+
+.image-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.2s;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.image-modal-content {
+  position: relative;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  padding: 16px;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: scaleIn 0.2s;
+}
+@keyframes scaleIn {
+  from { transform: scale(0.95); }
+  to { transform: scale(1); }
+}
+.modal-image {
+  max-width: 80vw;
+  max-height: 70vh;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+}
+.close-modal-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255,255,255,0.9);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  transition: background 0.2s;
+  z-index: 10;
+}
+.close-modal-btn:hover {
+  background: #f5f5f5;
 } 

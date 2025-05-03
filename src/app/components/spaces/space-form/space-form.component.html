@@ -8,14 +8,11 @@
         <!-- Información Básica -->
         <div class="mb-4">
           <h2 class="h5 mb-3">Información Básica</h2>
-          
+
           <div class="mb-3">
             <mat-form-field appearance="outline" class="w-100">
               <mat-label>Nombre del Espacio</mat-label>
               <input matInput formControlName="name" placeholder="Ingrese nombre del espacio">
-              <mat-error *ngIf="spaceForm.get('name')?.errors?.['required']">
-                El nombre es requerido
-              </mat-error>
             </mat-form-field>
           </div>
 
@@ -23,9 +20,6 @@
             <mat-form-field appearance="outline" class="w-100">
               <mat-label>Descripción</mat-label>
               <textarea matInput formControlName="description" rows="4" placeholder="Describa su espacio"></textarea>
-              <mat-error *ngIf="spaceForm.get('description')?.errors?.['required']">
-                La descripción es requerida
-              </mat-error>
             </mat-form-field>
           </div>
 
@@ -35,37 +29,26 @@
                 <mat-label>Tipo de Espacio</mat-label>
                 <mat-select formControlName="type">
                   <mat-option *ngIf="isLoadingSpaceTypes" disabled>Cargando tipos de espacios...</mat-option>
-                  <mat-option *ngIf="!isLoadingSpaceTypes && spaceTypes.length === 0" disabled>No hay tipos disponibles</mat-option>
+                  <mat-option *ngIf="!isLoadingSpaceTypes && spaceTypes.length === 0" disabled>No hay tipos
+                    disponibles</mat-option>
                   <mat-option *ngFor="let type of spaceTypes" [value]="type.value">
                     {{type.label}}
                   </mat-option>
                 </mat-select>
-                <mat-error *ngIf="spaceForm.get('type')?.errors?.['required']">
-                  El tipo es requerido
-                </mat-error>
               </mat-form-field>
             </div>
-            
+
             <div class="col-md-4 mb-3">
               <mat-form-field appearance="outline" class="w-100">
                 <mat-label>Capacidad</mat-label>
                 <input matInput type="number" formControlName="capacity" placeholder="Número de personas">
-                <mat-error *ngIf="spaceForm.get('capacity')?.errors?.['required']">
-                  La capacidad es requerida
-                </mat-error>
-                <mat-error *ngIf="spaceForm.get('capacity')?.errors?.['min']">
-                  Debe ser al menos 1
-                </mat-error>
               </mat-form-field>
             </div>
-            
+
             <div class="col-md-4 mb-3">
               <mat-form-field appearance="outline" class="w-100">
                 <mat-label>Área (m²)</mat-label>
                 <input matInput type="number" formControlName="area" placeholder="Área del espacio">
-                <mat-error *ngIf="spaceForm.get('area')?.errors?.['min']">
-                  Debe ser al menos 1
-                </mat-error>
               </mat-form-field>
             </div>
           </div>
@@ -74,41 +57,29 @@
         <!-- Precios -->
         <div class="mb-4">
           <h2 class="h5 mb-3">Precios</h2>
-          
+
           <div class="row">
             <div class="col-md-4 mb-3">
               <mat-form-field appearance="outline" class="w-100">
                 <mat-label>Precio por Hora</mat-label>
                 <input matInput type="number" formControlName="priceHour" placeholder="0.00">
                 <span matPrefix>$&nbsp;</span>
-                <mat-error *ngIf="spaceForm.get('priceHour')?.errors?.['required']">
-                  El precio por hora es requerido
-                </mat-error>
-                <mat-error *ngIf="spaceForm.get('priceHour')?.errors?.['min']">
-                  Debe ser al menos 0
-                </mat-error>
               </mat-form-field>
             </div>
-            
+
             <div class="col-md-4 mb-3">
               <mat-form-field appearance="outline" class="w-100">
                 <mat-label>Precio por Día</mat-label>
                 <input matInput type="number" formControlName="priceDay" placeholder="0.00">
                 <span matPrefix>$&nbsp;</span>
-                <mat-error *ngIf="spaceForm.get('priceDay')?.errors?.['min']">
-                  Debe ser al menos 0
-                </mat-error>
               </mat-form-field>
             </div>
-            
+
             <div class="col-md-4 mb-3">
               <mat-form-field appearance="outline" class="w-100">
                 <mat-label>Precio por Mes</mat-label>
                 <input matInput type="number" formControlName="priceMonth" placeholder="0.00">
                 <span matPrefix>$&nbsp;</span>
-                <mat-error *ngIf="spaceForm.get('priceMonth')?.errors?.['min']">
-                  Debe ser al menos 0
-                </mat-error>
               </mat-form-field>
             </div>
           </div>
@@ -128,9 +99,10 @@
                   </mat-option>
                 </mat-select>
               </mat-form-field>
-              
+
               <!-- Botón para agregar la comodidad seleccionada -->
-              <button type="button" mat-flat-button color="primary" (click)="addSelectedAmenityFromSelect()">
+              <button type="button" mat-flat-button color="primary" (click)="addSelectedAmenityFromSelect()"
+                style="width: 200px;">
                 <mat-icon>add</mat-icon> Agregar Comodidad
               </button>
             </div>
@@ -138,14 +110,12 @@
 
           <div class="amenities-container">
             <div *ngFor="let amenityControl of amenities.controls; let i = index">
-              <app-amenity-item
-                [amenityForm]="$any(amenityControl)"
-                (remove)="removeAmenity(i)"
-              ></app-amenity-item>
+              <app-amenity-item [amenityForm]="$any(amenityControl)" (remove)="removeAmenity(i)"></app-amenity-item>
             </div>
-            
+
             <div *ngIf="amenities.length === 0" class="empty-amenities-message text-center py-3">
-              <p class="text-muted">No hay comodidades agregadas. Use el selector o el botón para agregar.</p>
+              <p class="text-muted" style="margin-top: 20px;">No hay comodidades agregadas. Use el selector o el botón
+                para agregar.</p>
             </div>
           </div>
         </div>
@@ -153,22 +123,22 @@
         <!-- Botón de Dirección -->
         <div class="mb-4">
           <h2 class="h5 mb-3">Dirección</h2>
-          
+
           <div class="address-inline-container">
             <!-- Mostrar resumen de dirección si existe -->
             <div *ngIf="hasAddress" class="address-summary">
               <div class="address-summary-content">
                 <strong>{{ addressData?.countryName }}, {{ addressData?.cityName }}</strong>
-                <p>{{ addressData?.streetName }} {{ addressData?.streetNumber }}, 
-                   {{ addressData?.floor ? 'Piso ' + addressData?.floor + ',' : '' }} 
-                   {{ addressData?.apartment ? 'Apto ' + addressData?.apartment + ',' : '' }}
-                   CP: {{ addressData?.postalCode }}</p>
+                <p>{{ addressData?.streetName }} {{ addressData?.streetNumber }},
+                  {{ addressData?.floor ? 'Piso ' + addressData?.floor + ',' : '' }}
+                  {{ addressData?.apartment ? 'Apto ' + addressData?.apartment + ',' : '' }}
+                  CP: {{ addressData?.postalCode }}</p>
               </div>
               <button type="button" mat-icon-button color="primary" (click)="editAddress()">
                 <mat-icon>edit</mat-icon>
               </button>
             </div>
-            
+
             <!-- Formulario de dirección embebido -->
             <div *ngIf="!hasAddress" class="embedded-address-form">
               <!-- Barra de progreso horizontal -->
@@ -183,7 +153,7 @@
                   <div class="step-title">Dirección</div>
                 </div>
               </div>
-              
+
               <!-- Formulario de dirección -->
               <form [formGroup]="addressForm">
                 <!-- Paso 1: Selección de país y ciudad -->
@@ -201,13 +171,14 @@
                         <mat-error *ngIf="isFieldInvalid('countryId')">Este campo es requerido</mat-error>
                       </mat-form-field>
                     </div>
-                    
+
                     <div class="col-md-6 mb-3">
                       <mat-form-field appearance="outline" class="w-100">
                         <mat-label>Ciudad</mat-label>
                         <mat-select formControlName="cityId">
                           <mat-option *ngIf="loading.cities" disabled>Cargando ciudades...</mat-option>
-                          <mat-option *ngIf="filteredCities.length === 0 && !loading.cities" disabled>Seleccione un país primero</mat-option>
+                          <mat-option *ngIf="filteredCities.length === 0 && !loading.cities" disabled>Seleccione un país
+                            primero</mat-option>
                           <mat-option *ngFor="let city of filteredCities" [value]="city.id">
                             {{ city.name }}
                           </mat-option>
@@ -266,30 +237,22 @@
                 <div class="button-container">
                   <!-- Paso 1: Botones para siguiente -->
                   <div *ngIf="currentStep === 0" class="d-flex justify-content-end">
-                    <button 
-                      mat-flat-button 
-                      color="primary" 
-                      type="button" 
-                      [disabled]="!addressForm.get('countryId')?.valid || !addressForm.get('cityId')?.valid" 
+                    <button mat-flat-button color="primary" type="button"
+                      [disabled]="!addressForm.get('countryId')?.valid || !addressForm.get('cityId')?.valid"
                       (click)="nextStep()">
                       Siguiente
                       <mat-icon>arrow_forward</mat-icon>
                     </button>
                   </div>
-                  
+
                   <!-- Paso 2: Botones de volver y guardar -->
                   <div *ngIf="currentStep === 1" class="d-flex justify-content-between">
                     <button mat-stroked-button type="button" (click)="previousStep()">
                       <mat-icon>arrow_back</mat-icon>
                       Volver
                     </button>
-                    <button
-                      mat-flat-button
-                      color="primary"
-                      type="button"
-                      [disabled]="addressForm.invalid"
-                      (click)="saveAddress()"
-                    >
+                    <button mat-flat-button color="primary" type="button" [disabled]="addressForm.invalid"
+                      (click)="saveAddress()">
                       <mat-icon>save</mat-icon>
                       Guardar
                     </button>
@@ -303,46 +266,53 @@
         <!-- Fotos -->
         <div class="mb-4">
           <h2 class="h5 mb-3">Fotos</h2>
-          
+
           <div class="row">
             <div *ngFor="let _ of [1, 2, 3]; let i = index" class="col-md-4 mb-3">
               <div class="photo-upload-container">
-                <!-- Show image preview if available -->
-                <img *ngIf="imagePreviewUrls[i]" [src]="imagePreviewUrls[i]" class="image-preview" alt="Preview">
+                <img *ngIf="imagePreviewUrls[i]" [src]="imagePreviewUrls[i]" class="image-preview" alt="Preview"
+                  (click)="openImageModal(i)">
+                <button *ngIf="imagePreviewUrls[i]" type="button" class="zoom-lens-btn" (click)="openImageModal(i)"
+                  tabindex="-1">
+                  <mat-icon>zoom_in</mat-icon>
+                </button>
                 <div *ngIf="imagePreviewUrls[i]" class="image-upload-label">
                   Haz clic para cambiar
                 </div>
-                
-                <!-- Default placeholder when no image -->
-                <div *ngIf="!imagePreviewUrls[i]" class="photo-upload-placeholder d-flex flex-column align-items-center justify-content-center">
+                <div *ngIf="!imagePreviewUrls[i]"
+                  class="photo-upload-placeholder d-flex flex-column align-items-center justify-content-center">
                   <mat-icon class="mb-2">cloud_upload</mat-icon>
                   <span>Subir foto {{i + 1}}</span>
                 </div>
-                
-                <!-- Input file, siempre presente y accesible -->
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  class="photo-upload-input" 
-                  (change)="onFileSelected($event, i)"
-                  id="photo-upload-{{i}}"
-                >
+                <input type="file" accept="image/*" class="photo-upload-input" (change)="onFileSelected($event, i)"
+                  id="photo-upload-{{i}}">
               </div>
             </div>
           </div>
-          
+
           <p class="text-muted small mt-2">
             Sube hasta 3 fotos de tu espacio. Tamaño recomendado: 1200x800px
           </p>
         </div>
 
+        <!-- Modal de imagen ampliada -->
+        <div *ngIf="showImageModal" class="image-modal-overlay" (click)="closeImageModal()">
+          <div class="image-modal-content" (click)="$event.stopPropagation()">
+            <img [src]="imagePreviewUrls[selectedImageIndex]" alt="Imagen ampliada" class="modal-image">
+            <button type="button" class="close-modal-btn" (click)="closeImageModal()">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+
         <!-- Acciones del Formulario -->
-        <div class="d-flex justify-content-end gap-2 mt-4">
+        <div class="d-flex justify-content-end gap-2 mt-4 position-relative">
           <button type="button" mat-stroked-button (click)="cancel()">
             Cancelar
           </button>
-          <button type="submit" mat-flat-button color="primary">
-            {{ isEdit ? 'Actualizar Espacio' : 'Crear Espacio' }}
+          <button type="submit" mat-flat-button color="primary" [disabled]="isSubmitting">
+            <span *ngIf="!isSubmitting">{{ isEdit ? 'Actualizar Espacio' : 'Crear Espacio' }}</span>
+            <mat-spinner *ngIf="isSubmitting" diameter="24" class="spinner-button"></mat-spinner>
           </button>
         </div>
       </form>

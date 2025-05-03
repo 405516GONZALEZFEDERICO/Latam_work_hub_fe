@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, Router } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import { map, take, catchError } from 'rxjs/operators';
-import { AuthService } from '../services/auth-service/auth.service';
-import { UserRole } from '../models/user';
+import { AuthService } from '../app/services/auth-service/auth.service';
+import { UserRole } from '../app/models/user';
 
 interface IRoute {
   allowedRoles?: UserRole[];

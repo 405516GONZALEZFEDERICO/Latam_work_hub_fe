@@ -21,6 +21,7 @@ import { SpaceType } from '../../../models/space-type.model';
 import { Observable, map, startWith } from 'rxjs';
 import { SpaceService } from '../../../services/space/space.service';
 import { AmenityDto, SpaceDto, AddressEntity, Amenity } from '../../../models/space.model';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 @Component({
   selector: 'app-space-form',
@@ -30,12 +31,14 @@ import { AmenityDto, SpaceDto, AddressEntity, Amenity } from '../../../models/sp
     ReactiveFormsModule,
     FormsModule,
     MatFormFieldModule,
+    MatProgressSpinnerModule,
     MatInputModule,
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
     MatAutocompleteModule,
-    AmenityItemComponent
+    AmenityItemComponent,
+    MatProgressSpinnerModule
   ],
   templateUrl: './space-form.component.html',
   styleUrls: ['./space-form.component.css']
@@ -50,7 +53,7 @@ export class SpaceFormComponent implements OnInit {
   addressData: any = null;
   images: File[] = [];
   imagePreviewUrls: string[] = ['', '', ''];
-  
+  isSubmitting: boolean = false;
   // Nueva propiedad para el mat-select de amenidades
   selectedAmenityId: number | null = null;
   predefinedAmenities: any[] = [];
@@ -66,8 +69,11 @@ export class SpaceFormComponent implements OnInit {
     cities: false
   };
   
-  spaceTypes: { value: string, label: string }[] = [];
+  spaceTypes: { value: number | string, name: string, label: string }[] = [];
   isLoadingSpaceTypes = false;
+  
+  showImageModal = false;
+  selectedImageIndex: number = 0;
   
   constructor(
     private fb: FormBuilder,
@@ -108,7 +114,6 @@ export class SpaceFormComponent implements OnInit {
       next: (profile: any) => {
         if (profile) {
           this.currentUserId = profile.uid || '';
-          console.log('Usuario actual ID:', this.currentUserId);
         }
       },
       error: (err) => console.error('Error al obtener perfil de usuario:', err)
@@ -133,7 +138,6 @@ export class SpaceFormComponent implements OnInit {
         this.isEdit = true;
         this.spaceId = params['id'];
         if (this.spaceId) {
-          console.log('Cargando espacio con ID:', this.spaceId);
           this.loadSpace(this.spaceId);
         }
       }
@@ -201,11 +205,9 @@ export class SpaceFormComponent implements OnInit {
   }
   
   loadPredefinedAmenities(): void {
-    console.log('Solicitando amenidades predefinidas...');
     
     this.amenityService.getPredefinedAmenities().subscribe({
       next: (amenities) => {
-        console.log('Amenidades recibidas:', amenities);
         if (amenities && amenities.length > 0) {
           // Asegurar que cada amenidad tenga un ID
           this.predefinedAmenities = amenities.map((amenity, index) => ({
@@ -268,7 +270,6 @@ export class SpaceFormComponent implements OnInit {
     // Configurar listener para el cambio de país
     this.addressForm.get('countryId')?.valueChanges.subscribe(countryId => {
       if (countryId) {
-        console.log('País seleccionado ID:', countryId, 'tipo:', typeof countryId);
         this.loadCitiesByCountry(countryId);
         this.addressForm.get('cityId')?.setValue('');
       } else {
@@ -276,17 +277,14 @@ export class SpaceFormComponent implements OnInit {
       }
     });
     
-    console.log('Formulario de dirección inicializado');
   }
   // Cargar países desde el servicio
   loadCountries(): void {
     this.loading.countries = true;
-    console.log('Solicitando lista de países...');
     
     this.addressService.getAllCountries().subscribe({
       next: (data: Country[]) => {
         this.countries = data;
-        console.log(`${this.countries.length} países cargados`);
         this.loading.countries = false;
       },
       error: (error) => {
@@ -322,12 +320,10 @@ export class SpaceFormComponent implements OnInit {
     }
     
     this.loading.cities = true;
-    console.log(`Cargando ciudades para el país ID: ${id}, tipo: ${typeof id}`);
     
     this.addressService.getCitiesByCountry(id).subscribe({
       next: (data: City[]) => {
         this.filteredCities = data;
-        console.log(`${this.filteredCities.length} ciudades cargadas para país ID ${id}`);
         this.loading.cities = false;
       },
       error: (error) => {
@@ -366,85 +362,121 @@ export class SpaceFormComponent implements OnInit {
   
  
 loadSpace(id: string): void {
-  console.log(`Cargando datos del espacio ID: ${id}`);
   
   this.spaceService.getSpaceById(id).subscribe({
     next: (space: any) => {
       if (space) {
-        console.log('Datos del espacio recibidos:', space);
+        console.log('Espacio cargado:', space);
+        console.log('Tipos de espacio disponibles:', this.spaceTypes);
         
-        // Populate form with space data
+        // Asignar datos del espacio al formulario
         this.spaceForm.patchValue({
           name: space.name || space.title,
-          description: space.description || '',
-          type: space.type || '',
+          description: space.description,
           capacity: space.capacity,
           area: space.area,
-          priceHour: space.priceHour || space.hourlyPrice,
-          priceDay: space.priceDay || 0,
-          priceMonth: space.priceMonth || space.monthlyPrice
+          priceHour: space.pricePerHour || space.priceHour || space.hourlyPrice,
+          priceDay: space.pricePerDay || space.priceDay,
+          priceMonth: space.pricePerMonth || space.priceMonth || space.monthlyPrice
         });
 
-        // Load amenities if any
-        if (space.amenities && space.amenities.length > 0) {
-          console.log(`Cargando ${space.amenities.length} amenidades`);
-          
-          // Clear existing amenities
-          while (this.amenities.length) {
-            this.removeAmenity(0);
+        // Asignar el tipo de espacio - Corrección del problema
+        
+        
+        // Usar cualquier propiedad de tipo disponible
+        let spaceTypeName = '';
+        
+        // Verificar cada posible ubicación del tipo de espacio en orden de prioridad
+        if (typeof space.spaceType === 'string') {
+          spaceTypeName = space.spaceType;
+        } 
+        else if (space.spaceType && typeof space.spaceType === 'object' && space.spaceType.name) {
+          spaceTypeName = space.spaceType.name;
+        }
+        else if (space.type && typeof space.type === 'string') {
+          spaceTypeName = space.type;
+        }
+        else if (space.typeObj && space.typeObj.name) {
+          spaceTypeName = space.typeObj.name;
+        }
+        
+        
+        // Buscar en el array de tipos de espacio
+        const spaceTypeOption = this.spaceTypes.find(
+          type => {
+            // Verificar por nombre
+            if (typeof type.value === 'string' && spaceTypeName) {
+              return type.value.toLowerCase() === spaceTypeName.toLowerCase() ||
+                    type.name.toLowerCase() === spaceTypeName.toLowerCase();
+            }
+            // Si hay un objeto de tipo directo con ID, comparar con ese
+            if (space.spaceType && typeof space.spaceType === 'object' && space.spaceType.id) {
+              return type.value === space.spaceType.id;
+            }
+            return false;
           }
-          
-          // Add each amenity
-          space.amenities.forEach((amenity: any) => {
-            const amenityGroup = this.fb.group({
-              name: [amenity.name, Validators.required],
-              price: [amenity.price, [Validators.required, Validators.min(0)]]
+        );
+        
+        if (spaceTypeOption) {
+          this.spaceForm.patchValue({
+            type: spaceTypeOption.value
+          });
+          console.log('Tipo de espacio seleccionado:', spaceTypeOption);
+        } else {
+          console.warn('No se encontró el tipo de espacio en las opciones disponibles:', spaceTypeName);
+          // Si no encontramos el tipo exacto, intentar añadirlo dinámicamente
+          if (spaceTypeName) {
+            // Crear un nuevo tipo con ID dinámico para evitar conflictos
+            const newType = {
+              value: 'custom_' + spaceTypeName.replace(/\s+/g, '_').toLowerCase(),
+              name: spaceTypeName,
+              label: this.formatSpaceTypeName(spaceTypeName)
+            };
+            this.spaceTypes.push(newType);
+            this.spaceForm.patchValue({
+              type: newType.value
             });
-            this.amenities.push(amenityGroup);
+          }
+        }
+
+        // Cargar imágenes si están disponibles
+        if (space.photoUrl && Array.isArray(space.photoUrl)) {
+          space.photoUrl.forEach((image: string, index: number) => {
+            if (index < 3) {
+              this.imagePreviewUrls[index] = image;
+            }
           });
         }
 
-        // Load address if available
+        // Cargar dirección si está disponible
         if (space.address) {
-          console.log('Dirección del espacio:', space.address);
-          this.addressData = space.address;
+          this.addressForm.patchValue({
+            countryId: space.address.countryId,
+            cityId: space.address.cityId,
+            streetName: space.address.streetName,
+            streetNumber: space.address.streetNumber,
+            floor: space.address.floor || '',
+            apartment: space.address.apartment || '',
+            postalCode: space.address.postalCode
+          });
           this.hasAddress = true;
+        }
+        
+        // Cargar amenidades si están disponibles
+        if (space.amenities && Array.isArray(space.amenities) && space.amenities.length > 0) {
+          // Limpiar el FormArray de amenidades
+          (this.spaceForm.get('amenities') as FormArray).clear();
           
-          // Cargar datos en el formulario de dirección
-          if (this.addressData.countryId) {
-            // Asegurar que los IDs sean números
-            const countryId = typeof this.addressData.countryId === 'string' 
-              ? parseInt(this.addressData.countryId, 10) 
-              : this.addressData.countryId;
-              
-            const cityId = typeof this.addressData.cityId === 'string' 
-              ? parseInt(this.addressData.cityId, 10) 
-              : this.addressData.cityId;
-            
-            // Actualizar el objeto addressData con los valores convertidos
-            this.addressData.countryId = countryId;
-            this.addressData.cityId = cityId;
-            
-            console.log('Valores de dirección procesados:', {
-              countryId: countryId,
-              cityId: cityId,
-              tipo_countryId: typeof countryId,
-              tipo_cityId: typeof cityId
+          // Añadir cada amenidad al FormArray
+          space.amenities.forEach((amenity: any) => {
+            const amenityForm = this.fb.group({
+              name: [amenity.name || '', Validators.required],
+              price: [amenity.price || 0],
+              description: [amenity.description || '']
             });
             
-            this.addressForm.patchValue({
-              countryId: countryId,
-              cityId: cityId,
-              streetName: this.addressData.streetName,
-              streetNumber: this.addressData.streetNumber,
-              floor: this.addressData.floor || '',
-              apartment: this.addressData.apartment || '',
-              postalCode: this.addressData.postalCode
-            });
-            
-            // Cargar las ciudades del país seleccionado
-            this.loadCitiesByCountry(countryId);
-          }
+            (this.spaceForm.get('amenities') as FormArray).push(amenityForm);
+          });
         }
       }
     },
@@ -458,13 +490,17 @@ loadSpace(id: string): void {
 }
   
   onSubmit(): void {
-    if (this.spaceForm.invalid) {
-      this.spaceForm.markAllAsTouched();
-      this.snackBar.open('Por favor complete todos los campos requeridos', 'Cerrar', {
-        duration: 3000
-      });
+    if (this.spaceForm.invalid || this.isSubmitting) {
+      if (this.spaceForm.invalid) {
+        this.spaceForm.markAllAsTouched();
+        this.snackBar.open('Por favor complete todos los campos requeridos', 'Cerrar', {
+          duration: 3000
+        });
+      }
       return;
     }
+
+    this.isSubmitting = true;
 
     const formValue = this.spaceForm.getRawValue();
     
@@ -487,8 +523,17 @@ loadSpace(id: string): void {
       return;
     }
 
-    // Log para depuración
-    console.log('Datos de dirección a enviar:', this.addressData);
+    // Buscar el tipo de espacio seleccionado para obtener su nombre
+    const selectedType = this.spaceTypes.find(type => type.value === formValue.type);
+    if (!selectedType) {
+      console.error('No se pudo encontrar el tipo de espacio seleccionado:', formValue.type);
+      this.snackBar.open('Por favor seleccione un tipo de espacio válido', 'Cerrar', {
+        duration: 3000
+      });
+      return;
+    }
+    
+    console.log('Creando espacio con tipo:', selectedType);
     
     // Crear SpaceDto con formato plano (propiedades de dirección directamente en el objeto principal)
     const spaceDto: SpaceDto = {
@@ -501,7 +546,7 @@ loadSpace(id: string): void {
       pricePerMonth: formValue.priceMonth,
       uid: this.currentUserId,
       type: {
-        name: formValue.type
+        name: selectedType.name
       },
       // Propiedades de dirección planas según el formato del backend
       cityId: Number(this.addressData.cityId),
@@ -527,20 +572,30 @@ loadSpace(id: string): void {
     }
 
     // Log para depuración
-    console.log('SpaceDto a enviar:', spaceDto);
+    
 
-    this.spaceService.createSpace(spaceDto, this.images).subscribe({
+    // Determine whether to create or update based on isEdit flag
+    const operation = this.isEdit && this.spaceId
+      ? this.spaceService.updateSpace(this.spaceId, spaceDto, this.images)
+      : this.spaceService.createSpace(spaceDto, this.images);
+
+    operation.subscribe({
       next: (response: any) => {
-        this.snackBar.open('Espacio creado correctamente', 'Cerrar', {
+        this.isSubmitting = false;
+        const message = this.isEdit ? 'Espacio actualizado correctamente' : 'Espacio creado correctamente';
+        this.snackBar.open(message, 'Cerrar', {
           duration: 3000
         });
         this.router.navigate(['/home/spaces']);
       },
       error: (error: any) => {
-        console.error('Error al crear el espacio:', error);
-        this.snackBar.open('Error al crear el espacio: ' + error.message, 'Cerrar', {
-          duration: 3000
-        });
+        this.isSubmitting = false;
+        console.error(this.isEdit ? 'Error al actualizar el espacio:' : 'Error al crear el espacio:', error);
+        this.snackBar.open(
+          (this.isEdit ? 'Error al actualizar el espacio: ' : 'Error al crear el espacio: ') + (error?.message || 'Ocurrió un error desconocido'),
+          'Cerrar',
+          { duration: 5000 }
+        );
       }
     });
   }
@@ -725,11 +780,7 @@ loadSpace(id: string): void {
     };
     
     // Log para depuración
-    console.log('Dirección guardada:', this.addressData);
-    console.log('Tipos de IDs:', {
-      countryId: typeof this.addressData.countryId,
-      cityId: typeof this.addressData.cityId
-    });
+
     
     this.hasAddress = true;
     this.closeAddressModal();
@@ -745,15 +796,15 @@ loadSpace(id: string): void {
   
   loadSpaceTypes(): void {
     this.isLoadingSpaceTypes = true;
-    console.log('Solicitando tipos de espacios...');
     
     this.spaceTypeService.getAllSpaceTypes().subscribe({
       next: (types: SpaceType[]) => {
         this.spaceTypes = types.map(type => ({
-          value: type.name,
+          value: type.id !== undefined ? type.id : 0,
+          name: type.name || 'Desconocido',
           label: this.formatSpaceTypeName(type.name)
         }));
-        console.log(`${this.spaceTypes.length} tipos de espacios cargados`);
+        console.log('Tipos de espacio cargados:', this.spaceTypes);
         this.isLoadingSpaceTypes = false;
       },
       error: (error) => {
@@ -774,25 +825,15 @@ loadSpace(id: string): void {
       return;
     }
     
-    console.log('addressData completo:', this.addressData);
-    console.log('countryId:', this.addressData.countryId);
-    console.log('tipo de countryId:', typeof this.addressData.countryId);
-    console.log('cityId:', this.addressData.cityId);
-    console.log('tipo de cityId:', typeof this.addressData.cityId);
-    
     // Verificar si los valores son realmente números válidos
     const countryIdNum = Number(this.addressData.countryId);
     const cityIdNum = Number(this.addressData.cityId);
     
-    console.log('countryId como número:', countryIdNum, '¿es número válido?', !isNaN(countryIdNum));
-    console.log('cityId como número:', cityIdNum, '¿es número válido?', !isNaN(cityIdNum));
     
     // Verificar referencias a los objetos originales
     const selectedCountry = this.countries.find(c => c.id === countryIdNum);
     const selectedCity = this.filteredCities.find(c => c.id === cityIdNum);
-    
-    console.log('País correspondiente:', selectedCountry);
-    console.log('Ciudad correspondiente:', selectedCity);
+  
     
     console.groupEnd();
   }
@@ -813,5 +854,14 @@ loadSpace(id: string): void {
     // Para camelCase, insertar espacios antes de cada letra mayúscula y capitalizar la primera
     const formatted = name.replace(/([A-Z])/g, ' $1').trim();
     return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  }
+
+  openImageModal(index: number): void {
+    this.selectedImageIndex = index;
+    this.showImageModal = true;
+  }
+
+  closeImageModal(): void {
+    this.showImageModal = false;
   }
 }

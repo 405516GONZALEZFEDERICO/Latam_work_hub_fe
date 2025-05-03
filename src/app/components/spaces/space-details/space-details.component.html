@@ -16,7 +16,7 @@
   <div *ngIf="space && !isLoading && !error" class="space-content">
     <div class="space-header">
       <button mat-icon-button (click)="goBack()" class="back-button">
-        <mat-icon>arrow_back</mat-icon>
+        <mat-icon style="margin-bottom: 5px;">arrow_back</mat-icon>
       </button>
       <h1 class="space-title">{{ space.title || space.name }}</h1>
     </div>
@@ -96,7 +96,13 @@
             
             <mat-tab label="Comodidades">
               <div class="tab-content">
-                <div class="amenities-list">
+                <!-- Mostrar mensaje cuando no hay amenidades -->
+                <div *ngIf="!space.amenities || space.amenities.length === 0" class="no-amenities">
+                  <p>No hay comodidades disponibles para este espacio.</p>
+                </div>
+                
+                <!-- Mostrar amenidades cuando existen -->
+                <div class="amenities-list" *ngIf="space.amenities && space.amenities.length > 0">
                   <div class="amenity-item" *ngFor="let amenity of space.amenities">
                     <mat-icon class="amenity-icon">{{ getAmenityIcon(amenity.name) }}</mat-icon>
                     <span>{{ amenity.name }}</span>
@@ -157,7 +163,7 @@
           </div>
         </mat-card-content>
         <mat-card-actions>
-          <button mat-raised-button color="primary" class="reserve-button" (click)="reserveSpace()">
+          <button *ngIf="userRole === 'CLIENTE'" mat-raised-button color="primary" class="reserve-button" (click)="reserveSpace()">
             <mat-icon>calendar_today</mat-icon> Reservar este espacio
           </button>
         </mat-card-actions>

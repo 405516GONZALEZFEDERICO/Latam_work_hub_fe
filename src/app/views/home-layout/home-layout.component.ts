@@ -1,6 +1,6 @@
-import { Component, OnInit, HostListener, inject, OnDestroy } from '@angular/core';
+import { Component, OnInit, HostListener, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterOutlet, RouterModule } from '@angular/router';
+import { Router, RouterOutlet, RouterLink, NavigationEnd } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatListModule } from '@angular/material/list';
@@ -9,22 +9,20 @@ import { AuthService } from '../../services/auth-service/auth.service';
 import { ProfileService } from '../../services/profile/profile.service';
 import { ProfileData } from '../../models/profile';
 import { trigger, state, style, animate, transition } from '@angular/animations';
-
-// Importamos los componentes
 import { NavbarComponent } from '../../components/home-layout/navbar/navbar.component';
-import { NavigationEnd } from '@angular/router';
+import { inject } from '@angular/core';
 
 @Component({
   selector: 'app-home-layout',
   standalone: true,
   imports: [
     CommonModule,
+    RouterOutlet,
     MatIconModule,
     MatButtonModule,
     MatListModule,
     NavbarComponent,
-    RouterOutlet,
-    RouterModule
+    RouterLink
   ],
   templateUrl: './home-layout.component.html',
   styleUrls: ['./home-layout.component.css'],
@@ -59,7 +57,7 @@ import { NavigationEnd } from '@angular/router';
   ]
 })
 export class HomeLayoutComponent implements OnInit, OnDestroy {
-  // Inyectando servicios usando inject()
+  // Injecting services using inject()
   private authService = inject(AuthService);
   private profileService = inject(ProfileService);
   private router = inject(Router);
@@ -67,7 +65,7 @@ export class HomeLayoutComponent implements OnInit, OnDestroy {
   isSidebarOpen = false;
   userData: ProfileData = {} as ProfileData;
 
-  // Estado para las animaciones de celebración
+  // Animation states
   showConfetti = false;
   showCompletionBadge = false;
   confettiState = 'hidden';
@@ -76,43 +74,34 @@ export class HomeLayoutComponent implements OnInit, OnDestroy {
   timerHideBadge: any;
   confettiItems = Array(50).fill(0).map((_, i) => i);
 
-  // Propiedad para almacenar el título actual
+  // Current page title
   currentPageTitle: string = 'Bienvenido';
 
-  constructor() {
-    console.log('HomeLayoutComponent inicializado');
-  }
 
   ngOnInit(): void {
     this.loadUserProfile();
     
-    // En pantallas grandes, el sidebar comienza abierto
+    // On large screens, sidebar starts open
     this.isSidebarOpen = window.innerWidth >= 992;
     
-    // Agregar logs para depuración
-    console.log('HomeLayoutComponent inicializado');
-    console.log('Ruta actual:', this.router.url);
     
-    // Suscribirse a eventos de navegación
+    // Subscribe to navigation events
     this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {
-        console.log('Navegación completada:', event.url);
       }
     });
     
-    // Botón para cambiar manualmente al rol de PROVEEDOR (solo para pruebas)
-    console.log('Para establecer el rol manualmente, ejecuta en consola: setProviderRole()');
+    // Button to manually change to PROVEEDOR role (testing only)
     // @ts-ignore
     window.setProviderRole = () => {
       this.userData.role = 'PROVEEDOR';
-      console.log('Rol establecido a PROVEEDOR manualmente');
     };
   }
 
-  // Detector de cambio de tamaño de ventana
+  // Window resize detector
   @HostListener('window:resize', ['$event'])
   onResize(event: any): void {
-    // En móvil, cerramos el sidebar automáticamente
+    // On mobile, close sidebar automatically
     if (window.innerWidth < 768 && this.isSidebarOpen) {
       this.isSidebarOpen = false;
     }
@@ -123,26 +112,24 @@ export class HomeLayoutComponent implements OnInit, OnDestroy {
   }
 
   loadUserProfile(): void {
-    // Intentar obtener datos de perfil del servicio
+    // Try to get profile data from service
     this.profileService.getProfileData().subscribe({
       next: (profile: ProfileData) => {
-        console.log('Profile loaded:', profile);
         this.userData = profile;
       },
       error: (error: any) => {
         console.error('Error al cargar el perfil:', error);
-        // Usar datos por defecto temporales si hay error
+        // Use default temporary data if there's an error
         this.userData = {
           displayName: 'Usuario de Prueba',
           email: 'usuario@example.com',
           role: 'PROVEEDOR' as UserRole
         } as ProfileData;
         
-        // Intentar obtener el rol del usuario del servicio de autenticación
+        // Try to get user role from auth service
         this.authService.currentUser$.subscribe(user => {
           if (user) {
             this.userData.role = user.role;
-            console.log('Rol de usuario obtenido:', this.userData.role);
           }
         });
       }
@@ -154,7 +141,7 @@ export class HomeLayoutComponent implements OnInit, OnDestroy {
       this.router.navigate(['/login']);
     }).catch(error => {
       console.error('Error al cerrar sesión:', error);
-      // Redirigir de todos modos
+      // Redirect anyway
       this.router.navigate(['/login']);
     });
   }
@@ -171,7 +158,7 @@ export class HomeLayoutComponent implements OnInit, OnDestroy {
   }
   
   ngOnDestroy(): void {
-    // Limpiar timers al destruir el componente
+    // Clean up timers when destroying component
     if (this.timerHideConfetti) {
       clearTimeout(this.timerHideConfetti);
     }
@@ -179,4 +166,4 @@ export class HomeLayoutComponent implements OnInit, OnDestroy {
       clearTimeout(this.timerHideBadge);
     }
   }
-} 
+}

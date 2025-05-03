@@ -1,0 +1,93 @@
+<div class="container mt-4">
+  <div class="card shadow-sm">
+    <div class="card-header">
+      <h3 class="mb-0">Mis Reservas</h3>
+    </div>
+    <div class="card-body">
+      <!-- Filtros -->
+      <!-- <div class="row mb-4">
+        <div class="col-md-12">
+          <div class="filter-container p-3 bg-light rounded">
+            <h5>Filtros</h5>
+            <div class="row">
+              <div class="col-md-4 mb-2">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Fecha Inicio</mat-label>
+                  <input matInput [matDatepicker]="pickerStart" [(ngModel)]="startDate" placeholder="dd/mm/aaaa">
+                  <mat-datepicker-toggle matSuffix [for]="pickerStart"></mat-datepicker-toggle>
+                  <mat-datepicker #pickerStart></mat-datepicker>
+                </mat-form-field>
+              </div>
+              <div class="col-md-4 mb-2">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Fecha Fin</mat-label>
+                  <input matInput [matDatepicker]="pickerEnd" [(ngModel)]="endDate" placeholder="dd/mm/aaaa">
+                  <mat-datepicker-toggle matSuffix [for]="pickerEnd"></mat-datepicker-toggle>
+                  <mat-datepicker #pickerEnd></mat-datepicker>
+                </mat-form-field>
+              </div>
+              <div class="col-md-4 d-flex align-items-center mt-2 mt-md-0">
+                <button mat-flat-button color="primary" class="w-100" (click)="aplicarFiltros()">
+                  <mat-icon>filter_list</mat-icon> Aplicar Filtros
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div> -->
+
+      <!-- Ya no se necesitan Tabs, mostrar directamente las reservas -->
+      <div class="reservas-list">
+        <h4 class="mb-3">Tus Reservas</h4>
+
+        <!-- Mostrar mensaje si no hay reservas -->
+        <!-- <div *ngIf="reservas.length === 0" class="alert alert-info text-center">
+          No tienes reservas activas o pasadas en este momento.
+        </div> -->
+
+        <!-- Lista de Reservas -->
+        <div class="row" *ngIf="reservas.length > 0">
+          <div *ngFor="let reserva of reservas" class="col-md-6 mb-4">
+            <mat-card class="reserva-card">
+              <mat-card-header>
+                <mat-card-title>{{ reserva.titulo }}</mat-card-title>
+                <mat-card-subtitle>Reserva #{{ reserva.id }}</mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content>
+                <p>
+                  <strong>Fecha:</strong> {{ reserva.fecha }}<br>
+                  <strong>Horario:</strong> {{ reserva.horarioInicio }} - {{ reserva.horarioFin }}<br>
+                  <strong>Estado:</strong>
+                  <span class="badge"
+                        [ngClass]="{
+                          'bg-success': reserva.estado === 'Confirmado',
+                          'bg-warning text-dark': reserva.estado === 'Pendiente de Pago',
+                          'bg-danger': reserva.estado === 'Cancelado',
+                          'bg-secondary': reserva.estado !== 'Confirmado' && reserva.estado !== 'Pendiente de Pago' && reserva.estado !== 'Cancelado'
+                        }">
+                    {{ reserva.estado }}
+                  </span><br>
+                  <strong>Precio:</strong> {{ reserva.precio | currency:'USD':'symbol':'1.2-2' }}
+                </p>
+              </mat-card-content>
+              <mat-card-actions class="d-flex justify-content-between">
+                <button mat-stroked-button color="primary" (click)="verDetalles(reserva.id)">
+                  <mat-icon>visibility</mat-icon> Ver Detalles
+                </button>
+                <!-- Mostrar botón de cancelar solo si es relevante (ej. no está cancelada o ya pasó) -->
+                <button mat-stroked-button color="warn" *ngIf="reserva.estado !== 'Cancelado' && reserva.estado !== 'Completado'" (click)="cancelarReserva(reserva.id)">
+                  <mat-icon>cancel</mat-icon> Cancelar
+                </button>
+                 <!-- Mostrar botón Pagar si está pendiente -->
+                 <button mat-flat-button color="accent" *ngIf="reserva.estado === 'Pendiente de Pago'" (click)="pagarReserva(reserva.id)">
+                    <mat-icon>payment</mat-icon> Pagar Ahora
+                  </button>
+              </mat-card-actions>
+            </mat-card>
+          </div>
+        </div>
+      </div> <!-- End reservas-list -->
+
+    </div> <!-- End card-body -->
+  </div> <!-- End card -->
+</div> <!-- End container -->

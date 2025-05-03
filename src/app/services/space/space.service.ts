@@ -118,31 +118,51 @@ export class SpaceService {
 
   // Get space by ID
   getSpaceById(id: string): Observable<Space | undefined> {
-    console.log(`Obteniendo espacio con ID: ${id}`);
     
-    // El backend ahora usa @PathVariable, no necesitamos params adicionales
     return this.http.get<any>(`${this.apiUrl}/${id}`)
       .pipe(
         tap(response => console.log('Respuesta del API:', response)),
-        map(response => this.mapResponseToSpace(response)),
+        map(response => {
+          const mappedSpace = this.mapResponseToSpace(response);
+          return mappedSpace;
+        }),
         catchError(error => {
           console.error('Error en getSpaceById:', error);
-          // Si ocurre un error, intentamos usar los datos mock como fallback
-          console.log('Usando datos mock como fallback');
-          const space = this.mockSpaces.find(space => space.id === id);
-          return of(space);
+          return throwError(() => error);
         })
       );
   }
 
   // Método privado para mapear la respuesta del API al modelo Space
   private mapResponseToSpace(response: any): Space | undefined {
-    console.log('Mapeando respuesta a modelo Space', response);
     
     if (!response) return undefined;
     
-    // Mapeo básico para prueba, ajustar según la estructura real de SpaceResponseDto
-    return {
+    // Procesamiento del tipo de espacio
+    let processedSpaceType: any;
+    let spaceTypeName = '';
+    
+    // Determinar el tipo de espacio basado en múltiples propiedades posibles
+    if (response.spaceType) {
+      if (typeof response.spaceType === 'string') {
+        spaceTypeName = response.spaceType;
+        processedSpaceType = { name: response.spaceType };
+      } else if (typeof response.spaceType === 'object') {
+        spaceTypeName = response.spaceType.name || '';
+        processedSpaceType = { ...response.spaceType };
+      }
+    } else if (response.type) {
+      if (typeof response.type === 'string') {
+        spaceTypeName = response.type;
+        processedSpaceType = { name: response.type };
+      } else if (typeof response.type === 'object') {
+        spaceTypeName = response.type.name || '';
+        processedSpaceType = { ...response.type };
+      }
+    }
+    
+    // Mapeo detallado con logs para depuración
+    const mappedSpace = {
       id: response.id?.toString() || '',
       title: response.name || response.title || '',
       name: response.name || '',
@@ -150,14 +170,17 @@ export class SpaceService {
       imageUrl: response.mainImage || response.images?.[0] || '',
       additionalImages: response.images || [],
       photoUrl: response.photoUrl || [],
-      address: response.address?.location || response.address || '',
+      address: response.address || '',
       hourlyPrice: response.pricePerHour || 0,
       monthlyPrice: response.pricePerMonth || 0,
       capacity: response.capacity || 0,
       providerType: response.providerType || 'COMPANY',
-      amenities: response.amenities || [],
-      type: response.type?.name || response.spaceType || '',
-      spaceType: response.spaceType || '',
+      // Asegurar que amenities siempre sea un array, incluso si viene null del backend
+      amenities: Array.isArray(response.amenities) ? response.amenities : [],
+      // Usar el tipo procesado o el nombre como fallback
+      type: spaceTypeName,
+      spaceType: processedSpaceType || { name: spaceTypeName },
+      typeObj: processedSpaceType || { name: spaceTypeName },
       area: response.area || 0,
       priceHour: response.pricePerHour || 0,
       priceDay: response.pricePerDay || 0,
@@ -166,6 +189,9 @@ export class SpaceService {
       pricePerDay: response.pricePerDay || 0,
       pricePerMonth: response.pricePerMonth || 0
     };
+
+   
+    return mappedSpace;
   }
 
   // Create new space
@@ -195,8 +221,7 @@ export class SpaceService {
       }));
     }
     
-    // Log para depuración
-    console.log('SpaceDto a enviar al backend:', spaceToSend);
+
 
     const formData = new FormData();
 
@@ -223,18 +248,40 @@ export class SpaceService {
     );
   }
 
-  // Update existing space
-  updateSpace(id: string, space: Space): Observable<Space> {
-    // For development, return mock data
-    // In production, uncomment the HTTP request
-    // return this.http.put<Space>(`${this.apiUrl}/${id}`, space);
-    const index = this.mockSpaces.findIndex(s => s.id === id);
-    if (index !== -1) {
-      this.mockSpaces[index] = { ...space };
+  updateSpace(spaceId: string, spaceDto: SpaceDto, images: File[]): Observable<any> {
+    const url = `${this.apiUrl}/${spaceId}`;
+    
+    // Create a FormData object to send both the space data and images
+    const formData = new FormData();
+    
+    // Add the space data as JSON
+    formData.append('space', new Blob([JSON.stringify(spaceDto)], {
+      type: 'application/json'
+    }));
+    
+    // Add each image file if provided
+    if (images && images.length > 0) {
+      images.forEach((file, index) => {
+        if (file) {
+          formData.append('images', file, file.name);
+        }
+      });
     }
-    return of(space);
+    
+    return this.http.put<any>(url, formData).pipe(
+      tap(response => console.log('Respuesta de actualización:', response)),
+      catchError(error => {
+        let errorMsg = 'Error al actualizar el espacio';
+        if (error.error && error.error.message) {
+          errorMsg = error.error.message;
+        } else if (error.message) {
+          errorMsg = error.message;
+        }
+        
+        return throwError(() => new Error(errorMsg));
+      })
+    );
   }
-
   // Delete space
   deleteSpace(id: string): Observable<void> {
     // For development, return mock data

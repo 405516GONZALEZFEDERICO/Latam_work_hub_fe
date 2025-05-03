@@ -56,13 +56,16 @@
             <h4>Fecha y Hora</h4>
             <div class="date-time-section">
               <!-- Fecha inicial -->
-              <mat-form-field appearance="outline" [ngClass]="{'full-width': reservationForm.get('reservationType')?.value === 'month'}">
-                <mat-label>Fecha</mat-label>
-                <input matInput [matDatepicker]="startPicker" formControlName="startDate" 
-                      [min]="minDate" [max]="maxDate">
-                <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
-                <mat-datepicker #startPicker></mat-datepicker>
+              <mat-form-field appearance="fill">
+                <mat-label>Fecha de Reserva</mat-label>
+                <input matInput [matDatepicker]="picker" formControlName="startDate" placeholder="DD/MM/YYYY">
+                <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                <mat-datepicker #picker></mat-datepicker>
+                <mat-error *ngIf="reservationForm.get('startDate')?.hasError('required')">
+                  Selecciona una fecha
+                </mat-error>
               </mat-form-field>
+
 
               <!-- Rango de fechas para reserva mensual -->
               <div *ngIf="reservationForm.get('reservationType')?.value === 'month'" class="date-range-info">
@@ -157,7 +160,7 @@
       <button type="button" class="mercadopago-button" (click)="onSubmit()" [disabled]="isLoading">
         <div class="mp-button-content">
           <mat-spinner *ngIf="isLoading" diameter="20"></mat-spinner>
-          <img *ngIf="!isLoading" src="/public/mercado-pago-logo-0 (1).png" alt="Mercado Pago" class="mp-logo">
+          <img *ngIf="!isLoading" src="/mercado-pago.png" alt="Mercado Pago" class="mp-logo">
           <span>{{ isLoading ? 'Procesando...' : 'Pagar con Mercado Pago' }}</span>
         </div>
       </button>

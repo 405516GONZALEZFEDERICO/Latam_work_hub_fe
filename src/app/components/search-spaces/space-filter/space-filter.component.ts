@@ -110,7 +110,6 @@ export class SpaceFilterComponent implements OnInit {
   loadAmenities(): void {
     this.amenityService.getAmenities().subscribe({
       next: (amenities) => {
-        console.log('Amenidades cargadas:', amenities);
         this.amenities = amenities;
         
         // Convertir amenidades a opciones para el selector
@@ -128,9 +127,9 @@ export class SpaceFilterComponent implements OnInit {
 
   loadSpaceTypes(): void {
     this.spaceTypeService.getAllSpaceTypes().subscribe({
-      next: (types) => {
-        console.log('Tipos de espacio cargados:', types);
+      next: (types: SpaceType[]) => {
         this.spaceTypes = types;
+        console.log('Tipos de espacio cargados en SpaceFilterComponent:', JSON.stringify(this.spaceTypes)); // Log detallado
       },
       error: (error) => {
         console.error('Error al cargar tipos de espacios:', error);
@@ -188,12 +187,28 @@ export class SpaceFilterComponent implements OnInit {
 
   // Método para manejar la selección de amenidades desde el componente MaterialSelect
   onAmenitiesSelectionChange(selectedIds: any[]): void {
-    console.log('Amenidades seleccionadas:', selectedIds);
     this.filters.amenityIds = selectedIds.length > 0 ? selectedIds : null;
   }
 
   applyFilters(): void {
-    console.log('Aplicando filtros:', this.filters);
+    // Asegurarse que spaceTypeId sea un número entero válido
+    if (this.filters.spaceTypeId !== null) {
+      // Convertir explícitamente a número y validar
+      const typeId = Number(this.filters.spaceTypeId);
+      if (!isNaN(typeId)) {
+        this.filters.spaceTypeId = typeId;
+      } else {
+        console.error('Error: spaceTypeId no es un número válido:', this.filters.spaceTypeId);
+      }
+    }
+    
+    console.log('Aplicando filtros:', JSON.stringify(this.filters));
+    console.log('Tipo de espacio seleccionado:', 
+      this.filters.spaceTypeId, 
+      'tipo:', typeof this.filters.spaceTypeId,
+      'objeto correspondiente:', this.spaceTypes.find(t => t.id === this.filters.spaceTypeId)
+    );
+    
     this.filtersChanged.emit({...this.filters});
   }
 
@@ -232,5 +247,13 @@ export class SpaceFilterComponent implements OnInit {
   onFilterScroll(): void {
     // Esta lógica ya no es necesaria con el nuevo componente de Material
     // pero podemos mantenerla por compatibilidad si es necesario
+  }
+
+  // Método para registrar el cambio directo en el select
+  onSpaceTypeChange(event: any): void {
+    const selectedId = event.value;
+    console.log('Tipo de espacio SELECCIONADO (evento directo):', selectedId, 'Tipo de dato:', typeof selectedId);
+    // No necesitamos asignar aquí porque ngModel lo hace, pero podemos forzarlo si es necesario:
+    // this.filters.spaceTypeId = selectedId;
   }
 } 

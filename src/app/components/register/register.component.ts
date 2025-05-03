@@ -16,7 +16,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { HttpParams } from '@angular/common/http';
 import { map, catchError } from 'rxjs/operators';
 import { Observable, throwError } from 'rxjs';
-import { passwordStrengthValidator } from '../../validators/password-strength.validator';
+import { passwordStrengthValidator } from '../../../validators/password-strength.validator';
 
 @Component({
   selector: 'app-register',
@@ -87,7 +87,6 @@ export class RegisterComponent {
     // Llamada al servicio de registro
     this.authService.register(email, password).subscribe({
       next: (response: string) => {
-        console.log('Usuario registrado:', response);
         this.showSuccessSnackbar('Registro exitoso. Redirigiendo...');
 
         // Pequeña pausa para mostrar el mensaje antes de redirigir
@@ -119,7 +118,6 @@ export class RegisterComponent {
     // Limpiar posibles datos conflictivos en localStorage
     localStorage.removeItem('currentUserData');
     localStorage.removeItem('userDataTimestamp');
-    console.log('Registro con Google: datos de localStorage limpiados');
     
     // Convertir la promesa en Observable para mantener consistencia
     from(this.authService.loginWithGoogle(true)).subscribe({

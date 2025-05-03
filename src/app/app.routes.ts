@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
-import { SecurityWardGuard } from './guards/security-ward.guard';
-import { LoginGuard } from './guards/login.guard';
+import { LoginGuard } from '../guards/login.guard';
+import { SecurityWardGuard } from '../guards/security-ward.guard';
 
 export const routes: Routes = [
   {
@@ -144,16 +144,16 @@ export const routes: Routes = [
       {
         path: 'settings',
         loadComponent: () =>
-          import('./views/settings/settings.component').then(m => m.SettingsComponent),
+          import('./views/settings-view/settings.component').then(m => m.SettingsComponent),
         data: { title: 'Configuración' }
       },
       {
         path: 'reservas',
         loadComponent: () =>
-          import('./pages/reservas/reservas.component').then(m => m.ReservasComponent),
+          import('./components/reservas/reservas.component').then(m => m.ReservasComponent),
         canActivate: [SecurityWardGuard],
         data: { 
-          allowedRoles: ['CLIENTE', 'PROVEEDOR'],
+          allowedRoles: ['CLIENTE'],
           title: 'Mis Reservas y Alquileres' 
         }
       }

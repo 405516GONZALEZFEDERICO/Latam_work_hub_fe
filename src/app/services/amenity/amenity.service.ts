@@ -32,12 +32,8 @@ export class AmenityService {
    */
   getPredefinedAmenities(): Observable<Amenity[]> {
     // Intentar obtener amenidades del API y usar las predefinidas como fallback
-    console.log('Obteniendo amenidades predefinidas de:', `${this.apiUrl}/all`);
-    return this.http.get<Amenity[]>(`${this.apiUrl}/all`).pipe(
-      tap(amenities => console.log('Amenidades obtenidas del API:', amenities)),
+      return this.http.get<Amenity[]>(`${this.apiUrl}/all`).pipe(
       catchError(error => {
-        console.error('Error obteniendo amenidades del API:', error);
-        console.log('Utilizando lista predefinida como fallback');
         return of(this.predefinedAmenities);
       })
     );
@@ -47,9 +43,8 @@ export class AmenityService {
    * Get amenities from the API
    */
   getAmenities(): Observable<AmenityDto[]> {
-    console.log('Obteniendo amenidades de:', `${this.apiUrl}/all`);
     return this.http.get<AmenityDto[]>(`${this.apiUrl}/all`).pipe(
-      tap(amenities => console.log('Amenidades obtenidas:', amenities))
+      tap(amenities => console.log('Amenidades obtenidas:', amenities)) 
     );
   }
 

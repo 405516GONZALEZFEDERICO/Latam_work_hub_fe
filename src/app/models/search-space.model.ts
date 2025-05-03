@@ -16,6 +16,8 @@ export interface SearchSpace {
   pricePerDay?: number;
   pricePerMonth?: number;
   description?: string;
+  active?: boolean;
+  available?: boolean;
 }
 
 export interface FilterState {

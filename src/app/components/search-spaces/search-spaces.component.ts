@@ -61,7 +61,9 @@ export class SearchSpacesComponent implements OnInit {
   }
   
   handleFiltersChanged(filters: FilterState): void {
-    console.log('Filtros recibidos en el componente principal:', filters);
+    console.log('SearchSpacesComponent recibió filtros:', JSON.stringify(filters));
+    console.log('Tipo de espacio recibido:', filters.spaceTypeId, 'tipo:', typeof filters.spaceTypeId);
+    
     // Al cambiar filtros, volvemos a la primera página
     this.loadSpaces(filters, 0, this.pageSize);
   }

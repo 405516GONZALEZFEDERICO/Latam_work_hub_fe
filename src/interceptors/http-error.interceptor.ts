@@ -10,7 +10,7 @@ import { inject } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { Observable, throwError, of } from 'rxjs';
-import { AuthService } from '../services/auth-service/auth.service';
+import { AuthService } from '../app/services/auth-service/auth.service';
 
 // Variable para llevar el registro de los reintentos de autenticación
 let authRetryAttempts = 0;
@@ -71,7 +71,6 @@ export const httpErrorInterceptor: HttpInterceptorFn = (
               return throwError(() => error);
             } else if (authRetryAttempts < MAX_AUTH_RETRIES) {
               authRetryAttempts++;
-              console.log(`Intento ${authRetryAttempts} de recuperar autenticación`);
               showGenericSnackbar = false; // Suprimir snackbar durante el reintento
               // Intentar refrescar el token
               return authService.refreshToken().pipe(

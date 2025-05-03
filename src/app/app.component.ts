@@ -1,8 +1,7 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
-import { Subject } from 'rxjs';
-import { throttleTime, takeUntil } from 'rxjs/operators';
+
 
 @Component({
   selector: 'app-root',

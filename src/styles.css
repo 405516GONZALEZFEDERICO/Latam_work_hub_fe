@@ -18,6 +18,7 @@ html, body {
   height: 100%;
   width: 100%;
   overflow-x: hidden;
+  
 }
 
 /* Estilos específicos para los componentes de Material */
@@ -42,6 +43,7 @@ html, body {
 button.submit-button,
 button.continue-button {
   border-radius: 4px !important;
+  
 }
 
 /* Apply border radius to button ripples and focus indicators */

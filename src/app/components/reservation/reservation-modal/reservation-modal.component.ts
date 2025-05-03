@@ -9,13 +9,11 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatNativeDateModule } from '@angular/material/core';
+import { MatNativeDateModule, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Router } from '@angular/router';
-
-import { SpaceWithType } from '../../../components/spaces/space-details/space-details.component';
 import { BookingService, BookingDto } from '../../../services/booking/booking.service';
 
 // Interfaces
@@ -67,6 +65,9 @@ export enum ReservationPeriod {
     MatButtonToggleModule,
     MatProgressSpinnerModule
   ],
+  providers: [
+    { provide: MAT_DATE_LOCALE, useValue: 'es-ES' }
+  ],
   templateUrl: './reservation-modal.component.html',
   styleUrls: ['./reservation-modal.component.css']
 })
@@ -97,7 +98,6 @@ export class ReservationModalComponent implements OnInit {
     private router: Router
   ) {
     this.space = data.space;
-    console.log('Space data received:', this.space);
     
     // Normalizar la estructura de amenities si es necesario
     if (this.space.amenities) {
@@ -105,15 +105,14 @@ export class ReservationModalComponent implements OnInit {
       
       // Seleccionar automáticamente todas las amenities disponibles
       this.selectedAmenities = this.space.amenities.map((amenity: any) => amenity.name);
-      console.log('Amenities seleccionadas automáticamente:', this.selectedAmenities);
     }
     
     this.initAmenityPrices();
     
     // Initialize form
     this.reservationForm = this.fb.group({
-      reservationType: [ReservationPeriod.HOUR, Validators.required],
       startDate: [new Date(), Validators.required],
+      reservationType: [ReservationPeriod.HOUR, Validators.required],
       startTime: ['09:00', Validators.required],
       endTime: ['18:00', Validators.required],
       numberOfPeople: [1, [Validators.required, Validators.min(1), Validators.max(this.space.capacity || 10)]],
@@ -132,9 +131,8 @@ export class ReservationModalComponent implements OnInit {
     // Debug info at startup
     this.debugAmenityInfo();
     
-    // Asegurar que las amenities estén seleccionadas
+    // Asegurar que las amenities estén seleccionadas 
     if (this.selectedAmenities.length > 0) {
-      console.log('Verificando amenities seleccionadas en ngOnInit:', this.selectedAmenities);
       setTimeout(() => {
         this.calculatePrice();
       }, 100);
@@ -144,17 +142,11 @@ export class ReservationModalComponent implements OnInit {
   // Debug amenity information
   debugAmenityInfo(): void {
     console.group('Debug Amenity Info');
-    console.log('Space amenities:', this.space.amenities);
-    console.log('Amenity prices object:', this.amenityPrices);
     
     if (this.space.amenities && this.space.amenities.length > 0) {
-      console.log('Amenities detail:');
       this.space.amenities.forEach((amenity: any) => {
-        console.log(`Name: ${amenity.name}, Original price: ${amenity.price}, Type: ${typeof amenity.price}, Stored price: ${this.amenityPrices[amenity.name]}`);
       });
-    } else {
-      console.log('No amenities available');
-    }
+    } 
     console.groupEnd();
   }
 
@@ -195,15 +187,11 @@ export class ReservationModalComponent implements OnInit {
 
   initAmenityPrices(): void {
     // Initialize amenity prices with default values if needed
-    console.log('INICIALIZACIÓN DE PRECIOS DE AMENITIES');
-    console.log('Espacio completo:', this.space);
-    
+      
     if (this.space.amenities && this.space.amenities.length > 0) {
-      console.log('Amenities encontradas:', this.space.amenities.length);
       
       this.space.amenities.forEach((amenity: any) => {
         // Log info de la amenity antes de cualquier procesamiento
-        console.log('Amenity original:', amenity);
         
         // Convert price to number if it's a string
         let price = amenity.price;
@@ -220,13 +208,8 @@ export class ReservationModalComponent implements OnInit {
         }
         
         this.amenityPrices[amenity.name] = price;
-        console.log(`Amenity ${amenity.name} price set to: ${this.amenityPrices[amenity.name]} (original: ${amenity.price})`);
       });
       
-      // Mostrar objeto de precios completo
-      console.log('Objeto de precios inicializado:', this.amenityPrices);
-    } else {
-      console.log('No se encontraron amenities para inicializar');
     }
   }
 
@@ -239,19 +222,14 @@ export class ReservationModalComponent implements OnInit {
   }
 
   toggleAmenity(amenityName: string): void {
-    console.log(`Toggle amenity: ${amenityName}`);
-    console.log(`Precio de esta amenity: ${this.amenityPrices[amenityName]}`);
     
     const index = this.selectedAmenities.indexOf(amenityName);
     if (index > -1) {
-      console.log(`Quitando amenity: ${amenityName}`);
       this.selectedAmenities.splice(index, 1);
     } else {
-      console.log(`Agregando amenity: ${amenityName}`);
       this.selectedAmenities.push(amenityName);
     }
     
-    console.log('Amenities seleccionadas después del toggle:', this.selectedAmenities);
     
     // Forzar recálculo del precio total
     setTimeout(() => {
@@ -262,9 +240,6 @@ export class ReservationModalComponent implements OnInit {
   isAmenitySelected(amenityName: string): boolean {
     const isSelected = this.selectedAmenities.includes(amenityName);
     // Debug solo la primera vez para no saturar la consola
-    if (!this._debuggedAmenitySelections) {
-      console.log(`Checking amenity selection: ${amenityName} - Selected: ${isSelected}`);
-    }
     return isSelected;
   }
 
@@ -299,22 +274,15 @@ export class ReservationModalComponent implements OnInit {
     const basePrice = this.getBasePrice();
     const amenitiesPrice = this.getAmenitiesPrice();
     
-    console.log('CÁLCULO DETALLADO:');
-    console.log('Base price:', basePrice, 'tipo:', typeof basePrice);
-    console.log('Amenities price:', amenitiesPrice, 'tipo:', typeof amenitiesPrice);
-    console.log('Selected amenities:', this.selectedAmenities);
-    
     // Forzar conversión a números antes de sumar
     const basePriceNum = Number(basePrice);
     const amenitiesPriceNum = Number(amenitiesPrice);
     
     this.totalPrice = basePriceNum + amenitiesPriceNum;
     
-    console.log(`Cálculo: ${basePriceNum} + ${amenitiesPriceNum} = ${this.totalPrice}`);
     
     // Forzar cambio de detección
     setTimeout(() => {
-      console.log('Precio final actualizado:', this.totalPrice);
     }, 0);
   }
 
@@ -352,17 +320,14 @@ export class ReservationModalComponent implements OnInit {
         }
         
         const hourlyPrice = this.getHourlyPrice();
-        console.log(`Cálculo por hora: ${hours} horas x $${hourlyPrice} = $${hours * hourlyPrice}`);
         return hours * hourlyPrice;
         
       case ReservationPeriod.DAY:
         const dailyPrice = this.getDailyPrice();
-        console.log(`Precio por día: $${dailyPrice}`);
         return dailyPrice;
         
       case ReservationPeriod.MONTH:
         const monthlyPrice = this.getMonthlyPrice();
-        console.log(`Precio por mes: $${monthlyPrice}`);
         return monthlyPrice;
         
       default:
@@ -373,11 +338,9 @@ export class ReservationModalComponent implements OnInit {
   // Calcular el precio de los servicios adicionales seleccionados
   getAmenitiesPrice(): number {
     if (!this.selectedAmenities || !this.selectedAmenities.length) {
-      console.log('No hay amenities seleccionadas');
       return 0;
     }
     
-    console.log('Calculando precio de amenities para:', this.selectedAmenities);
     let total = 0;
     
     for (const amenityName of this.selectedAmenities) {
@@ -393,11 +356,9 @@ export class ReservationModalComponent implements OnInit {
         price = 0;
       }
       
-      console.log(`Sumando amenity: ${amenityName}, Precio: ${price}`);
       total += price;
     }
     
-    console.log(`Precio total calculado de amenities: $${total}`);
     return total;
   }
 
@@ -431,27 +392,68 @@ export class ReservationModalComponent implements OnInit {
 
     const formValues = this.reservationForm.value;
     const startDate = formValues.startDate;
+    const reservationType = formValues.reservationType;
     
-    // Format date and times for backend
+    // Format date and times based on reservation type
     const formattedDate = this.formatDate(startDate);
-    const startDateTime = `${formattedDate}T${this.formatTimeForBackend(formValues.startTime)}`;
-    const endDateTime = `${formattedDate}T${this.formatTimeForBackend(formValues.endTime)}`;
+    let startDateTime = '';
+    let endDateTime: string | undefined = undefined;
+    let initHour: string | undefined = undefined;
+    let endHour: string | undefined = undefined;
+    
+    // Handle different reservation types according to backend expectations
+    switch (reservationType) {
+      case ReservationPeriod.HOUR:
+        // For hourly reservations, include both date, times and hour fields
+        startDateTime = `${formattedDate}T${this.formatTimeForBackend(formValues.startTime)}`;
+        endDateTime = `${formattedDate}T${this.formatTimeForBackend(formValues.endTime)}`;
+        initHour = this.formatTimeForBackend(formValues.startTime);
+        endHour = this.formatTimeForBackend(formValues.endTime);
+        break;
+        
+      case ReservationPeriod.DAY:
+        // For daily reservations, include ONLY startDate (no endDate as per backend logic)
+        startDateTime = `${formattedDate}T00:00:00`;
+        // Do not set endDateTime for PER_DAY reservations
+        break;
+        
+      case ReservationPeriod.MONTH:
+        // For monthly reservations, include both start and end dates
+        const endDate = new Date(startDate);
+        endDate.setMonth(endDate.getMonth() + 1);
+        endDate.setDate(endDate.getDate() - 1); // Last day of the month period
+        
+        startDateTime = `${formattedDate}T00:00:00`;
+        endDateTime = `${this.formatDate(endDate)}T23:59:59`;
+        break;
+    }
+    
+    console.log(`Reservation Type: ${reservationType}`);
+    console.log(`Start Date Time: ${startDateTime}`);
+    console.log(`End Date Time: ${endDateTime || 'Not set (PER_DAY reservation)'}`);
     
     // Generate a unique ID for this booking
     const uid = this.generateUid();
-    console.log('Using user UID for booking:', uid);
     
-    // Create booking DTO according to backend requirements
+    // Create booking DTO according to backend requirements and reservation type
     const bookingDto: BookingDto = {
       uid: uid,
       spaceId: Number(this.data.spaceId),
       startDate: startDateTime,
-      endDate: endDateTime,
-      initHour: this.formatTimeForBackend(formValues.startTime),
-      endHour: this.formatTimeForBackend(formValues.endTime),
       counterPersons: formValues.numberOfPeople,
       totalAmount: this.totalPrice
     };
+    
+    // Only include endDate for HOUR and MONTH reservation types
+    if (endDateTime) {
+      bookingDto.endDate = endDateTime;
+    }
+    
+    // Only include initHour and endHour for hourly reservations
+    if (reservationType === ReservationPeriod.HOUR) {
+      bookingDto.initHour = initHour;
+      bookingDto.endHour = endHour;
+    }
 
     console.log('Sending booking data to backend:', bookingDto);
 
@@ -464,8 +466,7 @@ export class ReservationModalComponent implements OnInit {
     this.bookingService.createBooking(bookingDto).subscribe({
       next: (response) => {
         this.isLoading = false;
-        console.log('Backend response received (type):', typeof response);
-        console.log('Backend response content:', response);
+       
         
         // Try to find a Mercado Pago URL in the response
         const mpUrlRegex = /(https?:\/\/[^\s"]+mercadopago[^\s"]+)/;
@@ -473,7 +474,6 @@ export class ReservationModalComponent implements OnInit {
         
         if (urlMatch && urlMatch[0]) {
           const mpUrl = urlMatch[0];
-          console.log('Extracted Mercado Pago URL from response:', mpUrl);
           
           // Show a success message
           this.snackBar.open('Reserva procesada. Redirigiendo a Mercado Pago...', 'Abrir', {
@@ -496,7 +496,6 @@ export class ReservationModalComponent implements OnInit {
           // Check if the response itself is a URL
           if (typeof response === 'string' && response.trim().startsWith('http')) {
             const mpUrl = response.trim();
-            console.log('Response itself is a URL:', mpUrl);
             
             this.snackBar.open('Reserva procesada. Redirigiendo a Mercado Pago...', 'Abrir', {
               duration: 10000,
@@ -543,7 +542,6 @@ export class ReservationModalComponent implements OnInit {
           errorResponse = error;
         }
         
-        console.log('Error response content:', errorResponse);
         
         // Check if error response contains a URL to Mercado Pago
         const mpUrlRegex = /(https?:\/\/[^\s"]+mercadopago[^\s"]+)/;
@@ -551,7 +549,6 @@ export class ReservationModalComponent implements OnInit {
         
         if (urlMatch && urlMatch[0]) {
           const mpUrl = urlMatch[0];
-          console.log('Found Mercado Pago URL in error response:', mpUrl);
           
           this.snackBar.open('Reserva procesada. Haga clic para ir a Mercado Pago', 'Ir a Pagar', {
             duration: 15000,
@@ -581,7 +578,6 @@ export class ReservationModalComponent implements OnInit {
   
   // Helper method to open Mercado Pago URL in multiple ways
   private openMercadoPagoUrl(url: string): void {
-    console.log('Abriendo URL de Mercado Pago:', url);
     
     // Verificar que la URL es válida
     if (!url || !url.startsWith('http')) {
@@ -653,11 +649,9 @@ export class ReservationModalComponent implements OnInit {
       if (userData) {
         const user = JSON.parse(userData);
         if (user && user.uid) {
-          console.log('Using auth user UID for booking:', user.uid);
           return user.uid;
         }
       }
-      console.warn('No user UID found in localStorage, using fallback');
       return 'bk-' + Date.now() + '-' + Math.random().toString(36).substring(2, 10);
     } catch (error) {
       console.error('Error retrieving UID from localStorage:', error);
@@ -718,6 +712,5 @@ export class ReservationModalComponent implements OnInit {
       return amenity;
     });
     
-    console.log('Amenities normalized:', this.space.amenities);
   }
 }

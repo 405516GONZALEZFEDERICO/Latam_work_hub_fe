@@ -3,8 +3,8 @@
   max-width: 860px;
   margin: 0 auto;
   padding: 0;
-  background-color: transparent;
-  min-height: calc(100vh - 64px);
+  min-height: 100vh; /* Mantener altura completa para el contenedor principal */
+  overflow-y: auto; /* Permitir scroll solo en el contenedor externo */
 }
 
 .profile-wrapper {
@@ -12,6 +12,7 @@
   max-width: 100%;
   margin: 0;
   padding: 0;
+  min-height: auto; /* Cambiar de min-content a auto */
 }
 
 .profile-card {
@@ -26,6 +27,9 @@
 .tab-content {
   padding: 0;
   background-color: white;
+  overflow: visible;
+  height: auto;
+  min-height: 400px; /* Altura mínima para asegurar que se vea el formulario */
 }
 
 /* Estilos de la sección de dirección */
@@ -146,9 +150,12 @@
     margin-top: 10px;
   }
   
-  ::ng-deep .mat-tab-label {
-    padding: 0 12px !important;
-    min-width: 100px !important;
+  ::ng-deep .mat-tab-body-content {
+    overflow: visible !important;
+    height: auto !important;
+  }
+  ::ng-deep .mat-tab-body-wrapper {
+    height: auto !important;
   }
 }
 

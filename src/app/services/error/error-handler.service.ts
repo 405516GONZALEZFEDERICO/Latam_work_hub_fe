@@ -24,7 +24,6 @@ export class ErrorHandlerService {
 
   handleOptimisticLockingRetry(error: HttpErrorResponse, retryCount: number): Observable<number> {
     if (this.isOptimisticLockingError(error)) {
-      console.log(`Reintentando operación tras error de concurrencia (intento ${retryCount})`);
       // Esperar un tiempo incremental antes de reintentar (300ms, 600ms, 900ms)
       return timer(300 * retryCount);
     }

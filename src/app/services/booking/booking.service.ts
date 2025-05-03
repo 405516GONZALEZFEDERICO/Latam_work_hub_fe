@@ -7,7 +7,7 @@ export interface BookingDto {
   uid: string;
   spaceId: number;
   startDate: string;
-  endDate: string;
+  endDate?: string;
   initHour?: string;
   endHour?: string;
   counterPersons: number;
@@ -22,11 +22,9 @@ export class BookingService {
   private apiUrl = environment.apiUrl ? `${environment.apiUrl}/booking` : 'http://localhost:8080/api/booking';
 
   constructor(private http: HttpClient) {
-    console.log('BookingService initialized with URL:', this.apiUrl);
   }
 
   createBooking(bookingDto: BookingDto): Observable<any> {
-    console.log('Creating booking with payload:', bookingDto);
     
     // Use responseType: 'text' to get the raw response
     return this.http.post(
