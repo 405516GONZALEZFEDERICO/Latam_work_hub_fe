@@ -328,6 +328,8 @@ export class AuthService {
 
   async loginWithGoogle(isRegistration: boolean = false): Promise<void> {
     try {
+      // Add at the start of both login methods
+      await this.clearAllStorages();
       // Obtenemos las credenciales con Firebase (OAuth)
       const provider = new GoogleAuthProvider();
       
@@ -555,6 +557,8 @@ export class AuthService {
 
   loginWithEmail(email: string, password: string): Observable<any> {
     // Siempre usar persistencia local
+    // Add at the start of both login methods
+    this.clearAllStorages();
     const persistenceType = browserLocalPersistence;
     
     return from(setPersistence(this.auth, persistenceType)).pipe(
@@ -629,50 +633,107 @@ export class AuthService {
     );
   }
 
-  async logout(): Promise<void> {
-    try {
+  // async logout(): Promise<void> {
+  //   try {
       
-      // 1. Obtener token antes de limpiar datos (si existe)
-      const token = this.currentUserData?.idToken || await this.getIdToken();
+  //     // 1. Obtener token antes de limpiar datos (si existe)
+  //     const token = this.currentUserData?.idToken || await this.getIdToken();
       
-      // 2. Limpiar datos locales
-      this.currentUserData = null;
-      this.userSubject.next(null);
-      this.authStateSubject.next(false);
+  //     // 2. Limpiar datos locales
+  //     this.currentUserData = null;
+  //     this.userSubject.next(null);
+  //     this.authStateSubject.next(false);
       
-      // 3. Limpiar completamente localStorage
-      localStorage.removeItem('currentUserData');
-      localStorage.removeItem('userDataTimestamp');
+  //     // 3. Limpiar completamente localStorage
+  //     localStorage.removeItem('currentUserData');
+  //     localStorage.removeItem('userDataTimestamp');
       
-      // 4. Limpiar cualquier otro item de localStorage relacionado con Firebase
-      // Esto es importante para evitar que queden rastros de la sesión anterior
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && (key.includes('firebase') || key.includes('firebaseui') || key.includes('auth'))) {
-          localStorage.removeItem(key);
-          // Ajustar el índice después de eliminar
-          i--;
-        }
-      }
+  //     // 4. Limpiar cualquier otro item de localStorage relacionado con Firebase
+  //     // Esto es importante para evitar que queden rastros de la sesión anterior
+  //     for (let i = 0; i < localStorage.length; i++) {
+  //       const key = localStorage.key(i);
+  //       if (key && (key.includes('firebase') || key.includes('firebaseui') || key.includes('auth'))) {
+  //         localStorage.removeItem(key);
+  //         // Ajustar el índice después de eliminar
+  //         i--;
+  //       }
+  //     }
       
-      // 5. Cerrar sesión en Firebase
-      await signOut(this.auth);
+  //     // 5. Cerrar sesión en Firebase
+  //     await signOut(this.auth);
       
-      // 7. Navegar a la página de login para asegurar reinicio completo
-      this.router.navigate(['/login']);
+  //     // 7. Navegar a la página de login para asegurar reinicio completo
+  //     this.router.navigate(['/login']);
       
-      return Promise.resolve();
-    } catch (error) {
-      // Incluso si hay error, intentar limpiar localStorage y navegar a login
-      localStorage.removeItem('currentUserData');
-      localStorage.removeItem('userDataTimestamp');
-      this.router.navigate(['/login']);
+  //     return Promise.resolve();
+  //   } catch (error) {
+  //     // Incluso si hay error, intentar limpiar localStorage y navegar a login
+  //     localStorage.removeItem('currentUserData');
+  //     localStorage.removeItem('userDataTimestamp');
+  //     this.router.navigate(['/login']);
       
-      return Promise.reject(error);
-    }
-  }
+  //     return Promise.reject(error);
+  //   }
+  // }
 
 // filepath: c:\Users\Federico gonzalez\Desktop\Latam_work_hub_fe\src\app\services\auth-service\auth.service.ts
+
+async logout(): Promise<void> {
+  try {
+    // Clear all Firebase auth state
+    await signOut(this.auth);
+    
+    // Clear all local state
+    this.currentUserData = null;
+    this.userSubject.next(null);
+    this.authStateSubject.next(false);
+    
+    // Clear localStorage comprehensively
+    localStorage.clear(); // Clear everything to be thorough
+    sessionStorage.clear(); // Clear session storage too
+    
+    // Clear any Firebase specific items that might persist
+    indexedDB.deleteDatabase('firebaseLocalStorageDb');
+    
+    // Force clear Firebase auth persistence
+    try {
+      await setPersistence(this.auth, browserSessionPersistence);
+    } catch (e) {
+      console.warn('Error clearing Firebase persistence:', e);
+    }
+
+    // Navigate to login and force page refresh
+    window.location.href = '/login';
+    
+    return Promise.resolve();
+  } catch (error) {
+    console.error('Logout error:', error);
+    // Even if there's an error, try to clean up
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = '/login';
+    return Promise.reject(error);
+  }
+}
+private async clearAllStorages(): Promise<void> {
+  // Clear standard storage
+  localStorage.clear();
+  sessionStorage.clear();
+  
+  // Clear IndexedDB
+  const databases = await window.indexedDB.databases();
+  databases.forEach(db => {
+    if (db.name) {
+      window.indexedDB.deleteDatabase(db.name);
+    }
+  });
+  
+  // Clear cookies
+  document.cookie.split(";").forEach(c => {
+    document.cookie = c.replace(/^ +/, "")
+      .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+  });
+}
 updateCurrentUser(user: User): void {
   this.currentUserData = user; // Actualiza el usuario localmente
   this.userSubject.next(user); // Notifica a los observadores
