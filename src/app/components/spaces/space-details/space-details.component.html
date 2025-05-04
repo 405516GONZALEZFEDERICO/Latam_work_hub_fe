@@ -166,6 +166,9 @@
           <button *ngIf="userRole === 'CLIENTE'" mat-raised-button color="primary" class="reserve-button" (click)="reserveSpace()">
             <mat-icon>calendar_today</mat-icon> Reservar este espacio
           </button>
+          <button *ngIf="userRole === 'CLIENTE'" mat-raised-button color="accent" class="reserve-button" (click)="rentSpace()" style="margin-left: 10px;">
+            <mat-icon>shopping_cart</mat-icon> Alquilar este espacio
+          </button>
         </mat-card-actions>
       </mat-card>
       

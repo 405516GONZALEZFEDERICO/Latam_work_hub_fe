@@ -18,6 +18,7 @@ import { SpaceService } from '../../../services/space/space.service';
 import { Amenity } from '../../../models/amenity.model';
 import { ReservationModalComponent } from '../../reservation/reservation-modal/reservation-modal.component';
 import { AuthService } from '../../../services/auth-service/auth.service';
+import { RentalModalComponent } from '../../rental-modal/rental-modal.component';
 
 // Tipo para Address con las propiedades que realmente usamos
 interface AddressWithCityCountry {
@@ -421,6 +422,30 @@ export class SpaceDetailsComponent implements OnInit {
             panelClass: 'success-snackbar'
           });
         }
+      });
+    } else {
+      this.snackBar.open('No se pudo cargar la información del espacio', 'Cerrar', {
+        duration: 3000,
+        panelClass: 'error-snackbar'
+      });
+    }
+  }
+
+  rentSpace(): void {
+    if (this.space) {
+      const dialogRef = this.dialog.open(RentalModalComponent, {
+        width: '600px',
+        maxWidth: '98vw',
+        maxHeight: '98vh',
+        panelClass: 'rental-dialog-container',
+        data: {
+          spaceId: this.space.id,
+          monthlyAmount: this.space.priceMonth || this.space.pricePerMonth || 0,
+          amenities: this.space.amenities || []
+        }
+      });
+      dialogRef.afterClosed().subscribe(result => {
+        // Aquí puedes manejar el resultado si es necesario
       });
     } else {
       this.snackBar.open('No se pudo cargar la información del espacio', 'Cerrar', {

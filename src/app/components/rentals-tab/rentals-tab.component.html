@@ -1,0 +1,101 @@
+<div class="rentals-container">
+  <div class="rentals-header">
+    <h2>Mis Alquileres</h2>
+  </div>
+
+  <div class="rentals-content">
+    <div class="rentals-list" *ngIf="!loading">
+      <mat-card *ngFor="let rental of rentals" 
+                [class.selected]="selectedRental?.id === rental.id"
+                (click)="selectRental(rental)"
+                class="rental-card">
+        <mat-card-content>
+          <div class="rental-header">
+            <h3>Alquiler #{{rental.id}}</h3>
+            <mat-chip [style.background-color]="getStatusColor(rental.status)">
+              {{rental.status}}
+            </mat-chip>
+          </div>
+          
+          <div class="rental-details">
+            <div class="detail-item">
+              <span class="label">Fecha de Inicio:</span>
+              <span>{{rental.startDate | date:'dd/MM/yyyy'}}</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Fecha de Fin:</span>
+              <span>{{rental.endDate | date:'dd/MM/yyyy'}}</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Monto Mensual:</span>
+              <span>${{rental.monthlyAmount}}</span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <div class="no-rentals" *ngIf="rentals.length === 0">
+        <mat-icon>home</mat-icon>
+        <p>No tienes alquileres activos</p>
+      </div>
+    </div>
+
+    <div class="rental-details-panel" *ngIf="selectedRental">
+      <div class="panel-header">
+        <h3>Detalles del Alquiler</h3>
+        <button mat-icon-button (click)="selectedRental = null">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="panel-content">
+        <div class="invoices-section">
+          <h4>Facturas</h4>
+          <mat-card *ngFor="let invoice of invoices" class="invoice-card">
+            <mat-card-content>
+              <div class="invoice-header">
+                <span class="invoice-number">#{{invoice.invoiceNumber}}</span>
+                <mat-chip [style.background-color]="getStatusColor(invoice.status)">
+                  {{invoice.status}}
+                </mat-chip>
+              </div>
+              
+              <div class="invoice-details">
+                <div class="detail-item">
+                  <span class="label">Fecha de Emisión:</span>
+                  <span>{{invoice.issueDate | date:'dd/MM/yyyy'}}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="label">Fecha de Vencimiento:</span>
+                  <span>{{invoice.dueDate | date:'dd/MM/yyyy'}}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="label">Monto:</span>
+                  <span>${{invoice.totalAmount}}</span>
+                </div>
+              </div>
+
+              <button mat-raised-button color="primary" 
+                      *ngIf="invoice.status === 'PENDING' && invoice.paymentUrl"
+                      (click)="payInvoice(invoice)">
+                Pagar Factura
+              </button>
+            </mat-card-content>
+          </mat-card>
+        </div>
+
+        <div class="actions-section">
+          <button mat-raised-button color="warn" 
+                  *ngIf="selectedRental.status === 'ACTIVE'"
+                  (click)="cancelRental(selectedRental)">
+            Cancelar Alquiler
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="loading-spinner" *ngIf="loading">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+  </div>
+</div> 

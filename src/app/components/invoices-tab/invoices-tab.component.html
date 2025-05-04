@@ -1,0 +1,87 @@
+<div class="invoices-container">
+  <div class="invoices-header">
+    <h2>Mis Facturas</h2>
+    
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>Filtrar por Estado</mat-label>
+      <mat-select [(value)]="filterStatus">
+        <mat-option value="ALL">Todos</mat-option>
+        <mat-option value="PENDING">Pendientes</mat-option>
+        <mat-option value="PAID">Pagadas</mat-option>
+        <mat-option value="OVERDUE">Vencidas</mat-option>
+        <mat-option value="CANCELLED">Canceladas</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <div class="invoices-content">
+    <div class="invoices-summary" *ngIf="!loading">
+      <div class="summary-card">
+        <div class="summary-item">
+          <span class="label">Total Facturas:</span>
+          <span class="value">{{getFilteredInvoices().length}}</span>
+        </div>
+        <div class="summary-item">
+          <span class="label">Monto Total:</span>
+          <span class="value">${{getTotalAmount() | number:'1.2-2'}}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="invoices-list" *ngIf="!loading">
+      <mat-card *ngFor="let invoice of getFilteredInvoices()" class="invoice-card">
+        <mat-card-content>
+          <div class="invoice-header">
+            <div class="invoice-info">
+              <span class="invoice-number">#{{invoice.invoiceNumber}}</span>
+              <span class="invoice-type">{{invoice.type}}</span>
+            </div>
+            <mat-chip [style.background-color]="getStatusColor(invoice.status)">
+              {{invoice.status}}
+            </mat-chip>
+          </div>
+
+          <div class="invoice-details">
+            <div class="detail-row">
+              <div class="detail-item">
+                <span class="label">Fecha de Emisión:</span>
+                <span>{{invoice.issueDate | date:'dd/MM/yyyy'}}</span>
+              </div>
+              <div class="detail-item">
+                <span class="label">Fecha de Vencimiento:</span>
+                <span>{{invoice.dueDate | date:'dd/MM/yyyy'}}</span>
+              </div>
+            </div>
+
+            <div class="detail-row">
+              <div class="detail-item">
+                <span class="label">Descripción:</span>
+                <span>{{invoice.description}}</span>
+              </div>
+              <div class="detail-item amount">
+                <span class="label">Monto:</span>
+                <span class="value">${{invoice.totalAmount | number:'1.2-2'}}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="invoice-actions" *ngIf="invoice.status === 'PENDING' && invoice.paymentUrl">
+            <button mat-raised-button color="primary" (click)="payInvoice(invoice)">
+              <mat-icon>payment</mat-icon>
+              Pagar Factura
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <div class="no-invoices" *ngIf="getFilteredInvoices().length === 0">
+        <mat-icon>receipt</mat-icon>
+        <p>No hay facturas disponibles</p>
+      </div>
+    </div>
+
+    <div class="loading-spinner" *ngIf="loading">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+  </div>
+</div> 

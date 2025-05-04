@@ -1,0 +1,194 @@
+.rental-modal {
+  border-radius: 8px;
+  width: 100%;
+  max-width: 1200px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background-color: var(--color-primary);
+  color: white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  width: 100%;
+  z-index: 10;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.modal-content {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+  max-height: calc(98vh - 60px);
+  display: flex;
+  flex-direction: column;
+}
+
+.content-layout {
+  display: flex;
+  flex: 1;
+  min-height: 500px;
+  width: 100%;
+}
+
+.main-column {
+  flex: 1;
+  padding: 24px;
+  min-width: 0;
+  overflow-y: auto;
+  border-right: 1px solid #eee;
+  position: relative;
+}
+
+.price-column {
+  width: 350px;
+  background-color: #f9f9f9;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  position: relative;
+}
+
+.price-summary {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  border: 1px solid #eee;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+}
+
+.price-summary h4 {
+  font-size: 1.2rem;
+  font-weight: 500;
+  margin: 0;
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+  color: var(--color-primary-dark);
+  text-align: center;
+}
+
+.price-details {
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.price-detail {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.price-detail.total {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #ddd;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.payment-options {
+  padding: 20px;
+  margin-top: 20px;
+  background-color: #fff;
+  border-top: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.payment-options h5 {
+  margin: 0 0 15px 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--color-primary-dark);
+  text-align: center;
+}
+
+.payment-options button {
+  width: 100%;
+  max-width: 400px;
+  height: 48px;
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: background-color 0.2s ease;
+}
+
+.payment-options button:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.secure-payment-note {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: var(--color-text-light);
+  margin-top: 10px;
+  text-align: center;
+}
+
+.secure-payment-note mat-icon {
+  font-size: 14px;
+  height: 14px;
+  width: 14px;
+  margin-right: 5px;
+  color: var(--color-success);
+}
+
+@media (max-width: 960px) {
+  .rental-modal {
+    width: 95vw;
+  }
+  .content-layout {
+    flex-direction: column;
+  }
+  .main-column,
+  .price-column {
+    width: 100%;
+  }
+  .price-column {
+    border-left: none;
+    border-top: 1px solid #eee;
+  }
+  .payment-options {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 600px) {
+  .modal-header {
+    padding: 12px 16px;
+  }
+  .main-column,
+  .price-column {
+    padding: 16px;
+  }
+  .payment-options {
+    padding: 10px;
+  }
+} 

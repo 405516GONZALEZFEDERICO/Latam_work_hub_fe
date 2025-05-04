@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router';
 import { LoginGuard } from '../guards/login.guard';
 import { SecurityWardGuard } from '../guards/security-ward.guard';
+import { RentalsTabComponent } from './components/rentals-tab/rentals-tab.component';
+import { InvoicesTabComponent } from './components/invoices-tab/invoices-tab.component';
 
 export const routes: Routes = [
   {
@@ -158,5 +160,15 @@ export const routes: Routes = [
         }
       }
     ]
+  },
+  {
+    path: 'rentals',
+    component: RentalsTabComponent,
+    data: { title: 'Mis Alquileres' }
+  },
+  {
+    path: 'invoices',
+    component: InvoicesTabComponent,
+    data: { title: 'Mis Facturas' }
   }
 ];

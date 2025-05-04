@@ -1,0 +1,96 @@
+<div class="rental-modal">
+  <div class="modal-header">
+    <h2>Alquilar Espacio</h2>
+    <button mat-icon-button (click)="onCancel()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="modal-content">
+    <div class="content-layout">
+      <div class="main-column">
+        <div class="space-info">
+          <h3>Espacio</h3>
+        </div>
+        <form [formGroup]="rentalForm" class="rental-form">
+          <div class="form-section">
+            <h4>Detalles del Alquiler</h4>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Fecha de Inicio</mat-label>
+              <input matInput [matDatepicker]="startPicker" formControlName="startDate" [min]="minDate" [max]="maxDate">
+              <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+              <mat-datepicker #startPicker></mat-datepicker>
+              <mat-error *ngIf="rentalForm.get('startDate')?.hasError('required')">
+                La fecha de inicio es requerida
+              </mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Duración (meses)</mat-label>
+              <input matInput type="number" formControlName="durationMonths" min="1" max="12">
+              <mat-error *ngIf="rentalForm.get('durationMonths')?.hasError('required')">
+                La duración es requerida
+              </mat-error>
+              <mat-error *ngIf="rentalForm.get('durationMonths')?.hasError('min') || rentalForm.get('durationMonths')?.hasError('max')">
+                La duración debe estar entre 1 y 12 meses
+              </mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Depósito</mat-label>
+              <input matInput type="number" formControlName="depositAmount" [value]="data.monthlyAmount">
+              <span matPrefix>$&nbsp;</span>
+              <mat-error *ngIf="rentalForm.get('depositAmount')?.hasError('required')">
+                El depósito es requerido
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <!-- Servicios adicionales -->
+          <div class="amenities-section" *ngIf="hasAmenities()">
+            <h4>Servicios extras</h4>
+            <p class="amenities-note">Selecciona los servicios adicionales que deseas incluir en tu alquiler.</p>
+            <div class="amenities-grid">
+              <div class="amenity-card"
+                   *ngFor="let amenity of getAmenities()"
+                   [class.selected]="isAmenitySelected(amenity.name)"
+                   (click)="toggleAmenity(amenity.name)">
+                <mat-icon class="amenity-icon">check_circle</mat-icon>
+                <div class="amenity-name">{{ amenity.name }}</div>
+                <div class="amenity-price">+${{ amenityPrices[amenity.name] | number:'1.0-0' }}</div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="price-column">
+        <div class="price-summary">
+          <h4>Resumen del Alquiler</h4>
+          <div class="price-details">
+            <div class="price-detail">
+              <span class="price-label">Monto Mensual:</span>
+              <span class="price-value">${{data.monthlyAmount}}</span>
+            </div>
+            <div class="price-detail">
+              <span class="price-label">Depósito:</span>
+              <span class="price-value">${{rentalForm.get('depositAmount')?.value}}</span>
+            </div>
+            <div class="price-detail total">
+              <span class="price-label">Total Inicial:</span>
+              <span class="price-value">${{ getTotalInicial() }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="payment-options">
+      <h5>Métodos de pago</h5>
+      <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="rentalForm.invalid || loading">
+        <mat-spinner diameter="20" *ngIf="loading"></mat-spinner>
+        <span *ngIf="!loading">Continuar al Pago</span>
+      </button>
+      <p class="secure-payment-note">
+        <mat-icon>lock</mat-icon>
+        Pago seguro procesado por Mercado Pago
+      </p>
+    </div>
+  </div>
+</div> 
