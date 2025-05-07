@@ -7,10 +7,17 @@ import { MatCardModule } from '@angular/material/card';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { SearchSpace, FilterState } from '../../../models/search-space.model';
 import { SearchSpaceService, PagedResponse } from '../../../services/search-space/search-space.service';
+import { SpaceService } from '../../../services/space/space.service';
 import { SpaceFilterComponent } from '../../search-spaces/space-filter/space-filter.component';
 import { AuthService } from '../../../services/auth-service/auth.service';
+import { ConfirmDialogComponent } from '../../confirm-dialog/confirm-dialog.component';
+import { catchError, tap, finalize } from 'rxjs/operators';
+import { EMPTY } from 'rxjs';
 
 @Component({
   selector: 'app-spaces-list',
@@ -24,7 +31,9 @@ import { AuthService } from '../../../services/auth-service/auth.service';
     MatBadgeModule,
     MatPaginatorModule,
     MatProgressSpinnerModule,
-    SpaceFilterComponent
+    MatTooltipModule,
+    SpaceFilterComponent,
+    ConfirmDialogComponent
   ],
   templateUrl: './spaces-list.component.html',
   styleUrls: ['./spaces-list.component.css']
@@ -32,6 +41,7 @@ import { AuthService } from '../../../services/auth-service/auth.service';
 export class SpacesListComponent implements OnInit {
   spaces: SearchSpace[] = [];
   isLoading = true;
+  isDeleting: { [key: string]: boolean } = {};
   currentUid: string = '';
   
   // Paginación
@@ -46,7 +56,10 @@ export class SpacesListComponent implements OnInit {
   constructor(
     private router: Router,
     private searchSpaceService: SearchSpaceService,
-    private authService: AuthService
+    private spaceService: SpaceService,
+    private authService: AuthService,
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
@@ -114,27 +127,6 @@ export class SpacesListComponent implements OnInit {
     });
   }
 
-  /**
-   * @deprecated Use loadProviderSpaces instead
-   */
-  loadSpaces(filters?: FilterState, page: number = 0, size: number = this.pageSize): void {
-    this.isLoading = true;
-    this.currentFilters = filters;
-    
-    this.searchSpaceService.getSpaces(filters, page, size).subscribe({
-      next: (response: PagedResponse<SearchSpace>) => {
-        this.spaces = response.content;
-        this.totalItems = response.totalElements;
-        this.currentPage = response.pageable.pageNumber;
-        this.pageSize = response.pageable.pageSize;
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Error loading spaces:', error);
-        this.isLoading = false;
-      }
-    });
-  }
 
   handleFiltersChanged(filters: FilterState): void {
     // Aplicar los filtros y volver a la primera página
@@ -156,5 +148,54 @@ export class SpacesListComponent implements OnInit {
 
   navigateToEdit(id: string): void {
     this.router.navigate([`/home/spaces/${id}/edit`]);
+  }
+
+  // Método para confirmar y eliminar un espacio
+  confirmDeleteSpace(spaceId: string): void {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '350px',
+      data: {
+        title: 'Confirmar Eliminación',
+        message: '¿Estás seguro de que quieres eliminar este espacio? Esta acción no se puede deshacer.',
+        confirmText: 'Eliminar',
+        cancelText: 'Cancelar'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === true) {
+        // Obtener UID del usuario (asegurarse de que exista)
+        const userUid = this.currentUid;
+        if (!userUid) {
+          this.snackBar.open('Error: No se pudo identificar al usuario.', 'Cerrar', { duration: 3000 });
+          return;
+        }
+        
+        this.isDeleting[spaceId] = true; // Mostrar indicador de carga específico
+        
+        this.spaceService.deleteSpace(spaceId, userUid).pipe(
+          tap(() => {
+            this.snackBar.open('Espacio eliminado correctamente.', 'Cerrar', { duration: 3000, panelClass: 'success-snackbar' });
+            // Eliminar el espacio de la lista local para actualizar la UI
+            this.spaces = this.spaces.filter(s => s.id !== spaceId);
+            // Si la página actual queda vacía y no es la primera, ir a la anterior
+            if (this.spaces.length === 0 && this.currentPage > 0) {
+              this.loadProviderSpaces(this.currentFilters, this.currentPage - 1, this.pageSize);
+            } else {
+              // Recargar la página actual para ajustar el total
+              this.loadProviderSpaces(this.currentFilters, this.currentPage, this.pageSize);
+            }
+          }),
+          catchError(error => {
+            console.error('Error al eliminar el espacio:', error);
+            this.snackBar.open('Error al eliminar el espacio. Inténtalo de nuevo.', 'Cerrar', { duration: 3000, panelClass: 'error-snackbar' });
+            return EMPTY; // Manejar el error y continuar
+          }),
+          finalize(() => {
+            this.isDeleting[spaceId] = false; // Ocultar indicador de carga
+          })
+        ).subscribe();
+      }
+    });
   }
 } 

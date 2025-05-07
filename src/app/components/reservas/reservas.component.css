@@ -15,6 +15,7 @@
 .badge {
   font-size: 12px;
   padding: 5px 8px;
+  border-radius: 4px;
 }
 
 .card-title {
@@ -28,17 +29,24 @@
 }
 
 /* Estados */
-.badge.bg-success {
-  background-color: #28a745 !important;
+.bg-success {
+  background-color: var(--color-success) !important;
+  color: white !important;
 }
 
-.badge.bg-warning {
-  background-color: #ffc107 !important;
+.bg-warning {
+  background-color: orange !important;
   color: #212529 !important;
 }
 
-.badge.bg-danger {
-  background-color: #dc3545 !important;
+.bg-danger {
+  background-color: var(--color-error) !important;
+  color: white !important;
+}
+
+.bg-secondary {
+  background-color: gray !important;
+  color: white !important;
 }
 
 /* Botones */
@@ -70,4 +78,81 @@
 .btn-outline-warning:hover {
   background-color: #ffc107;
   color: #212529;
+}
+
+/* Estilos para la sección de alquileres */
+.alquileres-list {
+  padding: 0;
+  margin: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.alquileres-list app-rentals-tab {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Estilos para contenedor principal */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.card-body {
+  padding: 0;
+}
+
+.card-header {
+  background-color: var(--color-primary);
+  color: white;
+  padding: var(--spacing-lg);
+}
+
+.card-header h3 {
+  margin: 0;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-lg);
+}
+
+/* Estilos para las pestañas */
+::ng-deep .mat-mdc-tab-group {
+  height: 100%;
+}
+
+::ng-deep .mat-mdc-tab-body-wrapper {
+  height: 100%;
+}
+
+/* Estilos para la sección de reservas */
+.reservas-list {
+  margin-top: 20px;
+  padding: var(--spacing-lg);
+}
+
+.reserva-card {
+  margin-bottom: 15px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.reserva-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.mat-card-actions {
+  padding: 8px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Mantener estilos para pantallas pequeñas */
+@media (max-width: 768px) {
+  .col-md-6 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
 }

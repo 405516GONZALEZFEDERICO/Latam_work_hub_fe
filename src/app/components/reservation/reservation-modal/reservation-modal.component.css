@@ -510,3 +510,13 @@ form {
 .mat-form-field-appearance-fill .mat-form-field-flex {
   background-color: white;
 }
+
+/* Estilos para mensajes de error */
+::ng-deep .error-snackbar {
+  background-color: #f44336 !important;
+  color: white !important;
+}
+
+::ng-deep .error-snackbar .mat-simple-snackbar-action {
+  color: white !important;
+}

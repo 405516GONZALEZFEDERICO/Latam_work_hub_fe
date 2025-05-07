@@ -76,12 +76,15 @@
           </div>
         </mat-card-content>
         <mat-card-actions>
-          <div class="d-flex justify-content-between">
-            <button mat-button color="primary" (click)="navigateToView(space.id)">
-              <mat-icon>visibility</mat-icon> Ver
+          <div class="d-flex justify-content-end">
+            <button mat-icon-button color="primary" (click)="navigateToView(space.id)" matTooltip="Ver detalles del espacio">
+              <mat-icon>visibility</mat-icon>
             </button>
-            <button mat-button color="accent" (click)="navigateToEdit(space.id)">
-              <mat-icon>edit</mat-icon> Editar
+            <button mat-icon-button color="accent" (click)="navigateToEdit(space.id)" matTooltip="Editar espacio">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="confirmDeleteSpace(space.id)" matTooltip="Eliminar espacio">
+              <mat-icon>delete</mat-icon>
             </button>
           </div>
         </mat-card-actions>

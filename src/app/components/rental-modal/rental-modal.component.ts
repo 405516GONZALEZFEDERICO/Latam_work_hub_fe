@@ -1,7 +1,7 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
-import { RentalService } from '../../services/rental.service';
+import { RentalService } from '../../services/rental/rental.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -58,6 +58,11 @@ export class RentalModalComponent implements OnInit {
     if ((this.data as any).amenities) {
       this.initAmenities((this.data as any).amenities);
     }
+    this.rentalForm.get('depositAmount')?.setValue(this.data.monthlyAmount);
+    this.rentalForm.get('depositAmount')?.disable();
+    this.rentalForm.valueChanges.subscribe(() => {
+      this.getTotalInicial();
+    });
   }
 
   initAmenities(amenities: any[]): void {
@@ -84,6 +89,7 @@ export class RentalModalComponent implements OnInit {
     } else {
       this.selectedAmenities.push(amenityName);
     }
+    this.getTotalInicial();
   }
 
   isAmenitySelected(amenityName: string): boolean {
@@ -95,7 +101,10 @@ export class RentalModalComponent implements OnInit {
   }
 
   getTotalInicial(): number {
-    return (this.rentalForm.get('depositAmount')?.value || 0) + (this.data.monthlyAmount || 0) + this.getAmenitiesPrice();
+    const deposito = this.data.monthlyAmount || 0;
+    const mensualidad = this.data.monthlyAmount || 0;
+    const amenities = this.getAmenitiesPrice();
+    return deposito + mensualidad + amenities;
   }
 
   onSubmit(): void {

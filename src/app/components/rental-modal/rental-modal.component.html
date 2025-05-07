@@ -5,6 +5,12 @@
       <mat-icon>close</mat-icon>
     </button>
   </div>
+  <div class="modal-leyenda">
+    <mat-icon color="warn">info</mat-icon>
+    <span class="leyenda-texto">
+      El alquiler mínimo para periodo de meses es 3. Puede cancelar el alquiler sin haber pagado el mismo aún. Existen políticas de cancelación que se le detallarán cuando desee cancelar el alquiler.
+    </span>
+  </div>
 
   <div class="modal-content">
     <div class="content-layout">
@@ -36,7 +42,7 @@
             </mat-form-field>
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Depósito</mat-label>
-              <input matInput type="number" formControlName="depositAmount" [value]="data.monthlyAmount">
+              <input matInput type="number" formControlName="depositAmount" [readonly]="true" [disabled]="true">
               <span matPrefix>$&nbsp;</span>
               <mat-error *ngIf="rentalForm.get('depositAmount')?.hasError('required')">
                 El depósito es requerido

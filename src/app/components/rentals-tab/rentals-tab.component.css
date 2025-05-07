@@ -1,0 +1,519 @@
+/* Estilos principales */
+.rentals-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--color-background);
+  color: var(--color-text-dark);
+  font-family: var(--font-family);
+}
+
+.rentals-header {
+  padding: var(--spacing-lg);
+  background-color: white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.rentals-header h2 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+}
+
+.rentals-content {
+  display: flex;
+  height: calc(100% - 60px);
+  padding: var(--spacing-lg);
+  gap: var(--spacing-xl);
+  overflow: hidden;
+}
+
+/* Lista de alquileres */
+.rentals-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  width: 300px;
+  min-width: 300px;
+  height: 100%;
+  overflow-y: auto;
+  padding-right: var(--spacing-sm);
+}
+
+.rental-card {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow-light);
+  background-color: white;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.rental-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--box-shadow-medium);
+}
+
+.rental-card.selected {
+  border: 2px solid var(--color-primary);
+  background-color: rgba(var(--color-primary-rgb, 33, 150, 243), 0.05);
+}
+
+.rental-card.cancelled {
+  opacity: 0.7;
+  position: relative;
+}
+
+.rental-card.cancelled::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-color: rgba(0, 0, 0, 0.05);
+  pointer-events: none;
+}
+
+.rental-card .rental-header {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.rental-card .rental-details {
+  padding: var(--spacing-md);
+}
+
+.rental-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.rental-header h3 {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+}
+
+.rental-details {
+  font-size: var(--font-size-sm);
+}
+
+.rental-details .detail-item {
+  margin-bottom: var(--spacing-xs);
+  display: flex;
+  justify-content: space-between;
+}
+
+.rental-details .detail-item .label {
+  color: var(--color-text-light);
+  margin-right: var(--spacing-md);
+}
+
+/* Mensaje de no rentals */
+.no-rentals {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xxl);
+  color: var(--color-text-light);
+  text-align: center;
+  flex-grow: 1;
+  margin-top: 2rem;
+}
+
+.no-rentals mat-icon {
+  font-size: 48px;
+  height: 48px;
+  width: 48px;
+  margin-bottom: var(--spacing-md);
+}
+
+/* Panel de detalles */
+.rental-details-panel {
+  flex: 1;
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.panel-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.panel-header h3 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.panel-header .back-button {
+  margin-right: 1rem; /* Espacio entre el botón volver y el título */
+}
+
+@media (min-width: 769px) { /* O el breakpoint que uses para móvil (ajustar si es necesario) */
+  .panel-header .back-button {
+    display: none; /* Ocultar botón Volver en escritorio */
+  }
+}
+
+/* Resumen del alquiler */
+.rental-summary {
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-md);
+  background-color: white;
+  box-shadow: var(--box-shadow-light);
+  margin-bottom: var(--spacing-md);
+}
+
+.rental-summary-section {
+  flex: 1;
+  padding: var(--spacing-md);
+}
+
+.rental-summary-section h4 {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-lg);
+  color: var(--color-primary);
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.detail-item {
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.detail-item .label {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-light);
+  min-width: 180px;
+  margin-right: var(--spacing-md);
+  padding-top: 4px;
+}
+
+/* Contenedor para la información de factura pendiente */
+.invoice-inline-info-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: calc(100% - 198px);
+}
+
+.invoice-text-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  background-color: rgba(0, 0, 0, 0.02);
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-small);
+  width: 100%;
+}
+
+.invoice-number {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+}
+
+.invoice-due {
+  color: var(--color-text-light);
+  font-size: var(--font-size-sm);
+}
+
+.pay-button {
+  margin-top: var(--spacing-sm);
+  align-self: flex-end;
+  background-color: var(--color-accent, #4caf50) !important;
+  color: white !important;
+  padding: 0 var(--spacing-sm) !important;
+  min-width: 90px !important;
+  height: 36px;
+  line-height: 36px;
+}
+
+/* Contenido de las tabs */
+.tab-content {
+  padding: var(--spacing-lg);
+  overflow-y: auto;
+  height: calc(100% - 120px);
+}
+
+.tab-content h4 {
+  margin-top: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+}
+
+/* Sección de facturas */
+.invoices-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+}
+
+.invoice-card {
+  border-radius: var(--border-radius-small);
+  box-shadow: var(--box-shadow-light);
+}
+
+.invoice-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.invoice-details {
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  color: var(--color-text-light);
+}
+
+.empty-state mat-icon {
+  font-size: 36px;
+  height: 36px;
+  width: 36px;
+  margin-bottom: var(--spacing-md);
+}
+
+/* Timeline */
+.timeline {
+  padding: var(--spacing-md) 0;
+}
+
+.timeline-item {
+  position: relative;
+  padding-left: 24px;
+  padding-bottom: var(--spacing-xl);
+}
+
+.timeline-item:before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: var(--color-text-light);
+}
+
+.timeline-item:after {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 8px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+}
+
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.timeline-item:last-child:before {
+  display: none;
+}
+
+.timeline-date {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-light);
+  margin-bottom: var(--spacing-xs);
+}
+
+.timeline-content {
+  background-color: rgba(0, 0, 0, 0.02);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-small);
+}
+
+.change-status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.status-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-light);
+}
+
+/* Renovación y Cancelación */
+.renewal-options, .auto-renewal-form {
+  margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  max-width: 400px;
+}
+
+.toggle-row {
+  margin-bottom: var(--spacing-md);
+}
+
+.section-divider {
+  margin: var(--spacing-xl) 0;
+}
+
+.policy-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xl);
+}
+
+.policy-item {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--spacing-md);
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: var(--border-radius-small);
+}
+
+.policy-label {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-light);
+}
+
+.cancellation-action {
+  margin-top: var(--spacing-xl);
+}
+
+.warning-text {
+  color: var(--color-error);
+  margin-bottom: var(--spacing-md);
+  font-size: var(--font-size-sm);
+  padding: var(--spacing-md);
+  background-color: rgba(255, 59, 48, 0.1);
+  border-radius: var(--border-radius-small);
+}
+
+/* Botón de cancelación */
+.boton-cancelar {
+  margin-top: var(--spacing-md) !important;
+  max-width: 250px !important;
+  background-color: var(--color-error, #f44336) !important;
+  color: white !important;
+  display: inline-block !important;
+  font-weight: bold !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: none !important;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
+  height: 36px;
+  line-height: 36px;
+}
+
+.boton-cancelar:hover {
+  background-color: #d32f2f !important;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3) !important;
+}
+
+/* Loading spinner */
+.loading-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Paginación */
+.rentals-paginator {
+  margin-top: var(--spacing-lg);
+  background-color: transparent;
+  border-radius: var(--border-radius);
+}
+
+/* Filtro */
+.filter-bar {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  align-items: center;
+  background-color: white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.status-filter {
+  min-width: 200px;
+  max-width: 300px;
+}
+
+/* Acción para encima de cada pestaña */
+.action-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm);
+  background-color: rgba(255, 59, 48, 0.05);
+  border-radius: var(--border-radius-small);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .rentals-content {
+    flex-direction: column;
+  }
+
+  .rentals-list {
+    max-width: none;
+  }
+
+  .rental-details-panel {
+    margin-top: 24px;
+  }
+}
+
+/* Material Design fixes */
+::ng-deep .mat-mdc-tab-body-wrapper {
+  height: 100%;
+}
+
+::ng-deep .mat-mdc-tab-body.mat-mdc-tab-body-active {
+  height: 100%;
+}
+
+::ng-deep .mat-paginator-container {
+  justify-content: center;
+} 

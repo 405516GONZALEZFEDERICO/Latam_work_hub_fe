@@ -12,6 +12,55 @@ export interface BookingDto {
   endHour?: string;
   counterPersons: number;
   totalAmount: number;
+  bookingType?: string; // Tipo de reserva: PER_HOUR, PER_DAY, PER_MONTH
+}
+
+export interface BookingResponseDto {
+  id: number;
+  startDate: string;
+  endDate: string;
+  initHour: string;
+  endHour: string;
+  bookingType: string;
+  status: string;
+  counterPersons: number;
+  totalAmount: number;
+  spaceId: number;
+  spaceName: string;
+  spaceAddress: string;
+  spaceType: string;
+  cityName: string;
+  countryName: string;
+  [key: string]: any;
+}
+
+export interface PageResponse<T> {
+  content: T[];
+  pageable: {
+    pageNumber: number;
+    pageSize: number;
+    sort: {
+      sorted: boolean;
+      unsorted: boolean;
+      empty: boolean;
+    };
+    offset: number;
+    paged: boolean;
+    unpaged: boolean;
+  };
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+  size: number;
+  number: number;
+  sort: {
+    sorted: boolean;
+    unsorted: boolean;
+    empty: boolean;
+  };
+  numberOfElements: number;
+  first: boolean;
+  empty: boolean;
 }
 
 @Injectable({
@@ -33,4 +82,14 @@ export class BookingService {
       { responseType: 'text' }
     );
   }
-} 
+
+  getUserBookings(uid: string, status?: string, page: number = 0, size: number = 10): Observable<PageResponse<BookingResponseDto>> {
+    let url = `${this.apiUrl}/user/${uid}?page=${page}&size=${size}&sort=id,desc`;
+    
+    if (status) {
+      url += `&status=${status}`;
+    }
+    
+    return this.http.get<PageResponse<BookingResponseDto>>(url);
+  }
+}

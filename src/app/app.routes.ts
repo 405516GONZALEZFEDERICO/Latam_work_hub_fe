@@ -1,8 +1,10 @@
 import { Routes } from '@angular/router';
 import { LoginGuard } from '../guards/login.guard';
 import { SecurityWardGuard } from '../guards/security-ward.guard';
+import { ProfileCompletionGuard } from './guards/profile-completion.guard';
 import { RentalsTabComponent } from './components/rentals-tab/rentals-tab.component';
 import { InvoicesTabComponent } from './components/invoices-tab/invoices-tab.component';
+import { BookingsTabComponent } from './components/bookings-tab/bookings-tab.component';
 
 export const routes: Routes = [
   {
@@ -65,7 +67,7 @@ export const routes: Routes = [
         path: 'search-spaces',
         loadComponent: () =>
           import('./components/search-spaces/search-spaces.component').then(m => m.SearchSpacesComponent),
-        canActivate: [SecurityWardGuard],
+        canActivate: [SecurityWardGuard, ProfileCompletionGuard],
         data: { 
           allowedRoles: ['CLIENTE'],
           title: 'Buscar Espacios' 
@@ -75,7 +77,7 @@ export const routes: Routes = [
         path: 'space-details/:id',
         loadComponent: () =>
           import('./components/spaces/space-details/space-details.component').then(m => m.SpaceDetailsComponent),
-        canActivate: [SecurityWardGuard],
+        canActivate: [SecurityWardGuard, ProfileCompletionGuard],
         data: { 
           allowedRoles: ['CLIENTE'],
           title: 'Detalles del Espacio' 
@@ -111,7 +113,7 @@ export const routes: Routes = [
       },
       {
         path: 'spaces',
-        canActivate: [SecurityWardGuard],
+        canActivate: [SecurityWardGuard, ProfileCompletionGuard],
         data: { 
           allowedRoles: ['PROVEEDOR'],
           title: 'Mis Espacios'
@@ -170,5 +172,10 @@ export const routes: Routes = [
     path: 'invoices',
     component: InvoicesTabComponent,
     data: { title: 'Mis Facturas' }
+  },
+  {
+    path: 'bookings',
+    component: BookingsTabComponent,
+    data: { title: 'Mis Reservas' }
   }
 ];

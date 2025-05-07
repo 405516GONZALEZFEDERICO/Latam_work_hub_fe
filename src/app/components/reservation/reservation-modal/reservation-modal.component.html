@@ -5,6 +5,12 @@
       <mat-icon>close</mat-icon>
     </button>
   </div>
+  <div class="modal-leyenda">
+    <mat-icon color="warn">info</mat-icon>
+    <span class="leyenda-texto">
+      Tener en cuenta que para cancelar la reserva debe haber una diferencia de 7 días con respecto al día de reserva, es decir, solo puede cancelar con al menos una semana de anticipación.
+    </span>
+  </div>
 
   <div class="modal-content">
     <div class="content-layout">
@@ -22,7 +28,7 @@
           <div class="form-section">
             <h4>Tipo de reserva</h4>
             <mat-button-toggle-group formControlName="reservationType" class="reservation-type-toggle" (change)="onReservationTypeChange()">
-              <mat-button-toggle value="hour">
+              <mat-button-toggle value="PER_HOUR">
                 <div class="toggle-content">
                   <mat-icon>schedule</mat-icon>
                   <div>
@@ -31,7 +37,7 @@
                   </div>
                 </div>
               </mat-button-toggle>
-              <mat-button-toggle value="day">
+              <mat-button-toggle value="PER_DAY">
                 <div class="toggle-content">
                   <mat-icon>today</mat-icon>
                   <div>
@@ -40,7 +46,7 @@
                   </div>
                 </div>
               </mat-button-toggle>
-              <mat-button-toggle value="month">
+              <mat-button-toggle value="PER_MONTH">
                 <div class="toggle-content">
                   <mat-icon>calendar_month</mat-icon>
                   <div>
@@ -58,7 +64,7 @@
               <!-- Fecha inicial -->
               <mat-form-field appearance="fill">
                 <mat-label>Fecha de Reserva</mat-label>
-                <input matInput [matDatepicker]="picker" formControlName="startDate" placeholder="DD/MM/YYYY">
+                <input matInput [matDatepicker]="picker" formControlName="startDate" placeholder="DD/MM/YYYY" [min]="minDate" [max]="maxDate">
                 <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
                 <mat-datepicker #picker></mat-datepicker>
                 <mat-error *ngIf="reservationForm.get('startDate')?.hasError('required')">
@@ -68,7 +74,7 @@
 
 
               <!-- Rango de fechas para reserva mensual -->
-              <div *ngIf="reservationForm.get('reservationType')?.value === 'month'" class="date-range-info">
+              <div *ngIf="reservationForm.get('reservationType')?.value === 'PER_MONTH'" class="date-range-info">
                 <mat-icon>date_range</mat-icon>
                 <span>Rango de contrato: {{ getMonthDateRange() }}</span>
               </div>
@@ -77,12 +83,30 @@
               <mat-form-field appearance="outline" *ngIf="showTimeFields()">
                 <mat-label>Hora inicio</mat-label>
                 <input matInput type="time" formControlName="startTime">
+                <mat-error *ngIf="reservationForm.get('startTime')?.hasError('required')">
+                  La hora de inicio es requerida
+                </mat-error>
+                <mat-error *ngIf="reservationForm.get('startTime')?.hasError('pattern')">
+                  Formato de hora inválido
+                </mat-error>
+                <mat-error *ngIf="reservationForm.get('startTime')?.hasError('pastTime')">
+                  La hora debe ser posterior a la hora actual
+                </mat-error>
               </mat-form-field>
 
               <!-- Hora fin -->
               <mat-form-field appearance="outline" *ngIf="showTimeFields()">
                 <mat-label>Hora fin</mat-label>
                 <input matInput type="time" formControlName="endTime">
+                <mat-error *ngIf="reservationForm.get('endTime')?.hasError('required')">
+                  La hora de fin es requerida
+                </mat-error>
+                <mat-error *ngIf="reservationForm.get('endTime')?.hasError('pattern')">
+                  Formato de hora inválido
+                </mat-error>
+                <mat-error *ngIf="reservationForm.get('endTime')?.hasError('endBeforeStart')">
+                  La hora de fin debe ser posterior a la hora de inicio
+                </mat-error>
               </mat-form-field>
             </div>
           </div>
@@ -160,8 +184,7 @@
       <button type="button" class="mercadopago-button" (click)="onSubmit()" [disabled]="isLoading">
         <div class="mp-button-content">
           <mat-spinner *ngIf="isLoading" diameter="20"></mat-spinner>
-          <img *ngIf="!isLoading" src="/mercado-pago.png" alt="Mercado Pago" class="mp-logo">
-          <span>{{ isLoading ? 'Procesando...' : 'Pagar con Mercado Pago' }}</span>
+          <span>{{ isLoading ? 'Procesando...' : 'Pagar' }}</span>
         </div>
       </button>
       

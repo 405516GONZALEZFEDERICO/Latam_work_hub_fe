@@ -3,17 +3,30 @@
     <h2>Mis Alquileres</h2>
   </div>
 
+  <div class="filter-bar">
+    <mat-form-field appearance="outline" class="status-filter">
+      <mat-label>Filtrar por estado</mat-label>
+      <mat-select [formControl]="statusFilter">
+        <mat-option *ngFor="let status of availableStatuses" [value]="status.value">
+          {{ status.display }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
   <div class="rentals-content">
-    <div class="rentals-list" *ngIf="!loading">
+    <!-- Lista de Alquileres (Oculta en móvil si hay uno seleccionado) -->
+    <div class="rentals-list" *ngIf="!loading && (!(isMobile$ | async) || !selectedRental)">
       <mat-card *ngFor="let rental of rentals" 
                 [class.selected]="selectedRental?.id === rental.id"
+                [class.cancelled]="isCancelledStatus(rental.status)"
                 (click)="selectRental(rental)"
                 class="rental-card">
         <mat-card-content>
           <div class="rental-header">
             <h3>Alquiler #{{rental.id}}</h3>
             <mat-chip [style.background-color]="getStatusColor(rental.status)">
-              {{rental.status}}
+              {{translateContractStatus(rental.status)}}
             </mat-chip>
           </div>
           
@@ -30,9 +43,25 @@
               <span class="label">Monto Mensual:</span>
               <span>${{rental.monthlyAmount}}</span>
             </div>
+            <div class="detail-item" *ngIf="hasInvoicePending(rental)">
+              <span class="label">Factura Pendiente:</span>
+              <span>{{rental.currentInvoiceNumber}} (Vence: {{rental.currentInvoiceDueDate | date:'dd/MM/yyyy'}})</span>
+            </div>
           </div>
         </mat-card-content>
       </mat-card>
+
+      <!-- Paginación -->
+      <mat-paginator 
+        *ngIf="totalRentals > 0"
+        [length]="totalRentals"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="pageSizeOptions"
+        [pageIndex]="currentPage"
+        (page)="handlePageEvent($event)"
+        aria-label="Seleccionar página"
+        class="rentals-paginator">
+      </mat-paginator>
 
       <div class="no-rentals" *ngIf="rentals.length === 0">
         <mat-icon>home</mat-icon>
@@ -40,62 +69,367 @@
       </div>
     </div>
 
+    <!-- Panel de Detalles (Ocupa toda la pantalla en móvil si hay uno seleccionado) -->
     <div class="rental-details-panel" *ngIf="selectedRental">
       <div class="panel-header">
-        <h3>Detalles del Alquiler</h3>
-        <button mat-icon-button (click)="selectedRental = null">
-          <mat-icon>close</mat-icon>
+        <!-- Botón Volver (solo en móvil) -->
+        <button mat-icon-button *ngIf="isMobile$ | async" (click)="deselectRental()" class="back-button">
+          <mat-icon>arrow_back</mat-icon>
         </button>
-      </div>
-
-      <div class="panel-content">
-        <div class="invoices-section">
-          <h4>Facturas</h4>
-          <mat-card *ngFor="let invoice of invoices" class="invoice-card">
-            <mat-card-content>
-              <div class="invoice-header">
-                <span class="invoice-number">#{{invoice.invoiceNumber}}</span>
-                <mat-chip [style.background-color]="getStatusColor(invoice.status)">
-                  {{invoice.status}}
-                </mat-chip>
-              </div>
-              
-              <div class="invoice-details">
-                <div class="detail-item">
-                  <span class="label">Fecha de Emisión:</span>
-                  <span>{{invoice.issueDate | date:'dd/MM/yyyy'}}</span>
-                </div>
-                <div class="detail-item">
-                  <span class="label">Fecha de Vencimiento:</span>
-                  <span>{{invoice.dueDate | date:'dd/MM/yyyy'}}</span>
-                </div>
-                <div class="detail-item">
-                  <span class="label">Monto:</span>
-                  <span>${{invoice.totalAmount}}</span>
-                </div>
-              </div>
-
-              <button mat-raised-button color="primary" 
-                      *ngIf="invoice.status === 'PENDING' && invoice.paymentUrl"
-                      (click)="payInvoice(invoice)">
-                Pagar Factura
-              </button>
-            </mat-card-content>
-          </mat-card>
-        </div>
-
-        <div class="actions-section">
-          <button mat-raised-button color="warn" 
-                  *ngIf="selectedRental.status === 'ACTIVE'"
-                  (click)="cancelRental(selectedRental)">
-            Cancelar Alquiler
+        <h3>Detalles del Alquiler #{{selectedRental.id}}</h3>
+        <div class="panel-actions">
+          <button mat-icon-button (click)="deselectRental()">
+            <mat-icon>close</mat-icon>
           </button>
         </div>
       </div>
+
+      <div class="rental-summary">
+        <div class="rental-summary-section contract-info">
+          <h4>Información del Contrato</h4>
+          <div class="detail-item">
+            <span class="label">Estado:</span>
+            <mat-chip [style.background-color]="getStatusColor(selectedRental.status)">
+              {{translateContractStatus(selectedRental.status)}}
+            </mat-chip>
+          </div>
+          <div class="detail-item">
+            <span class="label">Período:</span>
+            <span>{{selectedRental.startDate | date:'dd/MM/yyyy'}} - {{selectedRental.endDate | date:'dd/MM/yyyy'}}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Monto Mensual:</span>
+            <span>${{selectedRental.monthlyAmount}}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Depósito:</span>
+            <span>${{selectedRental.depositAmount}}</span>
+          </div>
+          <div class="detail-item" *ngIf="hasInvoicePending(selectedRental)">
+            <span class="label">Factura Pendiente:</span>
+            <div class="invoice-inline-info-container">
+              <div class="invoice-text-info">
+                <span class="invoice-number">{{selectedRental.currentInvoiceNumber}}</span>
+                <span class="invoice-due">Vence: {{selectedRental.currentInvoiceDueDate | date:'dd/MM/yyyy'}}</span>
+              </div>
+              <button mat-raised-button color="accent" (click)="payCurrentInvoice(selectedRental)" class="pay-button">
+                <mat-icon>payment</mat-icon> Pagar
+              </button>
+            </div>
+          </div>
+          <div class="detail-item">
+            <span class="label">Renovación Automática:</span>
+            <span>{{selectedRental.autoRenew ? 'Sí' : 'No'}}</span>
+          </div>
+        </div>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <mat-tab-group [(selectedIndex)]="activeTab" animationDuration="0ms">
+        <!-- Tab de Facturas -->
+        <mat-tab label="Facturas">
+          <div class="tab-content">
+            <h4>Facturas Pendientes</h4>
+            <div class="invoices-section">
+              <mat-card *ngFor="let invoice of pendingInvoices" class="invoice-card">
+                <mat-card-content>
+                  <div class="invoice-header">
+                    <span class="invoice-number">#{{invoice.invoiceNumber}}</span>
+                    <mat-chip [style.background-color]="getStatusColor(invoice.status)">
+                      {{translateContractStatus(invoice.status)}}
+                    </mat-chip>
+                  </div>
+                  
+                  <div class="invoice-details">
+                    <div class="detail-item">
+                      <span class="label">Fecha de Emisión:</span>
+                      <span>{{invoice.issueDate ? (invoice.issueDate | date:'dd/MM/yyyy') : 'No disponible'}}</span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="label">Fecha de Vencimiento:</span>
+                      <span>{{invoice.dueDate ? (invoice.dueDate | date:'dd/MM/yyyy') : 'No disponible'}}</span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="label">Monto:</span>
+                      <span>${{invoice.totalAmount}}</span>
+                    </div>
+                  </div>
+
+                  <button *ngIf="isPendingStatus(invoice.status)" 
+                          mat-raised-button color="primary" 
+                          (click)="payInvoice(invoice)">
+                    Pagar Factura
+                  </button>
+                </mat-card-content>
+              </mat-card>
+
+              <div *ngIf="pendingInvoices.length === 0" class="empty-state">
+                <mat-icon>check_circle</mat-icon>
+                <p>No tienes facturas pendientes</p>
+              </div>
+            </div>
+
+            <h4>Historial de Facturas</h4>
+            <div class="invoices-section">
+              <mat-card *ngFor="let invoice of invoices" class="invoice-card">
+                <mat-card-content>
+                  <div class="invoice-header">
+                    <span class="invoice-number">#{{invoice.invoiceNumber}}</span>
+                    <mat-chip [style.background-color]="getStatusColor(invoice.status)">
+                      {{translateContractStatus(invoice.status)}}
+                    </mat-chip>
+                  </div>
+                  
+                  <div class="invoice-details">
+                    <div class="detail-item">
+                      <span class="label">Fecha de Emisión:</span>
+                      <span>{{invoice.issueDate ? (invoice.issueDate | date:'dd/MM/yyyy') : 'No disponible'}}</span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="label">Fecha de Vencimiento:</span>
+                      <span>{{invoice.dueDate ? (invoice.dueDate | date:'dd/MM/yyyy') : 'No disponible'}}</span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="label">Monto:</span>
+                      <span>${{invoice.totalAmount}}</span>
+                    </div>
+                    <div class="detail-item" *ngIf="invoice.paidDate">
+                      <span class="label">Fecha de Pago:</span>
+                      <span>{{invoice.paidDate | date:'dd/MM/yyyy'}}</span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="label">Tipo:</span>
+                      <span>{{invoice.type}}</span>
+                    </div>
+                  </div>
+
+                  <button *ngIf="isPendingStatus(invoice.status)" 
+                          mat-raised-button color="primary" 
+                          (click)="payInvoice(invoice)">
+                    Pagar Factura
+                  </button>
+                </mat-card-content>
+              </mat-card>
+
+              <div *ngIf="invoices.length === 0" class="empty-state">
+                <mat-icon>receipt</mat-icon>
+                <p>No hay historial de facturas disponible</p>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Tab de Historial de Contrato -->
+        <mat-tab label="Historial">
+          <div class="tab-content">
+            <h4>Historial de Cambios</h4>
+            <div class="history-section">
+              <div class="timeline">
+                <div *ngFor="let change of contractHistory" class="timeline-item">
+                  <div class="timeline-date">
+                    <span>{{change.changeDate | date:'dd/MM/yyyy HH:mm'}}</span>
+                  </div>
+                  <div class="timeline-content">
+                    <div class="change-status">
+                      <span class="status-label">Estado anterior:</span>
+                      <mat-chip [style.background-color]="getStatusColor(change.previousStatus)">
+                        {{translateContractStatus(change.previousStatus)}}
+                      </mat-chip>
+                      <mat-icon>arrow_forward</mat-icon>
+                      <span class="status-label">Nuevo estado:</span>
+                      <mat-chip [style.background-color]="getStatusColor(change.newStatus)">
+                        {{translateContractStatus(change.newStatus)}}
+                      </mat-chip>
+                    </div>
+                    <p *ngIf="change.changeReason" class="change-reason">
+                      Razón: {{change.changeReason}}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div *ngIf="contractHistory.length === 0" class="empty-state">
+                <mat-icon>history</mat-icon>
+                <p>No hay historial de cambios disponible</p>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Tab de Renovación -->
+        <mat-tab label="Renovación">
+          <div class="tab-content">
+            <div class="renewal-section">
+              <h4>Renovación de Contrato</h4>
+              
+              <div class="renewal-options">
+                <mat-form-field appearance="outline">
+                  <mat-label>Meses de Renovación</mat-label>
+                  <mat-select [(ngModel)]="renewalMonths">
+                    <mat-option [value]="3">3 meses</mat-option>
+                    <mat-option [value]="6">6 meses</mat-option>
+                    <mat-option [value]="12">12 meses</mat-option>
+                    <mat-option [value]="24">24 meses</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <button mat-raised-button color="primary" 
+                        [disabled]="!isContractActionable(selectedRental)"
+                        (click)="renewRental()">
+                  Renovar Contrato
+                </button>
+              </div>
+
+              <mat-divider class="section-divider"></mat-divider>
+
+              <h4>Renovación Automática</h4>
+              <div class="auto-renewal-form">
+                <div class="toggle-row">
+                  <mat-slide-toggle [(ngModel)]="autoRenewal.enabled" color="primary">
+                    Activar renovación automática
+                  </mat-slide-toggle>
+                </div>
+
+                <mat-form-field appearance="outline" *ngIf="autoRenewal.enabled">
+                  <mat-label>Meses de Renovación Automática</mat-label>
+                  <mat-select [(ngModel)]="autoRenewal.months">
+                    <mat-option [value]="3">3 meses</mat-option>
+                    <mat-option [value]="6">6 meses</mat-option>
+                    <mat-option [value]="12">12 meses</mat-option>
+                    <mat-option [value]="24">24 meses</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <button mat-raised-button color="primary" 
+                        [disabled]="!isContractActionable(selectedRental)"
+                        (click)="saveAutoRenewal()">
+                  Guardar Configuración
+                </button>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Tab de Cancelación -->
+        <mat-tab label="Cancelación">
+          <div class="tab-content">
+            <div class="cancellation-section">
+              <h4>Política de Cancelación</h4>
+              
+              <div *ngIf="cancellationPolicy" class="policy-details">
+                <div *ngFor="let key of getKeys(cancellationPolicy)" class="policy-item">
+                  <span class="policy-label">{{formatPropertyName(key)}}:</span>
+                  <span class="policy-value">{{formatPropertyValue(key, cancellationPolicy[key])}}</span>
+                </div>
+              </div>
+
+              <div *ngIf="!cancellationPolicy" class="empty-state">
+                <mat-icon>policy</mat-icon>
+                <p>No hay información disponible sobre la política de cancelación</p>
+              </div>
+
+              <div class="cancellation-action" *ngIf="isActiveStatus(selectedRental.status) || isPendingStatus(selectedRental.status)">
+                <p class="warning-text">
+                  Cancelar el contrato antes de su fecha de finalización puede incurrir en cargos adicionales según 
+                  la política de cancelación. Esta acción no puede deshacerse.
+                </p>
+                <button mat-raised-button color="warn" class="boton-cancelar"
+                        (click)="cancelRental(selectedRental)">
+                  Cancelar Contrato
+                </button>
+              </div>
+
+
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Tab de Detalles del Espacio -->
+        <mat-tab label="Detalles del Espacio">
+          <div class="tab-content">
+            <div class="space-details-section">
+              <h4>Información Completa del Espacio</h4>
+              
+              <div class="space-details">
+                <div class="detail-group">
+                  <h5>Datos Generales</h5>
+                  <div class="detail-item">
+                    <span class="label">ID del Espacio:</span>
+                    <span>{{selectedRental.spaceId}}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="label">Nombre del Espacio:</span>
+                    <span>{{selectedRental.spaceName}}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="label">Tipo de Espacio:</span>
+                    <span>{{selectedRental.spaceType}}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="label">Propietario:</span>
+                    <span>{{selectedRental.ownerName}}</span>
+                  </div>
+                </div>
+                
+                <div class="detail-group">
+                  <h5>Ubicación</h5>
+                  <div class="detail-item">
+                    <span class="label">Dirección:</span>
+                    <span>{{selectedRental.spaceAddress}}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="label">Ciudad:</span>
+                    <span>{{selectedRental.cityName}}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="label">País:</span>
+                    <span>{{selectedRental.countryName}}</span>
+                  </div>
+                </div>
+                
+                <div class="detail-group">
+                  <h5>Características</h5>
+                  <div class="detail-item">
+                    <span class="label">Área:</span>
+                    <span>{{selectedRental.spaceArea}} m²</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="label">Capacidad:</span>
+                    <span>{{selectedRental.spaceCapacity}} personas</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="label">Descripción:</span>
+                    <span>{{selectedRental.spaceDescription}}</span>
+                  </div>
+                </div>
+                
+                <div class="detail-group">
+                  <h5>Tarifas</h5>
+                  <div class="detail-item">
+                    <span class="label">Precio por Hora:</span>
+                    <span>${{selectedRental.pricePerHour}}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="label">Precio por Día:</span>
+                    <span>${{selectedRental.pricePerDay}}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="label">Precio por Mes:</span>
+                    <span>${{selectedRental.pricePerMonth}}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
     </div>
 
-    <div class="loading-spinner" *ngIf="loading">
+    <!-- Indicador de Carga -->
+    <div *ngIf="loading" class="loading-container">
       <mat-spinner diameter="40"></mat-spinner>
+      <p>Cargando alquileres...</p>
     </div>
   </div>
 </div> 

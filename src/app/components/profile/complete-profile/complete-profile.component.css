@@ -291,3 +291,59 @@
   margin-bottom: 20px;
   line-height: 1.5;
 }
+
+/* Estilos para la alerta de perfil incompleto */
+.profile-incomplete-alert {
+  width: 100%;
+  margin-bottom: 20px;
+  background-color: #fff3e0;
+  border-left: 4px solid #ff9800;
+}
+
+.alert-content {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+}
+
+.alert-message {
+  flex: 1;
+  margin: 0 16px;
+}
+
+.alert-message h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #d84315;
+}
+
+.alert-message p {
+  margin: 0;
+  color: #333333;
+}
+
+.profile-incomplete-alert mat-icon {
+  font-size: 24px;
+  height: 24px;
+  width: 24px;
+  margin-right: 8px;
+  color: #ff9800;
+}
+
+@media (max-width: 768px) {
+  .alert-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .alert-message {
+    margin: 8px 0;
+    width: 100%;
+  }
+  
+  .profile-incomplete-alert button {
+    margin-top: 8px;
+    align-self: flex-end;
+  }
+}

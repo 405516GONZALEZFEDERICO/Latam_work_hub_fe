@@ -154,7 +154,7 @@ export class SpaceDetailsComponent implements OnInit {
     this.formatAddress(space);
     
     // Usar cualquier propiedad disponible para buscar espacios similares
-    this.findSimilarSpacesLocally(space);
+    // this.findSimilarSpacesLocally(space);
     
 
   }
@@ -343,53 +343,53 @@ export class SpaceDetailsComponent implements OnInit {
       );
   }
 
-  // Buscar espacios similares utilizando los datos locales
-  findSimilarSpacesLocally(currentSpace: SpaceWithType): void {
-    this.spaceService.getSpaces().subscribe(spaces => {
-      // Convertir a SpaceWithType[]
-      const spacesWithType = spaces as SpaceWithType[];
+  // // Buscar espacios similares utilizando los datos locales
+  // findSimilarSpacesLocally(currentSpace: SpaceWithType): void {
+  //   this.spaceService.getSpaces().subscribe(spaces => {
+  //     // Convertir a SpaceWithType[]
+  //     const spacesWithType = spaces as SpaceWithType[];
       
-      this.similarSpaces = spacesWithType
-        .filter(space => {
-          // Si el ID es igual, no es un espacio similar
-          if (space.id === currentSpace.id) return false;
+  //     this.similarSpaces = spacesWithType
+  //       .filter(space => {
+  //         // Si el ID es igual, no es un espacio similar
+  //         if (space.id === currentSpace.id) return false;
           
-          // Obtener el tipo de espacio de cualquier propiedad disponible
-          let spaceTypeStr = '';
-          let currentTypeStr = '';
+  //         // Obtener el tipo de espacio de cualquier propiedad disponible
+  //         let spaceTypeStr = '';
+  //         let currentTypeStr = '';
           
-          // Intentar obtener el tipo del space
-          if (space.type) {
-            spaceTypeStr = typeof space.type === 'string' 
-              ? space.type 
-              : '';
-          } else if (space.spaceType) {
-            spaceTypeStr = typeof space.spaceType === 'string'
-              ? space.spaceType
-              : ((space.spaceType as any)?.name || '');
-          } else if (space.typeObj) {
-            spaceTypeStr = space.typeObj.name || '';
-          }
+  //         // Intentar obtener el tipo del space
+  //         if (space.type) {
+  //           spaceTypeStr = typeof space.type === 'string' 
+  //             ? space.type 
+  //             : '';
+  //         } else if (space.spaceType) {
+  //           spaceTypeStr = typeof space.spaceType === 'string'
+  //             ? space.spaceType
+  //             : ((space.spaceType as any)?.name || '');
+  //         } else if (space.typeObj) {
+  //           spaceTypeStr = space.typeObj.name || '';
+  //         }
           
-          // Intentar obtener el tipo del currentSpace
-          if (currentSpace.type) {
-            currentTypeStr = typeof currentSpace.type === 'string' 
-              ? currentSpace.type 
-              : '';
-          } else if (currentSpace.spaceType) {
-            currentTypeStr = typeof currentSpace.spaceType === 'string'
-              ? currentSpace.spaceType
-              : ((currentSpace.spaceType as any)?.name || '');
-          } else if (currentSpace.typeObj) {
-            currentTypeStr = currentSpace.typeObj.name || '';
-          }
+  //         // Intentar obtener el tipo del currentSpace
+  //         if (currentSpace.type) {
+  //           currentTypeStr = typeof currentSpace.type === 'string' 
+  //             ? currentSpace.type 
+  //             : '';
+  //         } else if (currentSpace.spaceType) {
+  //           currentTypeStr = typeof currentSpace.spaceType === 'string'
+  //             ? currentSpace.spaceType
+  //             : ((currentSpace.spaceType as any)?.name || '');
+  //         } else if (currentSpace.typeObj) {
+  //           currentTypeStr = currentSpace.typeObj.name || '';
+  //         }
           
-          return spaceTypeStr && currentTypeStr && spaceTypeStr === currentTypeStr;
-        })
-        .slice(0, 3); // Limitar a 3 espacios similares
+  //         return spaceTypeStr && currentTypeStr && spaceTypeStr === currentTypeStr;
+  //       })
+  //       .slice(0, 3); // Limitar a 3 espacios similares
       
-    });
-  }
+  //   });
+  // }
 
   goBack(): void {
     this.location.back();

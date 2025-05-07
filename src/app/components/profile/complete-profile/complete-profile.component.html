@@ -1,3 +1,19 @@
+<!-- Alerta de perfil incompleto -->
+<div *ngIf="showProfileIncompleteAlert" class="profile-incomplete-alert">
+  <div class="alert-content">
+    <mat-icon color="warn">warning</mat-icon>
+    <div class="alert-message">
+      <h3>Perfil incompleto</h3>
+      <p *ngIf="isProviderRole()">Para crear espacios, debes completar tu perfil con tus datos personales, información de empresa y tipo de proveedor.</p>
+      <p *ngIf="!isProviderRole()">Para buscar espacios, debes completar tu perfil con tus datos personales e información de empresa.</p>
+    </div>
+    <button mat-raised-button color="primary" (click)="continueToDestination()" matTooltip="Continuar después de completar el perfil" [disabled]="true">
+      Continuar
+    </button>
+  </div>
+  <mat-divider></mat-divider>
+</div>
+
 <!-- Tarjeta de Completar Perfil -->
 <div class="outer-container">
   <div class="profile-wrapper">

@@ -4,7 +4,7 @@
     
     <mat-form-field appearance="outline" class="filter-field">
       <mat-label>Filtrar por Estado</mat-label>
-      <mat-select [(value)]="filterStatus">
+      <mat-select [formControl]="statusFilter">
         <mat-option value="ALL">Todos</mat-option>
         <mat-option value="PENDING">Pendientes</mat-option>
         <mat-option value="PAID">Pagadas</mat-option>
@@ -19,7 +19,7 @@
       <div class="summary-card">
         <div class="summary-item">
           <span class="label">Total Facturas:</span>
-          <span class="value">{{getFilteredInvoices().length}}</span>
+          <span class="value">{{filteredInvoices.length}}</span>
         </div>
         <div class="summary-item">
           <span class="label">Monto Total:</span>
@@ -29,7 +29,7 @@
     </div>
 
     <div class="invoices-list" *ngIf="!loading">
-      <mat-card *ngFor="let invoice of getFilteredInvoices()" class="invoice-card">
+      <mat-card *ngFor="let invoice of displayedInvoices" class="invoice-card">
         <mat-card-content>
           <div class="invoice-header">
             <div class="invoice-info">
@@ -74,7 +74,19 @@
         </mat-card-content>
       </mat-card>
 
-      <div class="no-invoices" *ngIf="getFilteredInvoices().length === 0">
+      <!-- Paginación -->
+      <mat-paginator 
+        *ngIf="totalInvoices > 0"
+        [length]="totalInvoices"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="pageSizeOptions"
+        [pageIndex]="currentPage"
+        (page)="handlePageEvent($event)"
+        aria-label="Seleccionar página"
+        class="invoices-paginator">
+      </mat-paginator>
+
+      <div class="no-invoices" *ngIf="filteredInvoices.length === 0">
         <mat-icon>receipt</mat-icon>
         <p>No hay facturas disponibles</p>
       </div>

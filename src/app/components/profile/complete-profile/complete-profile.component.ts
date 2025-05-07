@@ -14,13 +14,15 @@ import { ProviderTypeSelectionComponent } from '../provider-type-selection/provi
 import { AddressStepperComponent } from '../address-stepper/address-stepper.component';
 import { UserRole } from '../../../models/user';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Address } from '../../../models/address.model';
 import { AuthService } from '../../../services/auth-service/auth.service';
 import { catchError, EMPTY, finalize, Subject, takeUntil, take } from 'rxjs';
 import { AddressService } from '../../../services/address/address.service';
 import { ProfileTab } from '../../../models/profile-tab.enum';
 import { ProviderTypeService, ProviderType } from '../../../services/provider.service/provider-type.service';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-complete-profile',
@@ -33,6 +35,9 @@ import { ProviderTypeService, ProviderType } from '../../../services/provider.se
     MatIconModule,
     MatFormFieldModule,
     MatProgressSpinnerModule,
+    MatSnackBarModule,
+    MatDividerModule,
+    MatTooltipModule,
     PersonalDataFormComponent,
     CompanyFormComponent,
     ProviderTypeSelectionComponent,
@@ -64,6 +69,10 @@ export class CompleteProfileComponent implements OnInit, OnDestroy {
   private companyDataLoaded = false;
   private profileDataLoaded = false;
   private isLoadingProviderType = false;
+  
+  // Nuevas propiedades para manejar la redirección por perfil incompleto
+  showProfileIncompleteAlert: boolean = false;
+  redirectUrl: string | null = null;
 
   // Para manejar la limpieza de suscripciones
   private destroy$ = new Subject<void>();
@@ -140,6 +149,26 @@ export class CompleteProfileComponent implements OnInit, OnDestroy {
           this.providerType = params['providerType'] as ProviderType;
           this.providerTypeService.setProviderType(this.providerType);
           this.isLoadingProviderType = false;
+        }
+        
+        // Verificar si el usuario fue redirigido por perfil incompleto
+        if (params['incomplete'] === 'true') {
+          this.showProfileIncompleteAlert = true;
+          this.redirectUrl = params['redirect'] || null;
+          
+          // Mostrar un mensaje según el rol del usuario
+          const currentUser = this.authService.getCurrentUserSync();
+          if (currentUser) {
+            const roleMessage = currentUser.role === 'PROVEEDOR' 
+              ? 'Para crear espacios, debes completar tu perfil con tus datos personales, información de empresa y tipo de proveedor.'
+              : 'Para buscar espacios, debes completar tu perfil con tus datos personales e información de empresa.';
+            
+            this.snackBar.open(
+              roleMessage, 
+              'Entendido', 
+              { duration: 10000, panelClass: 'warning-snackbar' }
+            );
+          }
         }
       });
   }
@@ -525,6 +554,16 @@ export class CompleteProfileComponent implements OnInit, OnDestroy {
       setTimeout(() => {
         this.cdr.detectChanges();
       }, 500);
+    }
+  }
+
+  // Método para continuar a la ruta original después de completar el perfil
+  continueToDestination(): void {
+    if (this.redirectUrl) {
+      this.router.navigateByUrl(this.redirectUrl);
+    } else {
+      // Si no hay URL de redirección, ir a la página principal
+      this.router.navigate(['/home/welcome']);
     }
   }
 }
