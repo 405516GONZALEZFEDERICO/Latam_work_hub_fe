@@ -33,7 +33,6 @@ import { EMPTY } from 'rxjs';
     MatProgressSpinnerModule,
     MatTooltipModule,
     SpaceFilterComponent,
-    ConfirmDialogComponent
   ],
   templateUrl: './spaces-list.component.html',
   styleUrls: ['./spaces-list.component.css']

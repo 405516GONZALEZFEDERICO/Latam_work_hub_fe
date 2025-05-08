@@ -1,33 +1,33 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../services/auth-service/auth.service';
-import { User, UserRole } from '../../../models/user';
-import { ProfileService } from '../../../services/profile/profile.service';
-import { ProfileData } from '../../../models/profile';
+import { User } from '../../../models/user';
 
 @Component({
   selector: 'app-welcome',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [
+    CommonModule, 
+    RouterModule 
+  ],
   templateUrl: './welcome.component.html',
   styleUrls: ['./welcome.component.css']
 })
 export class WelcomeComponent implements OnInit {
   currentUser: User | null = null;
-  profileData: ProfileData | null = null;
-  
+
   constructor(
     private authService: AuthService,
-    private profileService: ProfileService
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
+      this.cdr.detectChanges();
     });
   }
-  
   
   getUserRoleDisplay(): string {
     if (!this.currentUser || !this.currentUser.role) {

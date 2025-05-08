@@ -1,12 +1,16 @@
-<div class="welcome-container">
-  <div class="welcome-header">
-    <p class="subtitle">Bienvenido a Latam Work Hub</p>
-    <p *ngIf="currentUser" class="user-greeting">Hola, {{ currentUser.displayName || currentUser.email }}</p>
+<div class="welcome-container-loggedIn">
+  <div class="main-title-area">
+    <h1 class="page-title">Bienvenido a Latam Work Hub</h1>
+    <p *ngIf="currentUser" class="user-greeting-loggedIn">Hola, {{ currentUser.displayName || currentUser.email }}!</p>
+    <!-- Add other content for logged-in users here if needed -->
   </div>
   
-  <div class="welcome-message">
-    <h2>Tu espacio de trabajo en Latam Work Hub</h2>
-    <p>Conectando profesionales y espacios en toda Latinoamérica</p>
-    
+  <!-- You might want to add sections specific to logged-in users, like dashboards, quick links etc. -->
+  <!-- For example:
+  <div class="user-dashboard-links">
+    <a mat-button routerLink="/profile">Mi Perfil</a>
+    <a mat-button routerLink="/my-reservations">Mis Reservas</a>
+    <a mat-button routerLink="/spaces">Buscar Espacios</a>
   </div>
+  -->
 </div> 

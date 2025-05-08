@@ -18,7 +18,7 @@ import { SpaceType } from '../../../models/space-type.model';
 import { MaterialSelectComponent, OptionItem } from '../../shared/material-select/material-select.component';
 import { AddressService } from '../../../services/address/address.service';
 import { AmenityService } from '../../../services/amenity/amenity.service';
-import { SpaceTypeService } from '../../../services/space/space-type.service';
+import { SpaceTypeService } from '../../../services/space-type/space-type.service';
 
 @Component({
   selector: 'app-space-filter',

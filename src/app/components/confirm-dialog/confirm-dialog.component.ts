@@ -17,26 +17,26 @@ import { CommonModule } from '@angular/common';
   `,
   styles: [`
     :host {
-      display: block; /* Needed for padding to apply correctly to the host element */
-      padding: 24px; /* Add padding to the dialog container itself */
+      display: block; 
+      padding: 24px; 
     }
     h2[mat-dialog-title] {
-      margin-bottom: 20px; /* Add space below the title */
-      font-size: 1.25rem; /* Slightly larger title */
+      margin-bottom: 20px; 
+      font-size: 1.25rem; 
     }
     mat-dialog-content {
-      padding: 0; /* Remove default padding if any, we control it on :host or p */
-      margin-bottom: 24px; /* Space before actions */
-      overflow-wrap: break-word; /* Help prevent overflow from long words */
+      padding: 0; 
+      margin-bottom: 24px; 
+      overflow-wrap: break-word; 
     }
     mat-dialog-content p {
-      margin: 0; /* Remove default paragraph margins */
-      line-height: 1.6; /* Improve readability */
+      margin: 0; 
+      line-height: 1.6;
     }
     mat-dialog-actions {
-      padding: 0; /* Remove default padding, we control spacing with justify/gap */
-      justify-content: flex-end; /* Ensure buttons are at the end */
-      gap: 8px; /* Add space between action buttons */
+      padding: 0; 
+      justify-content: flex-end; 
+      gap: 8px; 
     }
   `],
   imports: [
@@ -52,8 +52,8 @@ export class ConfirmDialogComponent {
     @Inject(MAT_DIALOG_DATA) public data: { 
       title: string; 
       message: string; 
-      confirmText?: string;  // Made optional
-      cancelText?: string;   // Made optional
+      confirmText?: string;  
+      cancelText?: string;  
     }
   ) {}
 

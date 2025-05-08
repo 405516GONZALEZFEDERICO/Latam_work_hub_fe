@@ -5,12 +5,13 @@ import { ProfileCompletionGuard } from './guards/profile-completion.guard';
 import { RentalsTabComponent } from './components/rentals-tab/rentals-tab.component';
 import { InvoicesTabComponent } from './components/invoices-tab/invoices-tab.component';
 import { BookingsTabComponent } from './components/bookings-tab/bookings-tab.component';
+import { LandingPageComponent } from './components/landing-page/landing-page.component';
 
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'login',
-    pathMatch: 'full'
+    component: LandingPageComponent,
+    data: { title: 'Bienvenido a LATAM Work Hub' }
   },
   {
     path: 'login',

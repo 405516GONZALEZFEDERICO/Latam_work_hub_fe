@@ -158,7 +158,6 @@
       <mat-divider></mat-divider>
 
       <mat-tab-group [(selectedIndex)]="activeTab" animationDuration="0ms">
-        <!-- Tab de Detalles Adicionales (si los hubiera) -->
         <mat-tab label="Detalles">
           <div class="tab-content">
             <div class="additional-details">
@@ -166,7 +165,7 @@
               <div class="properties-list">
                 <div *ngFor="let key of getKeys(selectedBooking)" class="property-item">
                   <span class="property-name">{{formatPropertyName(key)}}:</span>
-                  <span class="property-value">{{formatPropertyValue(key, selectedBooking?.[key])}}</span>
+                  <span class="property-value">{{formatPropertyValue(key, selectedBooking[key])}}</span>
                 </div>
               </div>
             </div>
@@ -175,7 +174,6 @@
       </mat-tab-group>
     </div>
 
-    <!-- Indicador de Carga -->
     <div *ngIf="loading" class="loading-container">
       <mat-spinner diameter="40"></mat-spinner>
       <p>Cargando información...</p>

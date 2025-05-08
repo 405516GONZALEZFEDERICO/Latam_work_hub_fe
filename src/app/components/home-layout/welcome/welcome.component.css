@@ -1,57 +1,44 @@
-.welcome-container {
-  padding: 30px;
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+/* General Container Styling for Logged-In Welcome Page */
+.welcome-container-loggedIn {
+  padding: 40px 20px; /* Ample padding */
+  background-color: #ffffff; /* Clean white background */
+  min-height: calc(100vh - 100px); /* Adjust based on your header/footer height */
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center content horizontally */
+  justify-content: flex-start; /* Align content to the top */
+  text-align: center;
 }
 
-.welcome-header {
-  margin-bottom: 30px;
-  text-align: left;
+/* Area for the main title */
+.main-title-area {
+  margin-bottom: 30px; /* Space below title area */
 }
 
 .page-title {
-  font-size: 28px;
+  font-size: 2.8em;
   font-weight: 600;
+  color: #333333; /* Dark text for readability */
   margin-bottom: 10px;
-  color: #333;
 }
 
-.subtitle {
-  font-size: 16px;
-  color: #666;
-  margin-bottom: 5px;
+.user-greeting-loggedIn {
+  font-size: 1.4em;
+  color: #555555;
+  margin-bottom: 20px;
 }
 
-.user-greeting {
-  font-size: 14px;
-  color: #888;
-  margin-bottom: 0;
-}
-
-h1 {
-  font-size: 28px;
-  font-weight: 600;
-  margin-bottom: 10px;
-  color: #333;
-}
-
-.welcome-message {
-  text-align: center;
+/* Example styles for user dashboard links if you add them */
+.user-dashboard-links {
   margin-top: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: center;
 }
 
-.welcome-message h2 {
-  font-size: 24px;
-  color: #4285f4;
-  margin-bottom: 15px;
-}
-
-.welcome-message p {
-  color: #666;
-  line-height: 1.5;
-  margin-bottom: 30px;
-  font-size: 16px;
+.user-dashboard-links a.mat-button {
+  min-width: 180px; /* Give buttons some width */
 }
 
 /* Estilos para la barra de progreso */
@@ -149,35 +136,63 @@ h1 {
 
 .action-btn {
   display: inline-block;
-  padding: 8px 15px;
-  background-color: #4285f4;
+  padding: 12px 25px;
+  background-color: #007bff;
   color: white;
   border: none;
   border-radius: 5px;
-  font-size: 14px;
+  font-size: 1em;
+  font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.3s ease;
   text-decoration: none;
+  transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 .action-btn:hover {
-  background-color: #3367d6;
+  background-color: #0056b3;
+  transform: translateY(-2px);
 }
 
+/* Additional Content Section (Example) */
+.additional-content {
+  padding: 40px 20px;
+  text-align: center;
+  background-color: #ffffff;
+}
+
+.additional-content h3 {
+  font-size: 1.8em;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.additional-content p {
+  font-size: 1.1em;
+  color: #666;
+  margin-bottom: 25px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Responsive Adjustments */
 @media (max-width: 768px) {
-  .feature-card {
-    flex: 1 1 100%;
+  .welcome-container-loggedIn {
+    padding: 30px 15px;
   }
-  
-  .welcome-container {
-    padding: 20px;
+  .page-title {
+    font-size: 2.2em;
   }
-  
-  h1 {
-    font-size: 24px;
+  .user-greeting-loggedIn {
+    font-size: 1.2em;
   }
-  
-  .welcome-message h2 {
-    font-size: 20px;
+}
+
+@media (max-width: 480px) {
+  .page-title {
+    font-size: 1.9em;
+  }
+  .user-greeting-loggedIn {
+    font-size: 1.1em;
   }
 } 

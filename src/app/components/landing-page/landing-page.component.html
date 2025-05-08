@@ -1,0 +1,53 @@
+<div class="landing-container">
+  <!-- Header Section - Now separate from video -->
+  <header class="landing-header">
+    <h1 class="landing-title">LATAM Work Hub</h1>
+    <p class="landing-subtitle">Conectando Profesionales y Espacios Innovadores.</p>
+    <div class="cta-buttons">
+      <button mat-stroked-button color="primary" class="landing-button login" routerLink="/login">Ingresar</button>
+      <button mat-stroked-button class="landing-button register" routerLink="/register">Registrarse</button>
+    </div>
+  </header>
+
+  <!-- Video Section - Now independent -->
+  <div class="video-section">
+    <div class="video-container" (click)="handleVideoContainerClick()">
+      <video #videoPlayer playsinline poster="https://res.cloudinary.com/dikvv0xw3/video/upload/v1746729997/LATAM_WorkHub_Innovate_Together_xtmpih.jpg">
+        <source src="https://res.cloudinary.com/dikvv0xw3/video/upload/v1746729997/LATAM_WorkHub_Innovate_Together_xtmpih.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+      <button mat-icon-button class="play-pause-button"
+              *ngIf="controlsVisible"
+              (click)="togglePlay(); $event.stopPropagation();"
+              [attr.aria-label]="videoPlaying ? 'Pause video' : 'Play video'">
+        <mat-icon>{{ videoPlaying ? 'pause' : 'play_arrow' }}</mat-icon>
+      </button>
+    </div>
+  </div>
+
+
+  <div class="features-overview-section">
+    <h2>Descubre lo que Ofrecemos</h2>
+    <div class="features-grid">
+      <div class="feature-item">
+        <mat-icon>search</mat-icon>
+        <h3>Espacios Verificados</h3>
+        <p>Encuentra y reserva con confianza.</p>
+      </div>
+      <div class="feature-item">
+        <mat-icon>event_available</mat-icon>
+        <h3>Reservas Flexibles</h3>
+        <p>Por hora, día o mes, según tu necesidad.</p>
+      </div>
+      <div class="feature-item">
+        <mat-icon>payments</mat-icon>
+        <h3>Pagos Seguros</h3>
+        <p>Integración con Mercado Pago.</p>
+      </div>
+    </div>
+  </div>
+
+  <footer class="landing-footer">
+    <p>&copy; {{ currentYear }} LATAM Work Hub. Todos los derechos reservados.</p>
+  </footer>
+</div> 

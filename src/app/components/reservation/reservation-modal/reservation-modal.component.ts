@@ -48,35 +48,27 @@ export enum ReservationPeriod {
 }
 
 // Validador personalizado para verificar que la hora de inicio no sea anterior a la hora actual cuando es el día actual
-export function startTimeValidator(minDate: Date): ValidatorFn {
+export function startTimeValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const form = control.parent;
     if (!form) return null;
     
     const startDate = form.get('startDate')?.value as Date;
-    const startTime = form.get('startTime')?.value;
+    const startHour = control.value as number; // Value of startTime control, should be a number
     
-    if (!startDate || !startTime) return null;
+    if (!startDate || typeof startHour !== 'number') return null;
     
-    // Verificar si es hoy
     const today = new Date();
     const isToday = startDate.getDate() === today.getDate() && 
                     startDate.getMonth() === today.getMonth() && 
                     startDate.getFullYear() === today.getFullYear();
     
     if (isToday) {
-      const [hours, minutes] = startTime.split(':').map(Number);
-      const selectedTime = new Date();
-      selectedTime.setHours(hours, minutes, 0, 0);
-      
-      const now = new Date();
-      now.setSeconds(0, 0); // Ignorar segundos para la comparación
-      
-      if (selectedTime < now) {
+      const currentHour = today.getHours();
+      if (startHour < currentHour) {
         return { pastTime: true };
       }
     }
-    
     return null;
   };
 }
@@ -87,18 +79,15 @@ export function endTimeValidator(): ValidatorFn {
     const form = control.parent;
     if (!form) return null;
     
-    const startTime = form.get('startTime')?.value;
-    const endTime = form.get('endTime')?.value;
+    const startHour = form.get('startTime')?.value as number; // Should be a number
+    const endHour = control.value as number; // Value of endTime control, should be a number
     
-    if (!startTime || !endTime) return null;
+    if (typeof startHour !== 'number' || typeof endHour !== 'number') return null;
     
-    const [startHours, startMinutes] = startTime.split(':').map(Number);
-    const [endHours, endMinutes] = endTime.split(':').map(Number);
-    
-    if (endHours < startHours || (endHours === startHours && endMinutes <= startMinutes)) {
+    // For whole hours, endHour must be strictly greater than startHour
+    if (endHour <= startHour) {
       return { endBeforeStart: true };
     }
-    
     return null;
   };
 }
@@ -137,6 +126,7 @@ export class ReservationModalComponent implements OnInit {
   amenityPrices: { [key: string]: number } = {};
   reservationPeriod: ReservationPeriod = ReservationPeriod.PER_HOUR; // Default to hourly
   isLoading = false; // Track loading state
+  public hours: number[] = Array.from({length: 24}, (_, i) => i); // For hour selection
   
   // Map for reservation type labels
   private reservationTypeLabels = {
@@ -167,29 +157,42 @@ export class ReservationModalComponent implements OnInit {
     
     // Obtener hora actual con formato HH:MM
     const now = new Date();
-    const currentHour = now.getHours().toString().padStart(2, '0');
-    const currentMinute = now.getMinutes().toString().padStart(2, '0');
-    const currentTime = `${currentHour}:${currentMinute}`;
-    
-    // Calcular hora de fin por defecto (2 horas después)
-    let endHour = now.getHours() + 2;
-    const endTime = endHour > 23 
-      ? '23:59' 
-      : `${endHour.toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-    
+    // Default initial hours
+    let initialStartHour = now.getHours();
+    let initialEndHour = initialStartHour + 2;
+
+    // Adjust if initialEndHour exceeds 23
+    if (initialEndHour > 23) {
+      initialEndHour = 23;
+      // If initialStartHour makes duration <= 0 due to capping, adjust initialStartHour
+      if (initialStartHour >= initialEndHour && initialStartHour > 0) {
+        initialStartHour = initialEndHour -1;
+      } else if (initialStartHour >= 23) { // e.g. startHour=23, initialEndHour=23
+        initialStartHour = 22; // Default to 22:00 - 23:00 if current hour is 23:xx
+      }
+    }
+     // Ensure at least 1 hour duration by default if possible and start is not 23
+    if (initialEndHour <= initialStartHour && initialStartHour < 23) {
+        initialEndHour = initialStartHour + 1;
+    }
+    // Final check if start is 23, end must also be 23 (which validator will catch as invalid)
+    if (initialStartHour === 23) {
+        initialEndHour = 23;
+    }
+    if (initialStartHour < 0) initialStartHour = 0;
+
+
     // Initialize form con validadores personalizados
     this.reservationForm = this.fb.group({
       startDate: [new Date(), Validators.required],
       reservationType: [ReservationPeriod.PER_HOUR, Validators.required],
-      startTime: [currentTime, [
+      startTime: [initialStartHour, [ // Now a number (hour)
         Validators.required, 
-        Validators.pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
-        startTimeValidator(this.minDate)
+        startTimeValidator() // Updated validator
       ]],
-      endTime: [endTime, [
+      endTime: [initialEndHour, [ // Now a number (hour)
         Validators.required, 
-        Validators.pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
-        endTimeValidator()
+        endTimeValidator() // Updated validator
       ]],
       numberOfPeople: [1, [Validators.required, Validators.min(1), Validators.max(this.space.capacity || 10)]],
     });
@@ -204,8 +207,9 @@ export class ReservationModalComponent implements OnInit {
       this.calculatePrice();
       
       // Validar hora de inicio cuando cambia la fecha o la hora
+      // Y potencialmente ajustar si es el día actual y la hora es pasada
       if (this.showTimeFields()) {
-        this.validateStartTime();
+        this.validateStartTime(); // This method will handle adjustments
       }
     });
 
@@ -383,25 +387,16 @@ export class ReservationModalComponent implements OnInit {
     // Calculate price based on selected reservation type
     switch (reservationType) {
       case ReservationPeriod.PER_HOUR:
-        const startTime = formValues.startTime;
-        const endTime = formValues.endTime;
+        const startHour = formValues.startTime as number; // Is a number
+        const endHour = formValues.endTime as number;     // Is a number
         
-        // Calcular diferencia de horas
-        const [startHour, startMinute] = startTime.split(':').map(Number);
-        const [endHour, endMinute] = endTime.split(':').map(Number);
-        
-        let hours = endHour - startHour;
-        const minutes = endMinute - startMinute;
-        
-        // Ajustar por minutos
-        if (minutes > 0) {
-          hours += minutes / 60;
-        } else if (minutes < 0) {
-          hours -= 1 - (minutes / 60);
+        let hours = 0;
+        if (typeof startHour === 'number' && typeof endHour === 'number' && endHour > startHour) {
+            hours = endHour - startHour;
         }
         
         if (hours <= 0) {
-          hours = 1; // Minimum 1 hour
+          hours = 1; // Minimum 1 hour if selection is somehow invalid or for initial display
         }
         
         const hourlyPrice = this.getHourlyPrice();
@@ -447,8 +442,8 @@ export class ReservationModalComponent implements OnInit {
     return total;
   }
 
-  formatTimeForBackend(timeString: string): string {
-    return timeString + ':00'; // Add seconds for backend format
+  formatTimeForBackend(hour: number): string {
+    return hour.toString().padStart(2, '0') + ':00:00'; // Format HH:00:00
   }
 
   formatDate(date: Date): string {
@@ -501,10 +496,10 @@ export class ReservationModalComponent implements OnInit {
     switch (reservationType) {
       case ReservationPeriod.PER_HOUR:
         // For hourly reservations, include both date, times and hour fields
-        startDateTime = `${formattedDate}T${this.formatTimeForBackend(formValues.startTime)}`;
-        endDateTime = `${formattedDate}T${this.formatTimeForBackend(formValues.endTime)}`;
-        initHour = this.formatTimeForBackend(formValues.startTime);
-        endHour = this.formatTimeForBackend(formValues.endTime);
+        startDateTime = `${formattedDate}T${this.formatTimeForBackend(formValues.startTime as number)}`;
+        endDateTime = `${formattedDate}T${this.formatTimeForBackend(formValues.endTime as number)}`;
+        initHour = this.formatTimeForBackend(formValues.startTime as number);
+        endHour = this.formatTimeForBackend(formValues.endTime as number);
         break;
         
       case ReservationPeriod.PER_DAY:
@@ -820,53 +815,45 @@ export class ReservationModalComponent implements OnInit {
     if (!startDateControl || !startTimeControl || !endTimeControl) return;
     
     const startDate = startDateControl.value as Date;
-    const startTime = startTimeControl.value;
+    const selectedStartHour = startTimeControl.value as number; // Now a number
     
-    if (!startDate || !startTime) return;
+    if (!startDate || typeof selectedStartHour !== 'number') return;
     
-    // Verificar si es hoy
     const today = new Date();
     const isToday = startDate.getDate() === today.getDate() && 
                     startDate.getMonth() === today.getMonth() && 
                     startDate.getFullYear() === today.getFullYear();
     
     if (isToday) {
-      const [hours, minutes] = startTime.split(':').map(Number);
-      const selectedTime = new Date();
-      selectedTime.setHours(hours, minutes, 0, 0);
+      const currentHour = today.getHours();
       
-      const now = new Date();
-      
-      if (selectedTime < now) {
-        // Establecer la hora de inicio a la hora actual
-        const currentHour = now.getHours().toString().padStart(2, '0');
-        const currentMinute = now.getMinutes().toString().padStart(2, '0');
-        const currentTime = `${currentHour}:${currentMinute}`;
+      if (selectedStartHour < currentHour) {
+        startTimeControl.setValue(currentHour, { emitEvent: false }); // Avoid retriggering valueChanges immediately
         
-        startTimeControl.setValue(currentTime);
-        
-        // Ajustar la hora de fin si es necesario (asegurar que sea al menos 1 hora después)
-        const endTime = endTimeControl.value;
-        if (endTime) {
-          const [endHours, endMinutes] = endTime.split(':').map(Number);
-          const endSelectedTime = new Date();
-          endSelectedTime.setHours(endHours, endMinutes, 0, 0);
+        // SnackBar notification
+        this.snackBar.open(`Hora de inicio ajustada a las ${currentHour}:00 por ser anterior.`, 'Cerrar', { duration: 3500 });
+
+        // Adjust endTime if it's now invalid
+        const selectedEndHour = endTimeControl.value as number;
+        if (typeof selectedEndHour === 'number' && selectedEndHour <= currentHour) {
+          let newEndHour = currentHour + 1;
+          if (newEndHour > 23) newEndHour = 23;
           
-          const minEndTime = new Date(selectedTime);
-          minEndTime.setHours(minEndTime.getHours() + 1);
-          
-          if (endSelectedTime <= minEndTime) {
-            const newEndHour = (minEndTime.getHours()).toString().padStart(2, '0');
-            const newEndMinute = minEndTime.getMinutes().toString().padStart(2, '0');
-            endTimeControl.setValue(`${newEndHour}:${newEndMinute}`);
+          // Only set if newEndHour is actually different to prevent unnecessary updates
+          if (endTimeControl.value !== newEndHour) {
+             endTimeControl.setValue(newEndHour, { emitEvent: false });
           }
         }
       }
     }
     
-    // Volver a validar el formulario
-    startTimeControl.updateValueAndValidity();
-    endTimeControl.updateValueAndValidity();
+    // Manually trigger validation update for dependent controls if needed after setValue with emitEvent: false
+    // Or rely on the next user interaction / calculatePrice call
+    startTimeControl.updateValueAndValidity({ emitEvent: false }); // Ensure its own status is updated
+    endTimeControl.updateValueAndValidity({ emitEvent: false }); // Ensure endTime status reflects changes
+
+    // Recalculate price if changes were made without emitting event
+    this.calculatePrice();
   }
 
   // Normalizar el tipo de reserva para manejar diferentes formatos

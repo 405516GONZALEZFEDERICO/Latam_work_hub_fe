@@ -1,8 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
 import { SecurityWardGuard } from './security-ward.guard';
-import { AuthService } from '../services/auth-service/auth.service';
 import { Router } from '@angular/router';
+import { AuthService } from '../app/services/auth-service/auth.service';
 
 describe('SecurityWardGuard', () => {
   let guard: SecurityWardGuard;

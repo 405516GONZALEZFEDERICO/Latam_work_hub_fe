@@ -1,0 +1,311 @@
+:host {
+  display: block;
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f8f9fa; /* Light page background */
+}
+
+.landing-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Ensure footer is at bottom if content is short */
+}
+
+/* New Landing Header */
+.landing-header {
+  background-color: var(--color-text-dark, #1C1C1E);
+  color: white;
+  padding: 2rem 1rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.landing-title {
+  font-size: 3.2em;
+  font-weight: var(--font-weight-bold, 700);
+  margin-bottom: 0.3em;
+  color: #ffffff;
+}
+
+.landing-subtitle {
+  font-size: 1.4em;
+  margin-bottom: 1.5em;
+  font-weight: var(--font-weight-light, 300);
+  color: #f0f0f0;
+  max-width: 650px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.cta-buttons {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.cta-buttons button.landing-button {
+  padding: 12px 30px;
+  font-size: 1.1em;
+  margin: 10px 10px;
+  border-radius: var(--border-radius-button, 8px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  border-width: 2px;
+  font-weight: var(--font-weight-medium, 500);
+  background-color: transparent;
+  color: white;
+  border-color: white;
+}
+
+.cta-buttons button.landing-button.register {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.cta-buttons button.landing-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--box-shadow-medium, 0 4px 15px rgba(0,0,0,0.2));
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Video Section - Now independent and responsive */
+.video-section {
+  width: 100%;
+  max-width: 100%; /* Cambiado a 100% para que ocupe todo el ancho disponible */
+  margin: 0 auto;
+  position: relative;
+  height: 0;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  background-color: #000;
+  overflow: hidden;
+}
+
+@media (min-width: 1400px) {
+  .video-section {
+    max-width: 100%; /* Ahora ocupa todo el ancho disponible */
+    padding-bottom: 56.25%; /* Mantiene relación 16:9 */
+  }
+}
+
+@media (min-width: 992px) and (max-width: 1399px) {
+  .video-section {
+    max-width: 100%; /* Ahora ocupa todo el ancho disponible */
+  }
+}
+
+.video-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.video-container video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* Cambiado a 'contain' para mostrar todo el video sin recortar */
+}
+
+.play-pause-button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 7;
+  color: white;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.play-pause-button mat-icon {
+  font-size: 56px;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Tagline Section */
+.tagline-section {
+  background-color: #f8f9fa;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.tagline {
+  font-size: 2em;
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--color-text-dark, #1C1C1E);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Features Overview Section */
+.features-overview-section {
+  padding: 60px 20px;
+  text-align: center;
+  background-color: #ffffff;
+}
+
+.features-overview-section h2 {
+  font-size: 2.5em;
+  margin-bottom: 40px;
+  color: var(--color-text-dark, #333);
+  font-weight: var(--font-weight-semibold, 600);
+}
+
+.features-grid {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.feature-item {
+  flex-basis: calc(33.333% - 30px);
+  min-width: 280px;
+  background-color: #f8f9fa;
+  padding: 30px;
+  border-radius: var(--border-radius, 10px);
+  box-shadow: var(--box-shadow-light, 0 4px 12px rgba(0,0,0,0.08));
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.feature-item:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--box-shadow-medium, 0 6px 20px rgba(0,0,0,0.12));
+}
+
+.feature-item mat-icon {
+  font-size: 48px;
+  color: var(--color-primary, #007bff);
+  margin-bottom: 15px;
+}
+
+.feature-item h3 {
+  font-size: 1.5em;
+  margin-bottom: 10px;
+  color: var(--color-text-dark, #333);
+  font-weight: var(--font-weight-medium, 500);
+}
+
+.feature-item p {
+  font-size: 1em;
+  color: var(--color-text-light, #666);
+  line-height: var(--line-height-normal, 1.6);
+}
+
+/* Footer */
+.landing-footer {
+  background-color: var(--color-text-dark, #1C1C1E);
+  color: #f8f9fa;
+  text-align: center;
+  padding: 25px 20px;
+  margin-top: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .landing-title {
+    font-size: 2.8em;
+  }
+  .landing-subtitle {
+    font-size: 1.2em;
+  }
+  .feature-item {
+    flex-basis: calc(50% - 20px);
+  }
+  .tagline {
+    font-size: 1.8em;
+  }
+}
+
+@media (max-width: 768px) {
+  .landing-header {
+    padding: 1.5rem 1rem;
+  }
+  .landing-title {
+    font-size: 2.2em;
+  }
+  .landing-subtitle {
+    font-size: 1.1em;
+  }
+  .cta-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .cta-buttons button.landing-button {
+    margin: 8px 0;
+    width: 80%;
+    max-width: 300px;
+  }
+  .tagline {
+    font-size: 1.5em;
+  }
+  .features-grid {
+    flex-direction: column;
+    align-items: center;
+  }
+  .feature-item {
+    flex-basis: 100%;
+    width: 90%;
+    max-width: 450px;
+  }
+  .features-overview-section h2 {
+    font-size: 2em;
+  }
+  .play-pause-button {
+    width: 60px;
+    height: 60px;
+  }
+  .play-pause-button mat-icon {
+    font-size: 40px;
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .landing-header {
+    padding: 1rem 0.5rem;
+  }
+  .landing-title {
+    font-size: 1.8em;
+  }
+  .landing-subtitle {
+    font-size: 1em;
+  }
+  .tagline {
+    font-size: 1.3em;
+  }
+  .play-pause-button {
+    width: 50px;
+    height: 50px;
+  }
+  .play-pause-button mat-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+  }
+  .feature-item mat-icon {
+    font-size: 40px;
+  }
+  .feature-item h3 {
+    font-size: 1.3em;
+  }
+} 

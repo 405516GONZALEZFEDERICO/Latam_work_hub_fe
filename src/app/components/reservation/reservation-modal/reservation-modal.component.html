@@ -82,12 +82,13 @@
               <!-- Hora inicio -->
               <mat-form-field appearance="outline" *ngIf="showTimeFields()">
                 <mat-label>Hora inicio</mat-label>
-                <input matInput type="time" formControlName="startTime">
+                <mat-select formControlName="startTime">
+                  <mat-option *ngFor="let hour of hours" [value]="hour">
+                    {{ hour.toString().padStart(2, '0') }}:00
+                  </mat-option>
+                </mat-select>
                 <mat-error *ngIf="reservationForm.get('startTime')?.hasError('required')">
                   La hora de inicio es requerida
-                </mat-error>
-                <mat-error *ngIf="reservationForm.get('startTime')?.hasError('pattern')">
-                  Formato de hora inválido
                 </mat-error>
                 <mat-error *ngIf="reservationForm.get('startTime')?.hasError('pastTime')">
                   La hora debe ser posterior a la hora actual
@@ -97,12 +98,13 @@
               <!-- Hora fin -->
               <mat-form-field appearance="outline" *ngIf="showTimeFields()">
                 <mat-label>Hora fin</mat-label>
-                <input matInput type="time" formControlName="endTime">
+                <mat-select formControlName="endTime">
+                  <mat-option *ngFor="let hour of hours" [value]="hour">
+                    {{ hour.toString().padStart(2, '0') }}:00
+                  </mat-option>
+                </mat-select>
                 <mat-error *ngIf="reservationForm.get('endTime')?.hasError('required')">
                   La hora de fin es requerida
-                </mat-error>
-                <mat-error *ngIf="reservationForm.get('endTime')?.hasError('pattern')">
-                  Formato de hora inválido
                 </mat-error>
                 <mat-error *ngIf="reservationForm.get('endTime')?.hasError('endBeforeStart')">
                   La hora de fin debe ser posterior a la hora de inicio

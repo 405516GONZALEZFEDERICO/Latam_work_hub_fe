@@ -16,7 +16,7 @@ import { AmenityItemComponent } from '../amenity-item/amenity-item.component';
 import { AuthService } from '../../../services/auth-service/auth.service';
 import { AddressService } from '../../../services/address/address.service';
 import { AmenityService } from '../../../services/amenity/amenity.service';
-import { SpaceTypeService } from '../../../services/space/space-type.service';
+import { SpaceTypeService } from '../../../services/space-type/space-type.service';
 import { SpaceType } from '../../../models/space-type.model';
 import { Observable, map, startWith } from 'rxjs';
 import { SpaceService } from '../../../services/space/space.service';
