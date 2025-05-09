@@ -325,148 +325,72 @@ export class AuthService {
       }
     });
   }
-
-  async loginWithGoogle(isRegistration: boolean = false): Promise<void> {
-    try {
-      // Add at the start of both login methods
-      await this.clearAllStorages();
-      // Obtenemos las credenciales con Firebase (OAuth)
-      const provider = new GoogleAuthProvider();
-      
-      // Si es registro, pedimos permisos adicionales para asegurar una cuenta nueva
-      if (isRegistration) {
-        provider.setCustomParameters({ prompt: 'select_account' });
-      }
-      
-      const result = await signInWithPopup(this.auth, provider);
-      
-      const user = result.user;
-      
-      // Obtener token para comunicación con backend
-      const idToken = await user.getIdToken();
-      
-      // Verificar si hay un usuario diferente en localStorage y limpiarlo
-      const cachedUser = this.getUserFromLocalStorage();
-      if (cachedUser && cachedUser.uid !== user.uid) {
-        localStorage.removeItem('currentUserData');
-        localStorage.removeItem('userDataTimestamp');
-      }
-      
-      // Notificar al backend para verificar/asignar rol
+async loginWithGoogle(isRegistration: boolean = false): Promise<void> {
+  try {
+    // Clear storages first
+    await this.clearAllStorages();
+    
+    // 1. Get Firebase credentials (but don't store them yet)
+    const provider = new GoogleAuthProvider();
+    if (isRegistration) {
+      provider.setCustomParameters({ prompt: 'select_account' });
+    }
+    
+    const result = await signInWithPopup(this.auth, provider);
+    const user = result.user;
+    const idToken = await user.getIdToken();
+    
+    // 2. Validate with backend FIRST - Make this a blocking call
+    const backendValidation = await firstValueFrom(
       this.http.post<any>(`${this.API_BASE_URL}/google/login`, null, {
         params: new HttpParams()
           .set('idToken', idToken)
           .set('isRegistration', isRegistration ? 'true' : 'false'),
         headers: { 'Content-Type': 'application/json' }
-      }).subscribe({
-        next: (response) => {
-
-          if (this.auth.currentUser) {
-            // Verificar si ya existe un rol en localStorage
-            const cachedUser = this.getUserFromLocalStorage(this.auth.currentUser.uid);
-            const roleFromBackend = response.role || 'DEFAULT';
-            const persistedRole = cachedUser?.role;
-            
-            // Priorizar el rol persistido si es diferente a DEFAULT y el backend devuelve DEFAULT
-            let finalRole: string;
-            
-            if (isRegistration) {
-              // Si es registro, siempre usar DEFAULT para forzar selección de rol
-              finalRole = 'DEFAULT';
-            } else {
-              // Si es login, usar lógica normal
-              finalRole = (roleFromBackend === 'DEFAULT' && persistedRole && persistedRole !== 'DEFAULT')
-                ? persistedRole
-                : roleFromBackend;
-            }
-              
-            // Actualizar usuario con los datos del backend
-            this.currentUserData = {
-              uid: this.auth.currentUser.uid,
-              email: this.auth.currentUser.email!,
-              emailVerified: this.auth.currentUser.emailVerified,
-              role: finalRole as UserRole,
-              idToken: idToken,
-              refreshToken: this.auth.currentUser.refreshToken,
-              photoURL: response.photoUrl || this.auth.currentUser.photoURL || ''
-            };
-            
-            this.userSubject.next(this.currentUserData);
-            this.authStateSubject.next(true);
-            
-            // Guardar en localStorage siempre
-            localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
-            localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
-            
-            // Si es un registro o tiene rol DEFAULT, redirigir a selección de rol
-            if (isRegistration || finalRole === 'DEFAULT') {
-              // Usar método directo para evitar problemas de ruteo
-              this.navigateToRoleSelection();
-            } else {
-              this.router.navigate(['/home']);
-            }
-          } else {
-            throw new Error('No se pudo completar el proceso de autenticación.');
-          }
-        },
-        error: (error) => {
-          console.error('Error en autenticación con backend:', error);
-          // Verificar si es un error de ruta
-          if (error && error.message && (error.message.includes('select-rol') || error.message.includes('select-role'))) {
-            this.handleRouteError(error);
-          } else {
-            // Manejo genérico de errores
-            console.error('Error desconocido en proceso de autenticación:', error);
-            
-            // Incluso con error, intentar navegar según corresponda
-            const user = this.auth.currentUser;
-            if (user) {
-              
-              // Crear datos mínimos del usuario
-              this.currentUserData = {
-                uid: user.uid,
-                email: user.email!,
-                emailVerified: user.emailVerified,
-                role: 'DEFAULT' as UserRole, // Asignar DEFAULT como fallback
-                refreshToken: user.refreshToken,
-                photoURL: user.photoURL || '',
-                idToken: '' 
-              };
-              
-              // Actualizar el estado
-              this.userSubject.next(this.currentUserData);
-              this.authStateSubject.next(true);
-              
-              // Guardar en localStorage
-              localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
-              localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
-              
-              // Redirigir a selección de rol en caso de error
-              this.navigateToRoleSelection();
-            } else {
-              throw new Error('Error en autenticación y no hay usuario disponible');
-            }
-          }
-        }
-      });
-    } catch (error: any) {
-      console.error('Error crítico en proceso de Google auth:', error);
+      })
+    );
+    
+    // 3. Only if backend validates successfully, continue with login
+    if (this.auth.currentUser) {
+      // Set up user with role from backend
+      this.currentUserData = {
+        uid: this.auth.currentUser.uid,
+        email: this.auth.currentUser.email!,
+        emailVerified: this.auth.currentUser.emailVerified,
+        role: backendValidation.role as UserRole,
+        idToken: idToken,
+        refreshToken: this.auth.currentUser.refreshToken,
+        photoURL: backendValidation.photoUrl || this.auth.currentUser.photoURL || ''
+      };
       
-      let errorMessage = 'Error al procesar la autenticación con Google';
+      this.userSubject.next(this.currentUserData);
+      this.authStateSubject.next(true);
       
-      if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = 'Proceso cancelado. La ventana fue cerrada.';
-      } else if (error.code === 'auth/popup-blocked') {
-        errorMessage = 'El navegador bloqueó la ventana emergente. Por favor, permita ventanas emergentes e intente nuevamente.';
-      } else if (error.message && (error.message.includes('select-rol') || error.message.includes('select-role'))) {
-        // Error de ruta - intentar redirigir a la ruta correcta
+      localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
+      localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
+      
+      // Navigate based on role
+      if (backendValidation.role === 'DEFAULT' || isRegistration) {
         this.navigateToRoleSelection();
-        return;
+      } else {
+        this.router.navigate(['/home']);
       }
-      
-      throw new Error(errorMessage);
     }
+  } catch (error: any) {
+    // If ANY part fails (including backend validation), clean up and log out
+    console.error('Error en autenticación con Google:', error);
+    
+    // Sign out from Firebase to undo the previous sign in
+    await signOut(this.auth);
+    
+    // Clear all storage
+    localStorage.removeItem('currentUserData');
+    localStorage.removeItem('userDataTimestamp');
+    
+    // Throw a consistent error
+    throw new Error('No se pudo completar la autenticación. Verifica que el servidor esté disponible.');
   }
+}
 
   register(email: string, password: string): Observable<string> {
     const params = new HttpParams()
