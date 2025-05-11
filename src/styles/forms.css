@@ -90,12 +90,13 @@
 }
 
 .mat-mdc-form-field-error {
-  color: var(--color-error) !important;
-  font-size: 12px !important;
+  color: transparent !important;
+  font-size: 0 !important;
   margin: 0 !important;
-  font-weight: 500 !important;
-  display: block !important;
-  padding-left: 36px !important;
+  font-weight: 0 !important;
+  display: none !important;
+  padding: 0 !important;
+  height: 0 !important;
 }
 
 /* Error en campo de formulario */
@@ -113,13 +114,14 @@
 }
 
 .mat-error {
-  color: var(--color-error) !important;
-  font-size: 12px !important;
-  margin-top: 4px !important;
-  display: block !important;
-  padding-left: 36px !important; /* Alinea con el icono del campo */
+  color: transparent !important;
+  font-size: 0 !important;
+  margin: 0 !important;
+  display: none !important;
+  padding: 0 !important;
   position: static !important;
-  clear: both !important;
+  height: 0 !important;
+  opacity: 0 !important;
 }
 
 /* Estilo para el input inválido */
@@ -159,18 +161,20 @@
 .login-container .mat-mdc-form-field-error,
 .register-container .mat-mdc-form-field-error {
   position: static !important;
-  font-size: 12px !important;
-  margin-top: 3px !important;
-  padding-left: 36px !important;
-  display: block !important;
-  line-height: 1.2 !important;
-  white-space: normal !important;
-  overflow: visible !important;
+  font-size: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: none !important;
+  line-height: 0 !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  visibility: hidden !important;
+  overflow: hidden !important;
 }
 
 /* Ajuste específico para los mensajes de error */
 .mat-mdc-form-field.mat-form-field-invalid {
-  margin-bottom: 30px !important;
+  margin-bottom: 16px !important;
 }
 
 /* Ajustes para el W-100 que podría estar causando problemas */
@@ -195,12 +199,15 @@
 
 /* Solución para el error de términos y condiciones */
 .terms-error {
-  color: var(--color-error) !important;
-  font-size: 12px !important;
-  margin-top: 5px !important;
-  display: block !important;
-  padding-left: 36px !important;
+  color: transparent !important;
+  font-size: 0 !important;
+  margin: 0 !important;
+  display: none !important;
+  padding: 0 !important;
   position: static !important;
+  height: 0 !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
 }
 
 /* Fix crítico para forzar la correcta visualización de errores en todos los componentes */
@@ -211,15 +218,17 @@
 /* Estilo de alta prioridad para el contenedor de errores */
 .mdc-text-field--invalid + .mdc-text-field-helper-line,
 .mat-mdc-form-field-subscript-wrapper {
-  height: auto !important;
+  height: 0 !important;
   position: absolute !important;
   top: 100% !important;
   left: 0 !important;
   width: 100% !important;
-  z-index: 10 !important;
+  z-index: -1 !important;
   background-color: transparent !important;
-  display: block !important;
-  overflow: visible !important;
+  display: none !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
 }
 
 /* Forza el espaciado correcto entre campos con errores */

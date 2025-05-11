@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { RentalService, InvoiceHistory, RentalContractResponse, PaginatedResponse } from '../../services/rental/rental.service';
+import { RentalService, RentalContractResponse, InvoiceHistoryDto, PaginatedResponse } from '../../services/rental/rental.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -35,9 +35,9 @@ import { catchError, map } from 'rxjs/operators';
   standalone: true
 })
 export class InvoicesTabComponent implements OnInit {
-  invoices: InvoiceHistory[] = [];
-  filteredInvoices: InvoiceHistory[] = [];
-  displayedInvoices: InvoiceHistory[] = [];
+  invoices: InvoiceHistoryDto[] = [];
+  filteredInvoices: InvoiceHistoryDto[] = [];
+  displayedInvoices: InvoiceHistoryDto[] = [];
   loading = false;
   
   // Filtro por estado
@@ -96,12 +96,14 @@ export class InvoicesTabComponent implements OnInit {
             forkJoin(invoiceObservables).subscribe({
               next: (results) => {
                 // Aplanar el array de arrays de facturas
-                const allInvoices: InvoiceHistory[] = [];
+                const allInvoices: InvoiceHistoryDto[] = [];
                 results.forEach(invoiceArray => {
                   if (invoiceArray && invoiceArray.length) {
                     allInvoices.push(...invoiceArray);
                   }
                 });
+                
+                this.invoices = allInvoices;
                 
                 if (!this.invoices.every(invoice => invoice.issueDate)) {
                   console.warn('Algunas facturas no tienen fecha de emisión');
@@ -173,7 +175,7 @@ export class InvoicesTabComponent implements OnInit {
     this.updateDisplayedInvoices();
   }
 
-  payInvoice(invoice: InvoiceHistory): void {
+  payInvoice(invoice: InvoiceHistoryDto): void {
     if (invoice.paymentUrl) {
       window.location.href = invoice.paymentUrl;
     }

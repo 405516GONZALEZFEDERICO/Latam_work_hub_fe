@@ -148,10 +148,13 @@
 
 .panel-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-lg);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--surface-color);
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .panel-actions {
@@ -162,12 +165,13 @@
 
 .panel-header h3 {
   margin: 0;
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
+  flex-grow: 1;
+  text-align: center;
 }
 
-.panel-header .back-button {
-  margin-right: 1rem; /* Espacio entre el botón volver y el título */
+.close-button {
+  position: absolute;
+  left: 8px;
 }
 
 @media (min-width: 769px) { /* O el breakpoint que uses para móvil (ajustar si es necesario) */
@@ -516,4 +520,44 @@
 
 ::ng-deep .mat-paginator-container {
   justify-content: center;
+}
+
+/* Estilos para los botones de acción */
+.action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: white !important;
+  color: #1976d2 !important;
+  border: 1px solid #1976d2;
+  min-width: 100px;
+}
+
+.action-button.pending {
+  background-color: white !important;
+  color: #ff9800 !important;
+  border: 1px solid #ff9800;
+}
+
+.action-button.pending mat-icon {
+  color: #ff9800;
+}
+
+.action-button mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: #1976d2;
+}
+
+.action-button:hover {
+  background-color: rgba(25, 118, 210, 0.04) !important;
+}
+
+.action-button.pending:hover {
+  background-color: rgba(255, 152, 0, 0.04) !important;
 } 

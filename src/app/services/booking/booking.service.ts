@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpResponse } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environment/environment';
 
@@ -12,7 +12,7 @@ export interface BookingDto {
   endHour?: string;
   counterPersons: number;
   totalAmount: number;
-  bookingType?: string; // Tipo de reserva: PER_HOUR, PER_DAY, PER_MONTH
+  bookingType?: string; // PER_HOUR, PER_DAY, PER_MONTH
 }
 
 export interface BookingResponseDto {
@@ -67,17 +67,15 @@ export interface PageResponse<T> {
   providedIn: 'root'
 })
 export class BookingService {
-  // Use environment variable if available, fallback to the current URL
-  private apiUrl = environment.apiUrl ? `${environment.apiUrl}/booking` : 'http://localhost:8080/api/booking';
+  private readonly apiUrl: string;
 
   constructor(private http: HttpClient) {
+    this.apiUrl = `${environment.apiUrl}/booking`;
   }
 
-  createBooking(bookingDto: BookingDto): Observable<any> {
-    
-    // Use responseType: 'text' to get the raw response
+  createBooking(bookingDto: BookingDto): Observable<string> {
     return this.http.post(
-      `${this.apiUrl}/create`, 
+      `${this.apiUrl}/create`,
       bookingDto,
       { responseType: 'text' }
     );
@@ -91,5 +89,24 @@ export class BookingService {
     }
     
     return this.http.get<PageResponse<BookingResponseDto>>(url);
+  }
+
+  generateBookingPaymentLink(bookingId: number): Observable<string> {
+    return this.http.post(
+      `${this.apiUrl}/bookings/${bookingId}/payment`,
+      {},
+      { responseType: 'text' }
+    );
+  }
+
+  refundBooking(bookingId: number): Observable<string> {
+    return this.http.post(
+      `${this.apiUrl}/refound`,
+      {},
+      { 
+        params: { bookingId: bookingId.toString() },
+        responseType: 'text'
+      }
+    );
   }
 }

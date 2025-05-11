@@ -22,26 +22,30 @@ export class SpaceTypeService {
   getAllSpaceTypes(): Observable<SpaceType[]> {
     return this.http.get<any[]>(`${this.apiUrl}/all`).pipe(
       map((response): { id: number | null; name: string }[] => {
-        console.log('Respuesta CRUDA del API /space-types/all:', JSON.stringify(response)); // Log de la respuesta cruda
+        console.log('Respuesta CRUDA del API /space-types/all:', JSON.stringify(response));
         
-        // Asegurar que cada objeto tiene la propiedad id y name
         if (!Array.isArray(response)) {
           console.error('La respuesta del API no es un array:', response);
-          return []; // Devolver array vacío si la respuesta no es válida
+          return [];
         }
         
-        return response.map(item => {
-          const itemId = item.id; // Guardar el id original
-          const processedId = itemId !== undefined && itemId !== null ? Number(itemId) : null; // Convertir a número o dejar como null si no existe
-          
-          // Log para cada item procesado
-          console.log(`Procesando tipo: ID original=${itemId}, ID procesado=${processedId}, Nombre=${item.name}`); 
-          
-          return {
-            id: processedId, // Usar el ID procesado (puede ser null)
-            name: item.name || 'Desconocido'
-          };
-        });
+        return response
+          .filter(item => {
+            // Filtrar el tipo "empresa" (ignorando mayúsculas/minúsculas y espacios)
+            const name = item.name?.toLowerCase().trim();
+            return name !== 'empresa' && name !== 'company';
+          })
+          .map(item => {
+            const itemId = item.id;
+            const processedId = itemId !== undefined && itemId !== null ? Number(itemId) : null;
+            
+            console.log(`Procesando tipo: ID original=${itemId}, ID procesado=${processedId}, Nombre=${item.name}`);
+            
+            return {
+              id: processedId,
+              name: item.name || 'Desconocido'
+            };
+          });
       }),
       map(processedTypes => processedTypes.filter(type => type.id !== null) as SpaceType[])
     );

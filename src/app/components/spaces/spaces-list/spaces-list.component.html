@@ -80,10 +80,12 @@
             <button mat-icon-button color="primary" (click)="navigateToView(space.id)" matTooltip="Ver detalles del espacio">
               <mat-icon>visibility</mat-icon>
             </button>
-            <button mat-icon-button color="accent" (click)="navigateToEdit(space.id)" matTooltip="Editar espacio">
+            <button mat-icon-button color="accent" [disabled]="space.available === false" (click)="navigateToEdit(space.id)" 
+                  matTooltip="{{space.available === false ? 'No se puede editar un espacio no disponible' : 'Editar espacio'}}">
               <mat-icon>edit</mat-icon>
             </button>
-            <button mat-icon-button color="warn" (click)="confirmDeleteSpace(space.id)" matTooltip="Eliminar espacio">
+            <button mat-icon-button color="warn" [disabled]="space.available === false" (click)="confirmDeleteSpace(space.id)"
+                  matTooltip="{{space.available === false ? 'No se puede eliminar un espacio no disponible' : 'Eliminar espacio'}}">
               <mat-icon>delete</mat-icon>
             </button>
           </div>
