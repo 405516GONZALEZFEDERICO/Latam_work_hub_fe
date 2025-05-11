@@ -48,8 +48,7 @@
   flex: 2;
   overflow-y: auto;
   border-left: 1px solid #e0e0e0;
-  padding-left: 1.5rem;
-  padding-right: 1rem;
+  padding: 1.5rem;
 }
 
 .booking-card {
@@ -94,14 +93,15 @@
 
 .detail-item {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.5rem;
+  margin-bottom: 1rem;
+  align-items: flex-start;
 }
 
 .label {
   font-weight: 500;
   color: #555;
+  min-width: 140px;
+  flex-shrink: 0;
 }
 
 .panel-header {
@@ -127,16 +127,19 @@
 
 .booking-summary-section {
   margin-bottom: 1.5rem;
-  padding: 1rem;
+  padding: 1.5rem;
   border-radius: 8px;
   background-color: #f9f9f9;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .booking-summary-section h4 {
   margin-top: 0;
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.2rem;
   color: #333;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 0.8rem;
 }
 
 .no-bookings {
@@ -237,35 +240,79 @@
 .cancellation-policy-message {
   display: flex;
   align-items: flex-start;
-  gap: 0.5rem;
+  gap: 12px;
   margin-bottom: 1rem;
-  padding: 0.75rem;
-  background-color: #FFEBEE;
+  padding: 1rem;
+  background-color: rgba(244, 67, 54, 0.1);
   border-radius: 4px;
   font-size: 0.9rem;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .cancellation-policy-message mat-icon {
-  margin-top: 0.1rem;
+  color: #F44336;
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .cancellation-disabled-message {
-  margin-top: 0.75rem;
-  padding: 0.5rem;
-  background-color: #f5f5f5;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: rgba(244, 67, 54, 0.05);
   border-radius: 4px;
   color: #F44336;
   font-size: 0.85rem;
-  font-style: italic;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
 }
 
 .boton-cancelar {
-  margin-top: 0.5rem;
+  background-color: white !important;
+  color: #F44336 !important;
+  border: 1px solid #F44336;
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.boton-cancelar mat-icon {
+  color: #F44336;
+  margin-right: 4px;
+}
+
+.boton-cancelar:hover {
+  background-color: #F44336 !important;
+  color: white !important;
+}
+
+.boton-cancelar:hover mat-icon {
+  color: white;
+}
+
+.boton-cancelar:disabled {
+  background-color: #f5f5f5 !important;
+  border-color: #e0e0e0;
+  color: #bdbdbd !important;
+}
+
+.boton-cancelar:disabled mat-icon {
+  color: #bdbdbd;
 }
 
 .panel-header .back-button {
   margin-right: 1rem;
+}
+
+.back-button {
+  margin-right: 1rem;
+}
+
+.back-button mat-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
 }
 
 @media (min-width: 961px) {
@@ -277,19 +324,126 @@
 @media (max-width: 960px) {
   .bookings-content {
     flex-direction: column;
-    height: auto;
+    overflow-y: auto;
   }
-  
+
   .bookings-list {
     max-width: 100%;
     padding-right: 0;
   }
-  
+
   .booking-details-panel {
     border-left: none;
     border-top: 1px solid #e0e0e0;
-    padding-left: 0;
-    padding-top: 1.5rem;
+    padding: 1.5rem 0.5rem;
     margin-top: 1rem;
+  }
+}
+
+/* Hiding/removing unused sections */
+.tab-content,
+.additional-details,
+.properties-list,
+.property-item,
+.property-name,
+.property-value {
+  display: none;
+}
+
+/* Make the values in detail items wrap properly */
+.detail-item span:last-child {
+  flex: 1;
+  word-break: break-word;
+}
+
+/* Styles for payment section */
+.payment-section {
+  margin-top: 20px;
+  padding-top: 15px;
+}
+
+.payment-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: rgba(33, 150, 243, 0.1);
+  border-radius: 4px;
+}
+
+.payment-info mat-icon {
+  color: #2196F3;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.boton-pagar {
+  background-color: white !important;
+  color: #1976d2 !important;
+  border: 1px solid #1976d2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+}
+
+.boton-pagar mat-icon {
+  color: #1976d2;
+}
+
+.boton-pagar:hover {
+  background-color: #1976d2 !important;
+  color: white !important;
+}
+
+.boton-pagar:hover mat-icon {
+  color: white;
+}
+
+/* For the mini button in the list */
+.booking-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white !important;
+  color: #1976d2 !important;
+  border: 1px solid #1976d2;
+}
+
+.action-button mat-icon {
+  margin: 0;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  color: #1976d2;
+}
+
+/* Estilos para los iconos en general */
+.mat-icon {
+  vertical-align: middle;
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+/* Ajustes para dispositivos móviles */
+@media (max-width: 600px) {
+  .cancellation-policy-message,
+  .payment-info {
+    padding: 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
   }
 } 

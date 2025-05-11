@@ -48,6 +48,41 @@
               <span>{{rental.currentInvoiceNumber}} (Vence: {{rental.currentInvoiceDueDate | date:'dd/MM/yyyy'}})</span>
             </div>
           </div>
+
+          <!-- Botón de pago para facturas pendientes -->
+          <button mat-button 
+            [class]="'action-button ' + (isPendingStatus(rental.status) ? 'pending' : '')"
+            *ngIf="hasInvoicePending(rental)"
+            (click)="payCurrentInvoice(rental)">
+            <mat-icon>payment</mat-icon>
+            Pagar
+          </button>
+
+          <!-- Botón de renovación -->
+          <button mat-button 
+            [class]="'action-button ' + (isPendingStatus(rental.status) ? 'pending' : '')"
+            *ngIf="isContractActionable(rental)"
+            (click)="selectRental(rental); activeTab = 1">
+            <mat-icon>autorenew</mat-icon>
+            Renovar
+          </button>
+
+          <!-- Botón de cancelación -->
+          <button mat-button 
+            [class]="'action-button ' + (isPendingStatus(rental.status) ? 'pending' : '')"
+            *ngIf="isContractActionable(rental)"
+            (click)="selectRental(rental); activeTab = 2">
+            <mat-icon>cancel</mat-icon>
+            Cancelar
+          </button>
+
+          <!-- Botón de detalles -->
+          <button mat-button 
+            [class]="'action-button ' + (isPendingStatus(rental.status) ? 'pending' : '')"
+            (click)="selectRental(rental)">
+            <mat-icon>info</mat-icon>
+            Detalles
+          </button>
         </mat-card-content>
       </mat-card>
 
@@ -72,16 +107,10 @@
     <!-- Panel de Detalles (Ocupa toda la pantalla en móvil si hay uno seleccionado) -->
     <div class="rental-details-panel" *ngIf="selectedRental">
       <div class="panel-header">
-        <!-- Botón Volver (solo en móvil) -->
-        <button mat-icon-button *ngIf="isMobile$ | async" (click)="deselectRental()" class="back-button">
-          <mat-icon>arrow_back</mat-icon>
+        <button mat-icon-button (click)="deselectRental()" class="close-button">
+          <mat-icon>close</mat-icon>
         </button>
         <h3>Detalles del Alquiler #{{selectedRental.id}}</h3>
-        <div class="panel-actions">
-          <button mat-icon-button (click)="deselectRental()">
-            <mat-icon>close</mat-icon>
-          </button>
-        </div>
       </div>
 
       <div class="rental-summary">
@@ -119,14 +148,14 @@
           </div>
           <div class="detail-item">
             <span class="label">Renovación Automática:</span>
-            <span>{{selectedRental.autoRenew ? 'Sí' : 'No'}}</span>
+            <span>{{selectedRental.autoRenew ? 'Sí' : 'No'}}{{selectedRental.autoRenew && selectedRental.renewalMonths ? ' (' + selectedRental.renewalMonths + ' meses)' : ''}}</span>
           </div>
         </div>
       </div>
 
       <mat-divider></mat-divider>
 
-      <mat-tab-group [(selectedIndex)]="activeTab" animationDuration="0ms">
+      <mat-tab-group [(selectedIndex)]="activeTab" animationDuration="0ms" (selectedTabChange)="changeTab($event.index)">
         <!-- Tab de Facturas -->
         <mat-tab label="Facturas">
           <div class="tab-content">
@@ -220,43 +249,6 @@
           </div>
         </mat-tab>
 
-        <!-- Tab de Historial de Contrato -->
-        <mat-tab label="Historial">
-          <div class="tab-content">
-            <h4>Historial de Cambios</h4>
-            <div class="history-section">
-              <div class="timeline">
-                <div *ngFor="let change of contractHistory" class="timeline-item">
-                  <div class="timeline-date">
-                    <span>{{change.changeDate | date:'dd/MM/yyyy HH:mm'}}</span>
-                  </div>
-                  <div class="timeline-content">
-                    <div class="change-status">
-                      <span class="status-label">Estado anterior:</span>
-                      <mat-chip [style.background-color]="getStatusColor(change.previousStatus)">
-                        {{translateContractStatus(change.previousStatus)}}
-                      </mat-chip>
-                      <mat-icon>arrow_forward</mat-icon>
-                      <span class="status-label">Nuevo estado:</span>
-                      <mat-chip [style.background-color]="getStatusColor(change.newStatus)">
-                        {{translateContractStatus(change.newStatus)}}
-                      </mat-chip>
-                    </div>
-                    <p *ngIf="change.changeReason" class="change-reason">
-                      Razón: {{change.changeReason}}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div *ngIf="contractHistory.length === 0" class="empty-state">
-                <mat-icon>history</mat-icon>
-                <p>No hay historial de cambios disponible</p>
-              </div>
-            </div>
-          </div>
-        </mat-tab>
-
         <!-- Tab de Renovación -->
         <mat-tab label="Renovación">
           <div class="tab-content">
@@ -339,8 +331,6 @@
                   Cancelar Contrato
                 </button>
               </div>
-
-
             </div>
           </div>
         </mat-tab>
@@ -354,10 +344,6 @@
               <div class="space-details">
                 <div class="detail-group">
                   <h5>Datos Generales</h5>
-                  <div class="detail-item">
-                    <span class="label">ID del Espacio:</span>
-                    <span>{{selectedRental.spaceId}}</span>
-                  </div>
                   <div class="detail-item">
                     <span class="label">Nombre del Espacio:</span>
                     <span>{{selectedRental.spaceName}}</span>

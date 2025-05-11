@@ -1,7 +1,7 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
-import { RentalService } from '../../services/rental/rental.service';
+import { RentalContractResponse, RentalService } from '../../services/rental/rental.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -145,5 +145,21 @@ export class RentalModalComponent implements OnInit {
 
   onCancel(): void {
     this.dialogRef.close();
+  }
+
+  isContractActionable(rental: RentalContractResponse): boolean {
+    if (!rental) {
+      console.log('isContractActionable: rental is null or undefined');
+      return false;
+    }
+    const isActionable = this.isActiveStatus(rental.status);
+    console.log(`isContractActionable: ${rental.id} -> ${isActionable} (status: ${rental.status})`);
+    return isActionable;
+  }
+
+  isActiveStatus(status: string): boolean {
+    const isActive = status === 'ACTIVE' || status === 'ACTIVO';
+    console.log(`isActiveStatus: ${status} -> ${isActive}`);
+    return isActive;
   }
 } 

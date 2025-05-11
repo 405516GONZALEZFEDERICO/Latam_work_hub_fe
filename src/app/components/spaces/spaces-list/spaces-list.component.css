@@ -109,4 +109,20 @@ button mat-icon {
   .status-badges {
     display: none;
   }
+}
+
+/* Estilos para botones deshabilitados */
+button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed !important;
+}
+
+button[disabled] mat-icon {
+  color: #999 !important;
+}
+
+/* Tooltip para botones deshabilitados */
+.mat-tooltip {
+  font-size: 12px;
+  max-width: 200px;
 } 

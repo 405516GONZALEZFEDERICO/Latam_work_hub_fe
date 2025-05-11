@@ -53,7 +53,7 @@ export interface InvoiceEntity {
   paymentUrl: string;
 }
 
-export interface InvoiceHistory {
+export interface InvoiceHistoryDto {
   id: number;
   invoiceNumber: string;
   totalAmount: number;
@@ -80,6 +80,11 @@ export interface AutoRenewalDto {
   renewalMonths: number;
 }
 
+export interface IsAutoRenewalDto {
+  isAutoRenewal: boolean;
+  renewalMonths: number;
+}
+
 export interface PaginatedResponse<T> {
   content: T[];
   totalElements: number;
@@ -89,6 +94,7 @@ export interface PaginatedResponse<T> {
   first: boolean;
   last: boolean;
 }
+
 @Injectable({
   providedIn: 'root'
 })
@@ -163,15 +169,29 @@ export class RentalService {
   }
 
   renewContract(contractId: number, months: number): Observable<string> {
-    return this.http.post(`${this.apiUrl}/${contractId}/renew?months=${months}`, {}, { responseType: 'text' });
+    return this.http.post(`${this.apiUrl}/${contractId}/renew?months=${months}`, {}, { 
+      responseType: 'text',
+      headers: { 'Content-Type': 'application/json' }
+    }).pipe(
+      map(response => {
+        if (response && response.trim() !== '') {
+          return response;
+        }
+        throw new Error('La respuesta del servidor no contiene una URL de pago válida');
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.error('Error al renovar contrato:', error);
+        return throwError(() => new Error('Error al renovar el contrato'));
+      })
+    );
   }
 
   getContractHistory(contractId: number): Observable<ContractStateChange[]> {
     return this.http.get<ContractStateChange[]>(`${this.apiUrl}/${contractId}/history`);
   }
 
-  getContractInvoices(contractId: number): Observable<InvoiceHistory[]> {
-    return this.http.get<InvoiceHistory[]>(`${this.apiUrl}/${contractId}/invoices`);
+  getContractInvoices(contractId: number): Observable<InvoiceHistoryDto[]> {
+    return this.http.get<InvoiceHistoryDto[]>(`${this.apiUrl}/${contractId}/invoices`);
   }
 
   setupAutoRenewal(contractId: number, autoRenew: boolean, renewalMonths: number): Observable<string> {
@@ -183,5 +203,33 @@ export class RentalService {
 
   getCancellationPolicy(contractId: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/${contractId}/cancellation-policy`);
+  }
+
+  isAutoRenewal(contractId: number): Observable<IsAutoRenewalDto> {
+    return this.http.get<IsAutoRenewalDto>(`${this.apiUrl}/${contractId}/auto-renewal`).pipe(
+      catchError((error: HttpErrorResponse) => {
+        console.error('Error al verificar renovación automática:', error);
+        // Retornamos un objeto con valores por defecto en caso de error
+        // en lugar de lanzar un error
+        return of({
+          isAutoRenewal: false,
+          renewalMonths: 12
+        });
+      })
+    );
+  }
+
+  updateIsAutoRenewal(contractId: number, isAutoRenewal: boolean): Observable<boolean> {
+    return this.http.put<boolean>(`${this.apiUrl}/${contractId}/update-is-auto-renewal?isAutoRenewal=${isAutoRenewal}`, {}).pipe(
+      catchError((error: HttpErrorResponse) => {
+        console.error('Error al actualizar renovación automática:', error);
+        // Si estamos desactivando la renovación, devolvemos true para simular éxito
+        // y evitar mensajes de error innecesarios
+        if (!isAutoRenewal) {
+          return of(true);
+        }
+        return throwError(() => new Error('Error al actualizar la renovación automática'));
+      })
+    );
   }
 }

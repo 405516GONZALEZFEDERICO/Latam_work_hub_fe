@@ -9,7 +9,6 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatTabsModule } from '@angular/material/tabs';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
@@ -57,7 +56,6 @@ export class MatPaginatorIntlEsp extends MatPaginatorIntl {
     MatIconModule,
     MatButtonModule,
     MatProgressSpinnerModule,
-    MatTabsModule,
     MatInputModule,
     MatFormFieldModule,
     MatSlideToggleModule,
@@ -85,7 +83,6 @@ export class BookingsTabComponent implements OnInit, OnDestroy {
   
   // UI state properties
   loading = false;
-  activeTab = 0;
 
   // Filter options
   statusFilter = new FormControl('');
@@ -191,7 +188,6 @@ export class BookingsTabComponent implements OnInit, OnDestroy {
 
   selectBooking(booking: BookingResponseDto): void {
     this.selectedBooking = booking;
-    this.activeTab = 0;
   }
 
   cancelBooking(booking: BookingResponseDto): void {
@@ -248,20 +244,21 @@ export class BookingsTabComponent implements OnInit, OnDestroy {
            this.isActiveStatus(booking.status);
   }
 
-  // Check if booking can be cancelled (one week before start date)
+  // Método para verificar si una reserva puede ser cancelada
   canCancelBooking(booking: BookingResponseDto): boolean {
-    if (!this.isBookingActionable(booking)) {
-      return false;
+    if (!booking) return false;
+
+    // Si la reserva está pendiente de pago, siempre se puede cancelar
+    if (this.isPendingStatus(booking.status)) {
+      return true;
     }
-    
+
+    // Para otros estados, aplicar la regla de los 7 días
     const startDate = new Date(booking.startDate);
     const today = new Date();
-    
-    // Calculate difference in days
     const diffTime = startDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
-    // Can only cancel if more than 7 days before start date
     return diffDays >= 7;
   }
 
@@ -282,14 +279,6 @@ export class BookingsTabComponent implements OnInit, OnDestroy {
     }
   }
 
-  changeTab(tabIndex: number): void {
-    this.activeTab = tabIndex;
-  }
-
-  getKeys(obj: BookingResponseDto | null): string[] {
-    return obj ? Object.keys(obj as Record<string, any>) : [];
-  }
-
   translateBookingStatus(status: string): string {
     switch (status) {
       case 'CONFIRMED':
@@ -305,28 +294,6 @@ export class BookingsTabComponent implements OnInit, OnDestroy {
       default:
         return status || 'Desconocido';
     }
-  }
-
-  formatPropertyName(key: string): string {
-    const nameMap: { [key: string]: string } = {
-      'id': 'ID',
-      'startDate': 'Fecha de Inicio',
-      'endDate': 'Fecha de Fin',
-      'initHour': 'Hora de Inicio',
-      'endHour': 'Hora de Fin',
-      'bookingType': 'Tipo de Reserva',
-      'status': 'Estado',
-      'counterPersons': 'Número de Personas',
-      'totalAmount': 'Monto Total',
-      'spaceId': 'ID del Espacio',
-      'spaceName': 'Nombre del Espacio',
-      'spaceAddress': 'Dirección',
-      'spaceType': 'Tipo de Espacio',
-      'cityName': 'Ciudad',
-      'countryName': 'País'
-    };
-
-    return nameMap[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
   }
 
   formatPropertyValue(key: string, value: any): string {
@@ -404,5 +371,32 @@ export class BookingsTabComponent implements OnInit, OnDestroy {
   // Método para deseleccionar la reserva (usado por el botón Volver)
   deselectBooking(): void {
     this.selectedBooking = null;
+  }
+
+  // Método para pagar una reserva pendiente
+  payBooking(booking: BookingResponseDto): void {
+    if (!this.isPendingStatus(booking.status)) return;
+    
+    this.loading = true;
+    this.bookingService.generateBookingPaymentLink(booking.id).subscribe({
+      next: (paymentUrl) => {
+        this.loading = false;
+        if (paymentUrl && paymentUrl.trim() !== '') {
+          // Abrir URL de pago en una nueva ventana/pestaña
+          window.open(paymentUrl, '_blank', 'noopener,noreferrer');
+        } else {
+          this.snackBar.open('No se pudo obtener el enlace de pago', 'Cerrar', {
+            duration: 3000
+          });
+        }
+      },
+      error: (error) => {
+        this.loading = false;
+        console.error('Error al generar enlace de pago:', error);
+        this.snackBar.open('Error al generar el enlace de pago', 'Cerrar', {
+          duration: 3000
+        });
+      }
+    });
   }
 } 

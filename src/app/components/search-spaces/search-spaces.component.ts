@@ -4,9 +4,32 @@ import { SpaceFilterComponent } from './space-filter/space-filter.component';
 import { SpaceGridComponent } from './space-grid/space-grid.component';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatPaginatorModule, PageEvent, MatPaginatorIntl } from '@angular/material/paginator';
 import { SearchSpace, FilterState } from '../../models/search-space.model';
 import { SearchSpaceService, PagedResponse } from '../../services/search-space/search-space.service';
+
+// Clase para traducir los textos del paginador
+export class MatPaginatorIntlEsp extends MatPaginatorIntl {
+  override itemsPerPageLabel = 'Elementos por página:';
+  override nextPageLabel = 'Página siguiente';
+  override previousPageLabel = 'Página anterior';
+  override firstPageLabel = 'Primera página';
+  override lastPageLabel = 'Última página';
+
+  override getRangeLabel = (page: number, pageSize: number, length: number) => {
+    if (length === 0) {
+      return `0 de ${length}`;
+    }
+    
+    length = Math.max(length, 0);
+    const startIndex = page * pageSize;
+    const endIndex = startIndex < length ? 
+      Math.min(startIndex + pageSize, length) : 
+      startIndex + pageSize;
+    
+    return `${startIndex + 1} - ${endIndex} de ${length}`;
+  };
+}
 
 @Component({
   selector: 'app-search-spaces',
@@ -18,6 +41,9 @@ import { SearchSpaceService, PagedResponse } from '../../services/search-space/s
     MatIconModule,
     MatProgressSpinnerModule,
     MatPaginatorModule
+  ],
+  providers: [
+    { provide: MatPaginatorIntl, useClass: MatPaginatorIntlEsp }
   ],
   templateUrl: './search-spaces.component.html',
   styleUrls: ['./search-spaces.component.css']

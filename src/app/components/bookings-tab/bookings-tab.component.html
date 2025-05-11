@@ -48,6 +48,17 @@
               <span>${{booking.totalAmount}}</span>
             </div>
           </div>
+          
+          <!-- Botón de pago para reservas pendientes -->
+          <div class="booking-actions" *ngIf="isPendingStatus(booking.status)">
+            <button mat-mini-fab 
+                    color="primary" 
+                    class="action-button"
+                    (click)="$event.stopPropagation(); payBooking(booking)"
+                    title="Pagar reserva">
+              <mat-icon>payment</mat-icon>
+            </button>
+          </div>
         </mat-card-content>
       </mat-card>
 
@@ -106,20 +117,13 @@
             <span>{{formatLocation(selectedBooking.spaceAddress, selectedBooking.cityName, selectedBooking.countryName)}}</span>
           </div>
           <div class="detail-item">
-            <span class="label">Fecha de Inicio:</span>
+            <span class="label">Fecha:</span>
             <span>{{selectedBooking.startDate | date:'dd/MM/yyyy'}}</span>
-          </div>
-          <div class="detail-item" *ngIf="selectedBooking.endDate">
-            <span class="label">Fecha de Fin:</span>
-            <span>{{selectedBooking.endDate | date:'dd/MM/yyyy'}}</span>
+            <span *ngIf="selectedBooking.endDate && selectedBooking.endDate !== selectedBooking.startDate"> - {{selectedBooking.endDate | date:'dd/MM/yyyy'}}</span>
           </div>
           <div class="detail-item" *ngIf="selectedBooking.initHour">
-            <span class="label">Hora de Inicio:</span>
-            <span>{{selectedBooking.initHour}}</span>
-          </div>
-          <div class="detail-item" *ngIf="selectedBooking.endHour">
-            <span class="label">Hora de Fin:</span>
-            <span>{{selectedBooking.endHour}}</span>
+            <span class="label">Horario:</span>
+            <span>{{selectedBooking.initHour}} - {{selectedBooking.endHour}}</span>
           </div>
           <div class="detail-item">
             <span class="label">Número de Personas:</span>
@@ -133,13 +137,32 @@
             <span class="label">Tipo de Reserva:</span>
             <span>{{formatPropertyValue('bookingType', selectedBooking.bookingType)}}</span>
           </div>
+          
+          <!-- Botón de pago para reservas pendientes -->
+          <div class="payment-section" *ngIf="isPendingStatus(selectedBooking.status)">
+            <mat-divider></mat-divider>
+            <h4>Pago de Reserva</h4>
+            <div class="payment-info">
+              <mat-icon color="primary">info</mat-icon>
+              <span>Para confirmar tu reserva, realiza el pago correspondiente.</span>
+            </div>
+            <button mat-raised-button 
+                    color="primary" 
+                    class="boton-pagar" 
+                    (click)="payBooking(selectedBooking)">
+              <mat-icon>payment</mat-icon> Pagar Reserva
+            </button>
+          </div>
+          
           <!-- Botón de cancelación con mensaje sobre políticas -->
           <div class="cancellation-section" *ngIf="isBookingActionable(selectedBooking)">
             <mat-divider></mat-divider>
             <h4>Cancelación de Reserva</h4>
             <div class="cancellation-policy-message">
               <mat-icon color="warn">info</mat-icon>
-              <span>Las reservas solo pueden cancelarse hasta una semana antes de la fecha de inicio.</span>
+              <span>
+                Las reservas pendientes de pago pueden cancelarse en cualquier momento. Para reservas ya pagadas, solo pueden cancelarse hasta una semana antes de la fecha de inicio.
+              </span>
             </div>
             <button mat-raised-button 
                     color="warn" 
@@ -149,29 +172,13 @@
               <mat-icon>cancel</mat-icon> Cancelar Reserva
             </button>
             <div *ngIf="!canCancelBooking(selectedBooking)" class="cancellation-disabled-message">
-              <span>Ya no es posible cancelar esta reserva (menos de 7 días para el inicio).</span>
+              <span>Ya no es posible cancelar esta reserva (debe estar pendiente de pago o tener al menos 7 días de anticipación).</span>
             </div>
           </div>
         </div>
       </div>
 
-      <mat-divider></mat-divider>
-
-      <mat-tab-group [(selectedIndex)]="activeTab" animationDuration="0ms">
-        <mat-tab label="Detalles">
-          <div class="tab-content">
-            <div class="additional-details">
-              <h4>Propiedades de la Reserva</h4>
-              <div class="properties-list">
-                <div *ngFor="let key of getKeys(selectedBooking)" class="property-item">
-                  <span class="property-name">{{formatPropertyName(key)}}:</span>
-                  <span class="property-value">{{formatPropertyValue(key, selectedBooking[key])}}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </mat-tab>
-      </mat-tab-group>
+      <!-- Removing redundant tab system that repeats information -->
     </div>
 
     <div *ngIf="loading" class="loading-container">

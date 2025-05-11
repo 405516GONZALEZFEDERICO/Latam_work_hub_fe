@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { RentalService, RentalContractResponse, InvoiceHistory, InvoiceEntity, ContractStateChange, AutoRenewalDto, PaginatedResponse } from '../../services/rental/rental.service';
+import { RentalService, RentalContractResponse, InvoiceHistoryDto, InvoiceEntity, AutoRenewalDto, PaginatedResponse, IsAutoRenewalDto } from '../../services/rental/rental.service';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
@@ -76,9 +76,8 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
   // Main data properties
   rentals: RentalContractResponse[] = [];
   selectedRental: RentalContractResponse | null = null;
-  invoices: InvoiceHistory[] = [];
+  invoices: InvoiceHistoryDto[] = [];
   pendingInvoices: InvoiceEntity[] = [];
-  contractHistory: ContractStateChange[] = [];
   cancellationPolicy: any = null;
   
   // Pagination properties
@@ -202,12 +201,8 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
     this.activeTab = 0;
     this.loadInvoices(rental.id);
     this.loadPendingInvoices(rental.id);
-    this.loadContractHistory(rental.id);
     this.loadCancellationPolicy(rental.id);
-    this.autoRenewal = {
-      enabled: rental.autoRenew === true,
-      months: rental.renewalMonths || 12
-    };
+    this.loadAutoRenewalConfig(rental.id);
   }
 
   loadInvoices(contractId: number): void {
@@ -244,7 +239,7 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
   }
 
   // Método para asegurar que las fechas sean objetos Date
-  processDates(invoices: InvoiceEntity[] | InvoiceHistory[]): any[] {
+  processDates(invoices: InvoiceEntity[] | InvoiceHistoryDto[]): any[] {
     return invoices.map(invoice => ({
       ...invoice,
       issueDate: this.ensureDate(invoice.issueDate),
@@ -270,19 +265,6 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
     }
   }
 
-  loadContractHistory(contractId: number): void {
-    this.rentalService.getContractHistory(contractId).subscribe({
-      next: (history) => {
-        this.contractHistory = history;
-      },
-      error: (error) => {
-        this.snackBar.open('Error al cargar el historial del contrato', 'Cerrar', {
-          duration: 3000
-        });
-      }
-    });
-  }
-
   loadCancellationPolicy(contractId: number): void {
     this.cancellationPolicy = null; // Resetear para mostrar loading state si es necesario
     this.rentalService.getCancellationPolicy(contractId).subscribe({
@@ -293,6 +275,41 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
       error: (error) => {
         console.error('Error al cargar política de cancelación:', error);
         this.snackBar.open('Error al cargar la política de cancelación', 'Cerrar', {
+          duration: 3000
+        });
+      }
+    });
+  }
+
+  loadAutoRenewalConfig(contractId: number): void {
+    // Valores predeterminados antes de la carga
+    this.autoRenewal = {
+      enabled: false,
+      months: 12
+    };
+    
+    this.rentalService.isAutoRenewal(contractId).subscribe({
+      next: (autoRenewalDto) => {
+        console.log('Configuración de renovación automática cargada:', autoRenewalDto);
+        this.autoRenewal.enabled = autoRenewalDto.isAutoRenewal;
+        
+        if (autoRenewalDto.renewalMonths) {
+          this.autoRenewal.months = autoRenewalDto.renewalMonths;
+        } else if (autoRenewalDto.isAutoRenewal) {
+          // Si tiene renovación automática pero no tiene meses configurados, usar valor por defecto
+          this.autoRenewal.months = 12;
+        }
+        
+        // Actualizar la información en el objeto selectedRental para el resumen
+        if (this.selectedRental) {
+          this.selectedRental.autoRenew = autoRenewalDto.isAutoRenewal;
+          this.selectedRental.renewalMonths = autoRenewalDto.renewalMonths;
+        }
+      },
+      error: (error) => {
+        console.error('Error al cargar configuración de renovación automática:', error);
+        // En caso de error, mantenemos los valores predeterminados
+        this.snackBar.open('Error al cargar la configuración de renovación automática', 'Cerrar', {
           duration: 3000
         });
       }
@@ -413,7 +430,7 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
     return rental.hasCurrentInvoicePending === true;
   }
 
-  payInvoice(invoice: InvoiceHistory | InvoiceEntity): void {
+  payInvoice(invoice: InvoiceHistoryDto | InvoiceEntity): void {
     // Si la factura ya tiene URL de pago, la usamos directamente
     if (invoice.paymentUrl && invoice.paymentUrl.trim() !== '') {
       this.openPaymentInNewWindow(invoice.paymentUrl);
@@ -468,6 +485,8 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
             this.loading = false;
             if (paymentUrl && paymentUrl.trim() !== '') {
               this.openPaymentInNewWindow(paymentUrl);
+              // Reload rentals after successful renewal
+              this.loadRentals();
             } else {
               this.snackBar.open('Alquiler renovado exitosamente', 'Cerrar', {
                 duration: 3000
@@ -490,28 +509,72 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
     if (!this.selectedRental || !this.isContractActionable(this.selectedRental)) return;
     
     this.loading = true;
-    this.rentalService.setupAutoRenewal(
+    
+    // Si la renovación automática está desactivada, simplemente actualizamos el estado
+    if (!this.autoRenewal.enabled) {
+      this.rentalService.updateIsAutoRenewal(
+        this.selectedRental.id, 
+        false
+      ).subscribe({
+        next: () => {
+          this.finishAutoRenewalUpdate();
+        },
+        error: () => {
+          // Ignoramos el error cuando se desactiva la renovación automática
+          // para evitar mostrar mensajes de error al usuario
+          this.finishAutoRenewalUpdate();
+        }
+      });
+      return;
+    }
+    
+    // Si la renovación está activada, seguimos con el flujo normal
+    this.rentalService.updateIsAutoRenewal(
       this.selectedRental.id, 
-      this.autoRenewal.enabled, 
-      this.autoRenewal.months
+      true
     ).subscribe({
-      next: () => {
-        this.loading = false;
-        this.snackBar.open('Configuración de renovación automática guardada', 'Cerrar', {
-          duration: 3000
-        });
-        // Update the selected rental with the new auto-renewal settings
-        if (this.selectedRental) {
-          this.selectedRental.autoRenew = this.autoRenewal.enabled;
-          this.selectedRental.renewalMonths = this.autoRenewal.months;
+      next: (result) => {
+        if (result) {
+          this.rentalService.setupAutoRenewal(
+            this.selectedRental!.id,
+            true,
+            this.autoRenewal.months
+          ).subscribe({
+            next: () => {
+              this.finishAutoRenewalUpdate();
+            },
+            error: (error) => {
+              this.handleAutoRenewalError(error);
+            }
+          });
+        } else {
+          this.handleAutoRenewalError(new Error('No se pudo actualizar la renovación automática'));
         }
       },
       error: (error) => {
-        this.loading = false;
-        this.snackBar.open('Error al guardar la configuración de renovación automática', 'Cerrar', {
-          duration: 3000
-        });
+        this.handleAutoRenewalError(error);
       }
+    });
+  }
+  
+  private finishAutoRenewalUpdate(): void {
+    this.loading = false;
+    this.snackBar.open('Configuración de renovación automática guardada', 'Cerrar', {
+      duration: 3000
+    });
+    
+    // Recargar la configuración desde el backend para asegurar consistencia
+    this.loadAutoRenewalConfig(this.selectedRental!.id);
+    
+    // Actualizar también el listado de alquileres para mantener la información sincronizada
+    this.loadRentals(this.currentPage, this.pageSize);
+  }
+  
+  private handleAutoRenewalError(error: any): void {
+    this.loading = false;
+    console.error('Error al guardar configuración de renovación automática:', error);
+    this.snackBar.open('Error al guardar la configuración de renovación automática', 'Cerrar', {
+      duration: 3000
     });
   }
 
@@ -541,8 +604,14 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
     console.log(`Cambiando a la pestaña ${tabIndex}`);
     this.activeTab = tabIndex;
     
+    // Cargar configuración de renovación automática al cambiar a la pestaña de renovación
+    if (tabIndex === 1 && this.selectedRental) { // Índice 1 es la pestaña de Renovación
+      console.log('Pestaña de renovación seleccionada, cargando configuración actual');
+      this.loadAutoRenewalConfig(this.selectedRental.id);
+    }
+    
     // Verificar si estamos en la pestaña de cancelación
-    if (tabIndex === 3) { // Índice 3 es la pestaña de Cancelación
+    if (tabIndex === 2) { // Índice 2 es la pestaña de Cancelación
       console.log('Pestaña de cancelación seleccionada');
       console.log('selectedRental:', this.selectedRental);
       console.log('cancellationPolicy:', this.cancellationPolicy);
