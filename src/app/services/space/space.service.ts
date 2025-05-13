@@ -3,57 +3,18 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, tap, map } from 'rxjs/operators';
 import { Space, SpaceDto, AmenityDto, FilterState, AddressEntity } from '../../models/space.model';
+import { environment } from '../../../environment/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SpaceService {
-  private apiUrl = 'http://localhost:8080/api/spaces'; 
+  private apiUrl=environment.apiUrl + '/spaces';
 
-  //
 
   constructor(private http: HttpClient) {}
 
-  // // Get all spaces
-  // getSpaces(filters?: FilterState): Observable<Space[]> {
-  //   // En una implementación real, enviaríamos estos filtros a un backend
-    
-  //   if (filters) {
-  //     if (filters.providerType) {
-  //       filteredSpaces = filteredSpaces.filter(space => space.providerType === filters.providerType);
-  //     }
-      
-  //     if (filters.capacity > 0) {
-  //       filteredSpaces = filteredSpaces.filter(space => space.capacity >= filters.capacity);
-  //     }
-      
-  //     if (filters.hourlyPrice > 0) {
-  //       filteredSpaces = filteredSpaces.filter(space => space.hourlyPrice <= filters.hourlyPrice);
-  //     }
-      
-  //     if (filters.monthlyPrice > 0) {
-  //       filteredSpaces = filteredSpaces.filter(space => space.monthlyPrice <= filters.monthlyPrice);
-  //     }
-      
-  //     if (filters.address) {
-  //       filteredSpaces = filteredSpaces.filter(space => {
-  //         if (typeof space.address === 'string') {
-  //           return space.address.toLowerCase().includes(filters.address.toLowerCase());
-  //         } else if (space.address && typeof space.address === 'object') {
-  //           // Comprobar si address es un objeto AddressEntity y extraer la dirección formateada
-  //           const addressObj = space.address as AddressEntity;
-  //           const formattedAddress = `${addressObj.streetName} ${addressObj.streetNumber}`;
-  //           return formattedAddress.toLowerCase().includes(filters.address.toLowerCase());
-  //         }
-  //         return false;
-  //       });
-  //     }
-  //   }
-    
-  //   return of(filteredSpaces);
-  // }
 
-  // Get space by ID
   getSpaceById(id: string): Observable<Space | undefined> {
     
     return this.http.get<any>(`${this.apiUrl}/${id}`)
