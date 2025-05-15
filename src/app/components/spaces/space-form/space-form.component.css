@@ -458,6 +458,12 @@ button[type="submit"]:disabled {
     height: 48px;
     min-width: unset;
   }
+
+  /* Nuevo estilo para el select en móvil */
+  .amenities-controls .amenity-select {
+    min-width: 100%; /* Ocupar todo el ancho disponible */
+    margin-right: 0; /* Quitar margen si no es necesario en columna */
+  }
 }
 
 /* Estilos para los items de amenidades agregados */
