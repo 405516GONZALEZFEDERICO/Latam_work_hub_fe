@@ -17,7 +17,6 @@ import { LOCALE_ID } from '@angular/core';
 import { httpErrorInterceptor } from '../interceptors/http-error.interceptor';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
-import { ENVIRONMENT_INITIALIZER } from '@angular/core';
 
 // Registrar los datos de localización para español
 registerLocaleData(localeEs);
@@ -35,6 +34,9 @@ const suppressConsoleWarnings = () => {
   };
 };
 
+// Ejecutar directamente la supresión de warnings
+suppressConsoleWarnings();
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
@@ -50,14 +52,6 @@ export const appConfig: ApplicationConfig = {
     provideFirebaseApp(() => initializeApp(environment.firebase)),
     provideAuth(() => getAuth()),
     provideFirestore(() => getFirestore()),
-    // Suprimir warnings de Angular
-    {
-      provide: ENVIRONMENT_INITIALIZER,
-      multi: true,
-      useValue: () => {
-        suppressConsoleWarnings();
-      }
-    },
     ProfileService,
     { provide: LOCALE_ID, useValue: 'es' },
     {

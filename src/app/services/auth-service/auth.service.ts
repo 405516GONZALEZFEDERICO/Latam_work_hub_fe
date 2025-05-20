@@ -323,7 +323,6 @@ export class AuthService {
 
   async loginWithGoogle(isRegistration: boolean = false): Promise<void> {
     try {
-<<<<<<< Updated upstream
       // Add at the start of both login methods
       await this.clearAllStorages();
       // Obtenemos las credenciales con Firebase (OAuth)
@@ -356,7 +355,6 @@ export class AuthService {
         headers: { 'Content-Type': 'application/json' }
       }).subscribe({
         next: (response) => {
-
           if (this.auth.currentUser) {
             // Verificar si ya existe un rol en localStorage
             const cachedUser = this.getUserFromLocalStorage(this.auth.currentUser.uid);
@@ -377,79 +375,29 @@ export class AuthService {
             }
               
             // Actualizar usuario con los datos del backend
-=======
-      // Configurar todo dentro del contexto de inyección
-      return runInInjectionContext(this.environmentInjector, async () => {
-        // Asegurar que la persistencia esté configurada primero
-        await this.ensurePersistenceSet();
-      
-        // Configurar proveedor de Google con opciones mínimas
-        const provider = new GoogleAuthProvider();
-        provider.addScope('email');
-        provider.addScope('profile');
-        
-        if (isRegistration) {
-          provider.setCustomParameters({ prompt: 'select_account' });
-        }
-        
-        try {
-          // Realizar autenticación con popup sin código extra
-          const result = await signInWithPopup(this.auth, provider);
-          const user = result.user;
-          const idToken = await user.getIdToken();
-          
-          // Validar con backend de forma simple
-          const backendValidation = await firstValueFrom(
-            this.http.post<any>(`${this.API_BASE_URL}/google/login`, null, {
-              params: new HttpParams()
-                .set('idToken', idToken)
-                .set('isRegistration', isRegistration ? 'true' : 'false'),
-              headers: { 'Content-Type': 'application/json' }
-            })
-          );
-          
-          // Actualizar usuario y navegar
-          if (this.auth.currentUser) {
->>>>>>> Stashed changes
             this.currentUserData = {
               uid: this.auth.currentUser.uid,
               email: this.auth.currentUser.email!,
               emailVerified: this.auth.currentUser.emailVerified,
-<<<<<<< Updated upstream
               role: finalRole as UserRole,
               idToken: idToken,
               refreshToken: this.auth.currentUser.refreshToken,
               photoURL: response.photoUrl || this.auth.currentUser.photoURL || ''
-=======
-              role: backendValidation.role as UserRole,
-              idToken: idToken,
-              refreshToken: this.auth.currentUser.refreshToken,
-              photoURL: backendValidation.photoUrl || this.auth.currentUser.photoURL || ''
->>>>>>> Stashed changes
             };
             
             this.userSubject.next(this.currentUserData);
             this.authStateSubject.next(true);
             
-<<<<<<< Updated upstream
             // Guardar en localStorage siempre
             localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
             localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
             
             // Si es un registro o tiene rol DEFAULT, redirigir a selección de rol
             if (isRegistration || finalRole === 'DEFAULT') {
-              // Usar método directo para evitar problemas de ruteo
-=======
-            localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
-            localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
-            
-            if (backendValidation.role === 'DEFAULT' || isRegistration) {
->>>>>>> Stashed changes
               this.navigateToRoleSelection();
             } else {
               this.router.navigate(['/home']);
             }
-<<<<<<< Updated upstream
           } else {
             throw new Error('No se pudo completar el proceso de autenticación.');
           }
@@ -510,27 +458,6 @@ export class AuthService {
       }
       
       throw new Error(errorMessage);
-=======
-          }
-        } catch (error: any) {
-          console.error('Error en autenticación con Google:', error);
-          
-          // Cerrar sesión en caso de error
-          try {
-            await signOut(this.auth);
-          } catch (e) {
-            console.error('Error al cerrar sesión:', e);
-          }
-          
-          // Propagar el error
-          throw error;
-        }
-      });
-    } catch (error: any) {
-      console.error('Error global en autenticación con Google:', error);
-      await this.clearAllStorages();
-      throw new Error('No se pudo completar la autenticación con Google. Por favor intente nuevamente.');
->>>>>>> Stashed changes
     }
   }
 

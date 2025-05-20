@@ -3,12 +3,9 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, tap, map } from 'rxjs/operators';
 import { Space, SpaceDto, AmenityDto, FilterState, AddressEntity } from '../../models/space.model';
-<<<<<<< Updated upstream
-=======
 import { environment } from '../../../environment/environment';
 import { AdminSpace } from '../../models/admin.model';
 import { AuthService } from '../auth-service/auth.service';
->>>>>>> Stashed changes
 
 @Injectable({
   providedIn: 'root'

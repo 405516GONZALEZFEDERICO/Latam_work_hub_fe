@@ -1,9 +1,6 @@
 export const environment = {
     production: false,
-<<<<<<< Updated upstream
-=======
-    // apiUrl: 'https://latam-work-hub-be.onrender.com/api',
->>>>>>> Stashed changes
+    // // apiUrl: 'https://latam-work-hub-be.onrender.com/api',
     apiUrl: 'http://localhost:8080/api',
     firebase: {
         apiKey: "AIzaSyB9b7mzFtoRDNB0YroNRe6tF9uQFGfvzXQ",
