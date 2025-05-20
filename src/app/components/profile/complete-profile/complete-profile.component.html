@@ -59,8 +59,8 @@
             </ng-template>
           </mat-tab>
           
-          <!-- Tab de Proveedor/Empresa -->
-          <mat-tab>
+          <!-- Tab de Proveedor/Empresa - Oculto para ADMIN -->
+          <mat-tab *ngIf="!isAdminRole()">
             <ng-template mat-tab-label>
               <div class="d-flex align-items-center">
                 <mat-icon class="me-2">business</mat-icon>

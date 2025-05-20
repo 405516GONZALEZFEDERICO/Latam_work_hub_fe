@@ -32,13 +32,34 @@
           </div>
         </button>
         
+        <button [class]="'flex items-center ' + (isRoleSelected('ADMIN') ? 'border-primary' : '')" 
+                (click)="selectRole('ADMIN')" 
+                [disabled]="isLoading">
+          <div class="flex-shrink-0">
+            <mat-icon>admin_panel_settings</mat-icon>
+          </div>
+          <div class="ml-4">
+            <h3>Administrador</h3>
+            <p>Gestiona la plataforma y accede a funciones administrativas</p>
+          </div>
+        </button>
+        
+        <!-- Campo para clave de admin (solo visible cuando se selecciona ADMIN) -->
+        <div *ngIf="selectedRole === 'ADMIN'" class="admin-key-container">
+          <mat-form-field appearance="outline" class="admin-key-field">
+            <mat-label>Clave de administrador</mat-label>
+            <input matInput type="password" [(ngModel)]="adminKey" placeholder="Ingresa la clave de administrador">
+            <mat-icon matSuffix>vpn_key</mat-icon>
+          </mat-form-field>
+        </div>
+        
         <!-- Mensaje de error -->
         <div *ngIf="errorMessage" class="error-message">
           <mat-icon>error_outline</mat-icon>
           {{ errorMessage }}
         </div>
         
-        <button mat-raised-button color="primary" [disabled]="!selectedRole || isLoading" (click)="continue()">
+        <button mat-raised-button color="primary" [disabled]="!isRoleValid() || isLoading" (click)="continue()">
           <span *ngIf="!isLoading">Continuar</span>
           <span *ngIf="isLoading" class="loading-spinner-container">
             <mat-spinner diameter="20" class="spinner-in-button"></mat-spinner>

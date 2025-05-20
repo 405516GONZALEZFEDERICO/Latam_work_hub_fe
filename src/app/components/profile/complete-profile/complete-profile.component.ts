@@ -269,32 +269,38 @@ export class CompleteProfileComponent implements OnInit, OnDestroy {
   }
 
   private loadProfileData(): void {
-    if (this.personalDataLoaded) {
-      return;
+    if (this.profileDataLoaded) {
+      return; // Prevent reloading if already loaded
+    }
+    
+    // Evitar cargar datos del perfil si no hay usuario actual o ID
+    if (!this.currentUserId) {
+      const currentUser = this.authService.getCurrentUserSync();
+      if (currentUser && currentUser.uid) {
+        this.currentUserId = currentUser.uid;
+      } else {
+        return; // No cargar datos si no hay usuario
+      }
     }
     
     this.profileService.getProfileData()
       .pipe(
         takeUntil(this.destroy$),
-        take(1),
-        catchError(error => {
-          if (error.status !== 404) {
-            console.error('Error al cargar datos del perfil:', error);
-            this.snackBar.open('Error al cargar los datos del perfil', 'Cerrar', {
-              duration: 3000
-            });
-          } else {
-          }
-          return EMPTY;
-        }),
         finalize(() => {
-          this.personalDataLoaded = true;
           this.profileDataLoaded = true;
         })
       )
       .subscribe({
-        next: (profileData) => {
-          this.handleProfileDataLoaded(profileData);
+        next: (data) => {
+          this.userData = data;
+          this.personalDataLoaded = true;
+        },
+        error: (error) => {
+          console.error('Error al cargar datos del perfil:', error);
+          this.snackBar.open('Error al cargar datos del perfil', 'Cerrar', {
+            duration: 5000,
+            panelClass: ['snackbar-error']
+          });
         }
       });
   }
@@ -334,6 +340,11 @@ export class CompleteProfileComponent implements OnInit, OnDestroy {
   isProviderRole(): boolean {
     return this.userData?.role === 'PROVEEDOR';
   }
+
+  isAdminRole(): boolean {
+    return this.userData?.role === 'ADMIN';
+  }
+
   handleProviderTypeSelection(type: ProviderType): void {
   
     

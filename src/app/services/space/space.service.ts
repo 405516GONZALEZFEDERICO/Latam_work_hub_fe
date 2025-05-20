@@ -3,6 +3,12 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, tap, map } from 'rxjs/operators';
 import { Space, SpaceDto, AmenityDto, FilterState, AddressEntity } from '../../models/space.model';
+<<<<<<< Updated upstream
+=======
+import { environment } from '../../../environment/environment';
+import { AdminSpace } from '../../models/admin.model';
+import { AuthService } from '../auth-service/auth.service';
+>>>>>>> Stashed changes
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +18,10 @@ export class SpaceService {
 
   //
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) {}
 
   // // Get all spaces
   // getSpaces(filters?: FilterState): Observable<Space[]> {
@@ -233,5 +242,94 @@ export class SpaceService {
             return throwError(() => new Error('Error al eliminar el espacio'));
         })
     );
+  }
+
+  // Método para obtener todos los espacios para el administrador
+  getAllSpacesForAdmin(): Observable<AdminSpace[]> {
+    console.log('Llamando a getAllSpacesForAdmin - URL:', `${this.apiUrl}/spaces-list`);
+    return this.http.get<any[]>(`${this.apiUrl}/spaces-list`)
+      .pipe(
+        tap(response => console.log('Respuesta API espacios:', response)),
+        map(spaces => {
+          if (!spaces || spaces.length === 0) {
+            console.warn('No se recibieron espacios desde la API');
+            return [];
+          }
+          
+          console.log('Mapeando', spaces.length, 'espacios');
+          return spaces.map(space => {
+            // Verificar propiedades clave
+            if (!space) {
+              console.warn('Encontrado un espacio nulo o undefined');
+              return null;
+            }
+            
+            return {
+              id: space.id,
+              name: space.name || 'Sin nombre',
+              description: space.description || '',
+              pricePerHour: space.pricePerHour || 0,
+              pricePerDay: space.pricePerDay || 0,
+              pricePerMonth: space.pricePerMonth || 0,
+              capacity: space.capacity || 0,
+              area: space.area || 0,
+              active: space.active || false,
+              available: space.available || false,
+              address: space.address || { city: 'N/A', country: 'N/A' },
+              spaceType: space.spaceType || 'Sin tipo',
+              photoUrl: space.photoUrl || [],
+              amenities: space.amenities || []
+            } as AdminSpace;
+          }).filter(space => space !== null);
+        })
+      );
+  }
+
+  // Método para activar/desactivar un espacio
+  toggleSpaceStatus(spaceId: number | string, activate: boolean): Observable<boolean> {
+    const endpoint = activate ? 'activate' : 'deactivate';
+    // Convertir a número si es posible
+    const id = typeof spaceId === 'string' ? parseInt(spaceId, 10) : spaceId;
+    
+    // Obtener el UID del usuario que está realizando la acción
+    const userUid = this.getCurrentUserUid();
+    
+    console.log(`Enviando solicitud para ${activate ? 'activar' : 'desactivar'} espacio ${id} con userUid: ${userUid}`);
+    
+    return this.http.patch<boolean>(`${this.apiUrl}/${id}/${endpoint}`, {}, {
+      params: { userUid }
+    }).pipe(
+      tap(response => console.log(`Respuesta al ${activate ? 'activar' : 'desactivar'} espacio:`, response)),
+      catchError(error => {
+        console.error(`Error al ${activate ? 'activar' : 'desactivar'} espacio:`, error);
+        return throwError(() => new Error(`Error al ${activate ? 'activar' : 'desactivar'} el espacio: ${error.message || 'Error desconocido'}`));
+      })
+    );
+  }
+
+  // Método para obtener el UID del usuario actual
+  private getCurrentUserUid(): string {
+    // Primero intentar obtener el usuario del servicio de autenticación
+    const currentUser = this.authService.getCurrentUserSync();
+    
+    if (currentUser && currentUser.uid) {
+      return currentUser.uid;
+    }
+    
+    // Como respaldo, intentar obtenerlo desde localStorage
+    const localStorageUser = localStorage.getItem('currentUserData');
+    if (localStorageUser) {
+      try {
+        const userData = JSON.parse(localStorageUser);
+        if (userData && userData.uid) {
+          return userData.uid;
+        }
+      } catch (e) {
+        console.error('Error al obtener uid desde localStorage:', e);
+      }
+    }
+    
+    // Si todo falla, usar el valor antiguo como último recurso
+    return localStorage.getItem('uid') || '';
   }
 }

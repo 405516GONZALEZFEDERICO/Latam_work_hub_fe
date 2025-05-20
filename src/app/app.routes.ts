@@ -38,7 +38,7 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./views/view-select-rol/view-select-rol.component').then(m => m.RoleSelectionComponent),
     canActivate: [SecurityWardGuard],
-    data: { 
+    data: {
       allowedRoles: ['DEFAULT'],
       title: 'Seleccionar Rol'
     }
@@ -48,7 +48,7 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./views/home-layout/home-layout.component').then(h => h.HomeLayoutComponent),
     canActivate: [SecurityWardGuard],
-    data: { 
+    data: {
       allowedRoles: ['PROVEEDOR', 'CLIENTE', 'ADMIN'],
       title: 'Inicio'
     },
@@ -69,9 +69,9 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./components/search-spaces/search-spaces.component').then(m => m.SearchSpacesComponent),
         canActivate: [SecurityWardGuard, ProfileCompletionGuard],
-        data: { 
+        data: {
           allowedRoles: ['CLIENTE'],
-          title: 'Buscar Espacios' 
+          title: 'Buscar Espacios'
         }
       },
       {
@@ -79,9 +79,9 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./components/spaces/space-details/space-details.component').then(m => m.SpaceDetailsComponent),
         canActivate: [SecurityWardGuard, ProfileCompletionGuard],
-        data: { 
+        data: {
           allowedRoles: ['CLIENTE'],
-          title: 'Detalles del Espacio' 
+          title: 'Detalles del Espacio'
         }
       },
       {
@@ -115,7 +115,7 @@ export const routes: Routes = [
       {
         path: 'spaces',
         canActivate: [SecurityWardGuard, ProfileCompletionGuard],
-        data: { 
+        data: {
           allowedRoles: ['PROVEEDOR'],
           title: 'Mis Espacios'
         },
@@ -157,26 +157,74 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./components/reservas/reservas.component').then(m => m.ReservasComponent),
         canActivate: [SecurityWardGuard],
-        data: { 
+        data: {
           allowedRoles: ['CLIENTE'],
-          title: 'Mis Reservas y Alquileres' 
+          title: 'Mis Reservas y Alquileres'
+        }
+      },
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./views/admin-dashboard-view/admin-dashboard-view.component').then(m => m.AdminDashboardViewComponent),
+        canActivate: [SecurityWardGuard],
+        data: {
+          allowedRoles: ['ADMIN'],
+          title: 'Dashboard Administrativo'
+        }
+      },
+      {
+        path: 'admin-panel',
+        loadComponent: () =>
+          import('./views/admin-users-management/admin-users-management.component').then(m => m.AdminUsersManagementComponent),
+        canActivate: [SecurityWardGuard],
+        data: {
+          allowedRoles: ['ADMIN'],
+          title: 'Panel de Control'
+        }
+      },
+      {
+        path: 'reports',
+        loadComponent: () =>
+          import('./views/admin-report-view/admin-report-view.component').then(m => m.AdminReportViewComponent),
+        canActivate: [SecurityWardGuard],
+        data: {
+          allowedRoles: ['ADMIN'],
+          title: 'Informes'
         }
       }
     ]
   },
+
+  // Mantener las rutas a nivel raíz también para compatibilidad
   {
-    path: 'rentals',
-    component: RentalsTabComponent,
-    data: { title: 'Mis Alquileres' }
+    path: 'dashboard',
+    loadComponent: () =>
+      import('./views/admin-dashboard-view/admin-dashboard-view.component').then(m => m.AdminDashboardViewComponent),
+    canActivate: [SecurityWardGuard],
+    data: {
+      allowedRoles: ['ADMIN'],
+      title: 'Dashboard Administrativo'
+    }
   },
   {
-    path: 'invoices',
-    component: InvoicesTabComponent,
-    data: { title: 'Mis Facturas' }
+    path: 'admin-panel',
+    loadComponent: () =>
+      import('./views/admin-users-management/admin-users-management.component').then(m => m.AdminUsersManagementComponent),
+    canActivate: [SecurityWardGuard],
+    data: {
+      allowedRoles: ['ADMIN'],
+      title: 'Panel de Control'
+    }
   },
   {
-    path: 'bookings',
-    component: BookingsTabComponent,
-    data: { title: 'Mis Reservas' }
+    path: 'reports',
+    loadComponent: () =>
+      import('./views/admin-report-view/admin-report-view.component').then(m => m.AdminReportViewComponent),
+    canActivate: [SecurityWardGuard],
+    data: {
+      allowedRoles: ['ADMIN'],
+      title: 'Informes'
+    }
   }
+
 ];

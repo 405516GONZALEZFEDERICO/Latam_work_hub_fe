@@ -368,4 +368,18 @@ button:focus {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Admin key field styles */
+.admin-key-container {
+  margin-top: 16px;
+  width: 100%;
+}
+
+.admin-key-field {
+  width: 100%;
+}
+
+.admin-key-field .mat-form-field-outline {
+  border-radius: 10px;
 } 

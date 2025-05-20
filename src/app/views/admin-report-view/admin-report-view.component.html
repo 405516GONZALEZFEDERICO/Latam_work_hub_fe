@@ -1,0 +1,619 @@
+<div class="reports-container">
+  <h1 class="page-title">Informes para Exportación</h1>
+
+  <!-- Loader -->
+  <div *ngIf="loading" class="loading-overlay">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Cargando datos...</p>
+  </div>
+
+  <!-- Mensaje de error, pero sin ocultar los tabs -->
+  <div *ngIf="error" class="error-message mat-elevation-z1">
+    <mat-icon>error</mat-icon>
+    <span>{{ error }}</span>
+    <button mat-button color="primary" (click)="error = null">Cerrar</button>
+  </div>
+
+  <!-- Filtros para los reportes -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+        <div class="filters-container">
+          <!-- Solo mostrar las fechas para reportes que lo necesiten -->
+          <mat-form-field appearance="outline" *ngIf="showFilter('startDate')">
+            <mat-label>{{ selectedReport === 'users' ? 'Fecha Registro' : 
+                           selectedReport === 'invoices' ? 'Fecha Emisión' : 'Fecha Inicio' }}</mat-label>
+            <input matInput [matDatepicker]="startPicker" formControlName="startDate">
+            <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+            <mat-datepicker #startPicker></mat-datepicker>
+            <mat-error *ngIf="hasError('startDate', 'required')">Fecha de inicio es requerida</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" *ngIf="showFilter('endDate')">
+            <mat-label>Fecha Fin</mat-label>
+            <input matInput [matDatepicker]="endPicker" formControlName="endDate">
+            <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+            <mat-datepicker #endPicker></mat-datepicker>
+            <mat-error *ngIf="hasError('endDate', 'dateError')">{{ getErrorMessage('endDate') }}</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" *ngIf="showFilter('status')">
+            <mat-label>Estado</mat-label>
+            <mat-select formControlName="status">
+              <mat-option value="">Todos</mat-option>
+              
+              <!-- Estados de usuario -->
+              <mat-optgroup label="Estados de Usuario" *ngIf="selectedReport === 'users'">
+                <mat-option value="ACTIVE">Activo</mat-option>
+                <mat-option value="INACTIVE">Inactivo</mat-option>
+              </mat-optgroup>
+              
+              <!-- Estados de espacio -->
+              <mat-optgroup label="Estados de Espacio" *ngIf="selectedReport === 'spaces'">
+                <mat-option value="DISPONIBLE">Disponible</mat-option>
+                <mat-option value="OCUPADO">Ocupado</mat-option>
+                <mat-option value="INACTIVO">Inactivo</mat-option>
+              </mat-optgroup>
+              
+              <!-- Estados de reserva -->
+              <mat-optgroup label="Estados de Reserva" *ngIf="selectedReport === 'bookings'">
+                <mat-option value="PENDING_PAYMENT">Pendiente de pago</mat-option>
+                <mat-option value="CONFIRMED">Confirmada</mat-option>
+                <mat-option value="ACTIVE">Activa</mat-option>
+                <mat-option value="COMPLETED">Completada</mat-option>
+                <mat-option value="CANCELED">Cancelada</mat-option>
+              </mat-optgroup>
+              
+              <!-- Estados de contrato -->
+              <mat-optgroup label="Estados de Contrato" *ngIf="selectedReport === 'contracts'">
+                <mat-option value="DRAFT">Borrador</mat-option>
+                <mat-option value="PENDING">Pendiente</mat-option>
+                <mat-option value="CONFIRMED">Confirmado</mat-option>
+                <mat-option value="ACTIVE">Activo</mat-option>
+                <mat-option value="TERMINATED">Terminado</mat-option>
+                <mat-option value="EXPIRED">Expirado</mat-option>
+                <mat-option value="CANCELLED">Cancelado</mat-option>
+                <mat-option value="RENEWAL">En renovación</mat-option>
+              </mat-optgroup>
+              
+              <!-- Estados de factura -->
+              <mat-optgroup label="Estados de Factura" *ngIf="selectedReport === 'invoices' || selectedReport === 'overdueInvoices'">
+                <mat-option value="DRAFT">Borrador</mat-option>
+                <mat-option value="ISSUED">Emitida</mat-option>
+                <mat-option value="PAID">Pagada</mat-option>
+                <mat-option value="CANCELLED">Cancelada</mat-option>
+              </mat-optgroup>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" *ngIf="showFilter('clientId')">
+            <mat-label>ID Cliente</mat-label>
+            <input matInput type="number" formControlName="clientId">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" *ngIf="showFilter('providerId')">
+            <mat-label>ID Proveedor</mat-label>
+            <input matInput type="number" formControlName="providerId">
+          </mat-form-field>
+          
+          <mat-form-field appearance="outline" *ngIf="showFilter('spaceId')">
+            <mat-label>ID Espacio</mat-label>
+            <input matInput type="number" formControlName="spaceId">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" *ngIf="showFilter('role')">
+            <mat-label>Rol</mat-label>
+            <mat-select formControlName="role" (selectionChange)="onRoleFilterChange($event)">
+              <mat-option value="">Todos</mat-option>
+              <mat-option value="CLIENTE">Cliente</mat-option>
+              <mat-option value="PROVEEDOR">Proveedor</mat-option>
+              <mat-option value="ADMIN">Administrador</mat-option>
+            </mat-select>
+          </mat-form-field>
+          
+          <mat-form-field appearance="outline" *ngIf="showFilter('daysUntilExpiry')">
+            <mat-label>Días para vencimiento</mat-label>
+            <input matInput type="number" formControlName="daysUntilExpiry">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" *ngIf="showFilter('minDaysOverdue')">
+            <mat-label>Mínimo días vencido</mat-label>
+            <input matInput type="number" formControlName="minDaysOverdue">
+          </mat-form-field>
+
+          <div class="filter-buttons">
+            <button mat-raised-button color="primary" type="submit">
+              <mat-icon>filter_list</mat-icon> Aplicar Filtros
+            </button>
+            <button mat-button type="button" (click)="resetFilters()">
+              <mat-icon>clear_all</mat-icon> Limpiar
+            </button>
+          </div>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Tabs de los diferentes reportes -->
+  <mat-tab-group [(selectedIndex)]="selectedTabIndex" (selectedIndexChange)="onReportTabChange($event)" class="reports-tabs">
+    <!-- Tab de Espacios -->
+    <mat-tab label="Espacios">
+      <div class="export-actions">
+        <button mat-raised-button class="export-btn-red" (click)="exportToPDF()">
+          <mat-icon>picture_as_pdf</mat-icon> PDF
+        </button>
+        <button mat-raised-button class="export-btn-green" (click)="exportToExcel()">
+          <mat-icon>table_chart</mat-icon> Excel/CSV
+        </button>
+      </div>
+      
+      <div class="table-container mat-elevation-z1">
+        <table mat-table [dataSource]="spaceData" matSort>
+          <ng-container matColumnDef="spaceId">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
+            <td mat-cell *matCellDef="let item">{{item.spaceId}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="spaceName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Nombre</th>
+            <td mat-cell *matCellDef="let item">{{item.spaceName}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="providerName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Proveedor</th>
+            <td mat-cell *matCellDef="let item">{{item.providerName}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="bookingCount">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Reservas</th>
+            <td mat-cell *matCellDef="let item">{{item.bookingCount}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="revenueGenerated">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Ingresos</th>
+            <td mat-cell *matCellDef="let item">{{formatCurrency(item.revenueGenerated)}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Estado</th>
+            <td mat-cell *matCellDef="let item">{{translateStatus(item.status)}}</td>
+          </ng-container>
+          
+          <tr mat-header-row *matHeaderRowDef="spaceColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: spaceColumns;"></tr>
+          
+          <!-- Fila mostrada cuando no hay datos -->
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell" colspan="6">No hay datos disponibles.</td>
+          </tr>
+        </table>
+        
+        <mat-paginator
+          [length]="totalItems"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="[5, 10, 25, 50, 100]"
+          (page)="onPageChange($event)"
+          showFirstLastButtons>
+        </mat-paginator>
+      </div>
+    </mat-tab>
+    
+    <!-- Tab de Reservas -->
+    <mat-tab label="Reservas">
+      <div class="export-actions">
+        <button mat-raised-button class="export-btn-red" (click)="exportToPDF()">
+          <mat-icon>picture_as_pdf</mat-icon> PDF
+        </button>
+        <button mat-raised-button class="export-btn-green" (click)="exportToExcel()">
+          <mat-icon>table_chart</mat-icon> Excel/CSV
+        </button>
+      </div>
+      
+      <div class="table-container mat-elevation-z1">
+        <table mat-table [dataSource]="bookingData" matSort>
+          <ng-container matColumnDef="bookingId">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
+            <td mat-cell *matCellDef="let item">{{item.bookingId}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="spaceName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Espacio</th>
+            <td mat-cell *matCellDef="let item">{{item.spaceName}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="clientName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Cliente</th>
+            <td mat-cell *matCellDef="let item">{{item.clientName}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="providerName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Proveedor</th>
+            <td mat-cell *matCellDef="let item">{{item.providerName}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="startDate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha Inicio</th>
+            <td mat-cell *matCellDef="let item">{{formatDate(item.startDate)}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="endDate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha Fin</th>
+            <td mat-cell *matCellDef="let item">{{formatDate(item.endDate)}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="durationHours">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Duración (h)</th>
+            <td mat-cell *matCellDef="let item">{{item.durationHours}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Estado</th>
+            <td mat-cell *matCellDef="let item">{{translateStatus(item.status)}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="amount">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Monto</th>
+            <td mat-cell *matCellDef="let item">{{formatCurrency(item.amount)}}</td>
+          </ng-container>
+          
+          <tr mat-header-row *matHeaderRowDef="bookingColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: bookingColumns;"></tr>
+          
+          <!-- Fila mostrada cuando no hay datos -->
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell" colspan="9">No hay datos disponibles.</td>
+          </tr>
+        </table>
+        
+        <mat-paginator
+          [length]="totalItems"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="[5, 10, 25, 50, 100]"
+          (page)="onPageChange($event)"
+          showFirstLastButtons>
+        </mat-paginator>
+      </div>
+    </mat-tab>
+    
+    <!-- Tab de Usuarios -->
+    <mat-tab label="Usuarios">
+      <div class="export-actions">
+        <button mat-raised-button class="export-btn-red" (click)="exportToPDF()">
+          <mat-icon>picture_as_pdf</mat-icon> PDF
+        </button>
+        <button mat-raised-button class="export-btn-green" (click)="exportToExcel()">
+          <mat-icon>table_chart</mat-icon> Excel/CSV
+        </button>
+      </div>
+      
+      <div class="table-container mat-elevation-z1">
+        <table mat-table [dataSource]="userData" matSort>
+          <ng-container matColumnDef="userId">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
+            <td mat-cell *matCellDef="let item">{{item.userId}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Nombre</th>
+            <td mat-cell *matCellDef="let item">{{item.name}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="email">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Email</th>
+            <td mat-cell *matCellDef="let item">{{item.email}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="role">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Rol</th>
+            <td mat-cell *matCellDef="let item">{{item.role}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="totalSpaces" *ngIf="isProviderTab()">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Espacios</th>
+            <td mat-cell *matCellDef="let item">{{item.totalSpaces || 0}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="activeContracts">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Contratos Activos</th>
+            <td mat-cell *matCellDef="let item">{{item.activeContracts || 0}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="totalRevenue" *ngIf="isProviderTab()">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Ingresos Totales</th>
+            <td mat-cell *matCellDef="let item">{{formatCurrency(item.totalRevenue || 0)}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="totalBookings" *ngIf="isClientTab()">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Reservas Totales</th>
+            <td mat-cell *matCellDef="let item">{{item.totalBookings || 0}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="totalSpending" *ngIf="isClientTab()">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Gastos Totales</th>
+            <td mat-cell *matCellDef="let item">{{formatCurrency(item.totalSpending || 0)}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="registrationDate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha Registro</th>
+            <td mat-cell *matCellDef="let item">{{formatDate(item.registrationDate)}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="lastLoginDate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Último Acceso</th>
+            <td mat-cell *matCellDef="let item">{{formatDate(item.lastLoginDate)}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Estado</th>
+            <td mat-cell *matCellDef="let item">{{translateStatus(item.status)}}</td>
+          </ng-container>
+          
+          <tr mat-header-row *matHeaderRowDef="userColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: userColumns;"></tr>
+          
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell" colspan="8">No hay datos disponibles.</td>
+          </tr>
+        </table>
+        
+        <mat-paginator
+          [length]="totalItems"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="[5, 10, 25, 50, 100]"
+          (page)="onPageChange($event)"
+          showFirstLastButtons>
+        </mat-paginator>
+      </div>
+    </mat-tab>
+    
+    <!-- Tab de Contratos -->
+    <mat-tab label="Contratos">
+      <div class="export-actions">
+        <button mat-raised-button class="export-btn-red" (click)="exportToPDF()">
+          <mat-icon>picture_as_pdf</mat-icon> PDF
+        </button>
+        <button mat-raised-button class="export-btn-green" (click)="exportToExcel()">
+          <mat-icon>table_chart</mat-icon> Excel/CSV
+        </button>
+      </div>
+      
+      <div class="table-container mat-elevation-z1">
+        <table mat-table [dataSource]="contractData" matSort>
+          <ng-container matColumnDef="contractId">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
+            <td mat-cell *matCellDef="let item">{{item.contractId}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="spaceName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Espacio</th>
+            <td mat-cell *matCellDef="let item">{{item.spaceName}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="tenantName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Inquilino</th>
+            <td mat-cell *matCellDef="let item">{{item.tenantName}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="ownerName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Propietario</th>
+            <td mat-cell *matCellDef="let item">{{item.ownerName}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="startDate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha Inicio</th>
+            <td mat-cell *matCellDef="let item">{{formatDate(item.startDate)}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="endDate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha Fin</th>
+            <td mat-cell *matCellDef="let item">{{formatDate(item.endDate)}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="amount">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Monto</th>
+            <td mat-cell *matCellDef="let item">{{formatCurrency(item.amount)}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Estado</th>
+            <td mat-cell *matCellDef="let item">{{translateStatus(item.status)}}</td>
+          </ng-container>
+          
+          <tr mat-header-row *matHeaderRowDef="contractColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: contractColumns;"></tr>
+          
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell" colspan="8">No hay datos disponibles.</td>
+          </tr>
+        </table>
+        
+        <mat-paginator
+          [length]="totalItems"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="[5, 10, 25, 50, 100]"
+          (page)="onPageChange($event)"
+          showFirstLastButtons>
+        </mat-paginator>
+      </div>
+    </mat-tab>
+    
+    <!-- Tab de Facturas -->
+    <mat-tab label="Facturas">
+      <div class="export-actions">
+        <button mat-raised-button class="export-btn-red" (click)="exportToPDF()">
+          <mat-icon>picture_as_pdf</mat-icon> PDF
+        </button>
+        <button mat-raised-button class="export-btn-green" (click)="exportToExcel()">
+          <mat-icon>table_chart</mat-icon> Excel/CSV
+        </button>
+      </div>
+      
+      <div class="table-container mat-elevation-z1">
+        <table mat-table [dataSource]="invoiceData" matSort>
+          <ng-container matColumnDef="invoiceId">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
+            <td mat-cell *matCellDef="let item">{{item.invoiceId}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="clientName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Cliente</th>
+            <td mat-cell *matCellDef="let item">{{item.clientName}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="issueDate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha Emisión</th>
+            <td mat-cell *matCellDef="let item">{{formatDate(item.issueDate)}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="dueDate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha Vencimiento</th>
+            <td mat-cell *matCellDef="let item">{{formatDate(item.dueDate)}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="totalAmount">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Total</th>
+            <td mat-cell *matCellDef="let item">{{formatCurrency(item.totalAmount)}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="pendingAmount">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Pendiente</th>
+            <td mat-cell *matCellDef="let item">{{formatCurrency(item.pendingAmount)}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Estado</th>
+            <td mat-cell *matCellDef="let item">{{translateStatus(item.status)}}</td>
+          </ng-container>
+          
+          <tr mat-header-row *matHeaderRowDef="invoiceColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: invoiceColumns;"></tr>
+          
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell" colspan="8">No hay datos disponibles.</td>
+          </tr>
+        </table>
+        
+        <mat-paginator
+          [length]="totalItems"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="[5, 10, 25, 50, 100]"
+          (page)="onPageChange($event)"
+          showFirstLastButtons>
+        </mat-paginator>
+      </div>
+    </mat-tab>
+    
+    <!-- Tab de Alertas: Contratos por Vencer -->
+    <mat-tab label="Contratos por Vencer">
+      <div class="export-actions">
+        <button mat-raised-button class="export-btn-red" (click)="exportToPDF()">
+          <mat-icon>picture_as_pdf</mat-icon> PDF
+        </button>
+        <button mat-raised-button class="export-btn-green" (click)="exportToExcel()">
+          <mat-icon>table_chart</mat-icon> Excel/CSV
+        </button>
+      </div>
+      
+      <div class="table-container mat-elevation-z1">
+        <table mat-table [dataSource]="expiringContractData" matSort>
+          <ng-container matColumnDef="contractId">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
+            <td mat-cell *matCellDef="let item">{{item.contractId}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="spaceName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Espacio</th>
+            <td mat-cell *matCellDef="let item">{{item.spaceName}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="tenantName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Inquilino</th>
+            <td mat-cell *matCellDef="let item">{{item.tenantName}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="expiryDate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha Vencimiento</th>
+            <td mat-cell *matCellDef="let item">{{formatDate(item.expiryDate)}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="daysUntilExpiry">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Días Restantes</th>
+            <td mat-cell *matCellDef="let item">{{item.daysUntilExpiry}}</td>
+          </ng-container>
+          
+          <tr mat-header-row *matHeaderRowDef="expiringContractColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: expiringContractColumns;"></tr>
+          
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell" colspan="5">No hay contratos próximos a vencer.</td>
+          </tr>
+        </table>
+        
+        <mat-paginator
+          [length]="totalItems"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="[5, 10, 25, 50, 100]"
+          (page)="onPageChange($event)"
+          showFirstLastButtons>
+        </mat-paginator>
+      </div>
+    </mat-tab>
+    
+    <!-- Tab de Alertas: Facturas Vencidas -->
+    <mat-tab label="Facturas Vencidas">
+      <div class="export-actions">
+        <button mat-raised-button class="export-btn-red" (click)="exportToPDF()">
+          <mat-icon>picture_as_pdf</mat-icon> PDF
+        </button>
+        <button mat-raised-button class="export-btn-green" (click)="exportToExcel()">
+          <mat-icon>table_chart</mat-icon> Excel/CSV
+        </button>
+      </div>
+      
+      <div class="table-container mat-elevation-z1">
+        <table mat-table [dataSource]="overdueInvoiceData" matSort>
+          <ng-container matColumnDef="invoiceId">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
+            <td mat-cell *matCellDef="let item">{{item.invoiceId}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="clientName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Cliente</th>
+            <td mat-cell *matCellDef="let item">{{item.clientName}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="dueDate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha Vencimiento</th>
+            <td mat-cell *matCellDef="let item">{{formatDate(item.dueDate)}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="daysOverdue">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Días Vencidos</th>
+            <td mat-cell *matCellDef="let item">{{item.daysOverdue}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="overdueAmount">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Monto Vencido</th>
+            <td mat-cell *matCellDef="let item">{{formatCurrency(item.overdueAmount)}}</td>
+          </ng-container>
+          
+          <tr mat-header-row *matHeaderRowDef="overdueInvoiceColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: overdueInvoiceColumns;"></tr>
+          
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell" colspan="5">No hay facturas vencidas.</td>
+          </tr>
+        </table>
+        
+        <mat-paginator
+          [length]="totalItems"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="[5, 10, 25, 50, 100]"
+          (page)="onPageChange($event)"
+          showFirstLastButtons>
+        </mat-paginator>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>
+

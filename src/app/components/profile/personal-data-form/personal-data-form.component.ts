@@ -302,6 +302,10 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
   
   // Cargar datos del usuario
   loadUserData(): void {
+    // Si ya se cargaron los datos, no volver a cargar
+    if (this.dataLoaded) {
+      return;
+    }
     
     // Activar indicador de carga
     this.isLoading = true;
@@ -378,6 +382,11 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   loadAddress(): void {
+    // Si ya se cargaron los datos de dirección, no volver a cargar
+    if (this.addressDataLoaded) {
+      return;
+    }
+    
     this.addressService.getAddressByUserUid(this.currentUserId)
       .pipe(
         takeUntil(this.destroy$),

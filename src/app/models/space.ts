@@ -1,5 +1,5 @@
 export interface Space {
-  id: number;
+  id: number | string;
   name: string;
   description: string;
   status: string;
@@ -14,11 +14,21 @@ export interface Space {
   priceDay?: number;
   priceMonth?: number;
   priceHour?: number;
+  pricePerHour?: number;
+  pricePerDay?: number;
+  pricePerMonth?: number;
   userId?: string;
   address?: any;
   createdAt?: string;
   updatedAt?: string;
   amenities?: Amenity[];
+  // Propiedades necesarias para la gestión de administrador
+  ownerName?: string;
+  ownerUid?: string;
+  spaceTypeName?: string;
+  cityName?: string;
+  countryName?: string;
+  mainImage?: string;
 }
 
 export interface Amenity {

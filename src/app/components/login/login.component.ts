@@ -61,6 +61,7 @@ export class LoginComponent implements OnInit {
       await this.authService.loginWithGoogle(false);
       // La redirección la maneja el servicio de autenticación
     } catch (error) {
+      console.error('Error de login con Google:', error);
       this.showErrorSnackbar('Error en la autenticación con Google. Por favor intente nuevamente.');
     }
   }

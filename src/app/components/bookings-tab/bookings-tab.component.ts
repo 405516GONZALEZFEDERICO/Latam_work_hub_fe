@@ -20,7 +20,7 @@ import { CommonModule } from '@angular/common';
 import { FormControl } from '@angular/forms';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { Observable, Subject } from 'rxjs';
-import { map, takeUntil } from 'rxjs/operators';
+import { finalize, map, takeUntil } from 'rxjs/operators';
 
 // Clase para traducir los textos del paginador
 export class MatPaginatorIntlEsp extends MatPaginatorIntl {
@@ -206,14 +206,26 @@ export class BookingsTabComponent implements OnInit, OnDestroy {
         this.loading = true;
         // Aquí iría la lógica para cancelar la reserva
         // Ejemplo: this.bookingService.cancelBooking(booking.id)...
-        
-        // Por ahora, solo mostramos un mensaje
-        setTimeout(() => {
-          this.loading = false;
-          this.snackBar.open('Funcionalidad de cancelación no implementada', 'Cerrar', {
-            duration: 3000
+        this.bookingService.refundBooking(booking.id)
+          .pipe(
+            finalize(() => this.loading = false)
+          )
+          .subscribe({
+            next: () => {
+              this.snackBar.open('Reserva cancelada con éxito', 'Cerrar', {
+                duration: 3000
+              });
+              // Recargar reservas después de cancelar
+              this.loadBookings(this.currentPage, this.pageSize);
+            },  
+            error: (error) => {
+              console.error('Error al cancelar la reserva:', error);
+              this.snackBar.open('Error al cancelar la reserva', 'Cerrar', {
+                duration: 3000
+              });
+            }
           });
-        }, 1000);
+  
       }
     });
   }

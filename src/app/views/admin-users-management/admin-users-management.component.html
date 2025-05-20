@@ -1,0 +1,329 @@
+<div class="management-container">
+  <h1 class="page-title">Panel de Control de Administración</h1>
+
+  <mat-tab-group (selectedIndexChange)="onTabChange($event)" [selectedIndex]="selectedTab">
+    <!-- Tab Clientes -->
+    <mat-tab label="Clientes">
+      <mat-card class="management-card">
+        <mat-card-header>
+          <mat-card-title>Administración de Clientes</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <!-- Filtro de usuarios -->
+          <div class="filter-container">
+            <mat-form-field appearance="outline" class="filter-field">
+              <mat-label>Filtrar clientes</mat-label>
+              <input matInput [(ngModel)]="userFilter" (keyup)="applyUserFilter()" placeholder="Buscar por nombre o email">
+              <mat-icon matSuffix>search</mat-icon>
+              <button *ngIf="userFilter" matSuffix mat-icon-button aria-label="Clear" (click)="userFilter=''; applyUserFilter()">
+                <mat-icon>close</mat-icon>
+              </button>
+            </mat-form-field>
+          </div>
+
+          <!-- Mensaje de carga -->
+          <div *ngIf="loadingUsers.clients" class="loading-container">
+            <mat-spinner diameter="40"></mat-spinner>
+            <p>Cargando clientes...</p>
+          </div>
+
+          <!-- Mensaje de error -->
+          <div *ngIf="errorUsers.clients" class="error-message">
+            <mat-icon color="warn">error</mat-icon>
+            <span>{{ errorUsers.clients }}</span>
+          </div>
+
+          <!-- Tabla de clientes -->
+          <div class="table-container" *ngIf="!loadingUsers.clients && !errorUsers.clients">
+            <table mat-table [dataSource]="filteredClientUsers" class="mat-elevation-z2">
+              <!-- UID Column -->
+              <ng-container matColumnDef="firebaseUid">
+                <th mat-header-cell *matHeaderCellDef> ID </th>
+                <td mat-cell *matCellDef="let user"> {{ user?.firebaseUid ? user.firebaseUid.substring(0, 8) + '...' : 'N/A' }} </td>
+              </ng-container>
+
+              <!-- Nombre Column -->
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef> Nombre </th>
+                <td mat-cell *matCellDef="let user"> {{ user?.name || 'Sin nombre' }} </td>
+              </ng-container>
+
+              <!-- Email Column -->
+              <ng-container matColumnDef="email">
+                <th mat-header-cell *matHeaderCellDef> Email </th>
+                <td mat-cell *matCellDef="let user"> {{ user?.email || 'Sin email' }} </td>
+              </ng-container>
+
+              <!-- Role Column -->
+              <ng-container matColumnDef="role">
+                <th mat-header-cell *matHeaderCellDef> Rol </th>
+                <td mat-cell *matCellDef="let user"> {{ getUserRoleName(user) }} </td>
+              </ng-container>
+
+              <!-- Último Login Column -->
+              <ng-container matColumnDef="lastLoginAt">
+                <th mat-header-cell *matHeaderCellDef> Último ingreso </th>
+                <td mat-cell *matCellDef="let user"> {{ user?.lastLoginAt ? formatDateTime(user.lastLoginAt) : 'Nunca' }} </td>
+              </ng-container>
+
+              <!-- Fecha Registro Column -->
+              <ng-container matColumnDef="registrationDate">
+                <th mat-header-cell *matHeaderCellDef> Fecha de registro </th>
+                <td mat-cell *matCellDef="let user"> {{ user?.registrationDate ? formatDateTime(user.registrationDate) : 'Desconocida' }} </td>
+              </ng-container>
+
+              <!-- Estado Column -->
+              <ng-container matColumnDef="enabled">
+                <th mat-header-cell *matHeaderCellDef> Estado </th>
+                <td mat-cell *matCellDef="let user">
+                  <div class="status-container">
+                    <span class="status-indicator" [ngClass]="{'active-status': user?.enabled, 'inactive-status': !user?.enabled}"></span>
+                    <span>{{ user?.enabled ? 'Activo' : 'Inactivo' }}</span>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Acciones Column -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef> Acciones </th>
+                <td mat-cell *matCellDef="let user">
+                  <button mat-icon-button color="{{ user.enabled ? 'warn' : 'primary' }}" 
+                    (click)="toggleUserStatus(user)" 
+                    [matTooltip]="user.enabled ? 'Desactivar Usuario' : 'Activar Usuario'">
+                    <mat-icon>{{ user.enabled ? 'block' : 'check_circle' }}</mat-icon>
+                  </button>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="userColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: userColumns;"></tr>
+              
+              <!-- Fila mostrada cuando no hay datos -->
+              <tr class="mat-row" *matNoDataRow>
+                <td class="mat-cell empty-row" [attr.colspan]="userColumns.length">
+                  No se encontraron clientes.
+                </td>
+              </tr>
+            </table>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-tab>
+
+    <!-- Tab Proveedores -->
+    <mat-tab label="Proveedores">
+      <mat-card class="management-card">
+        <mat-card-header>
+          <mat-card-title>Administración de Proveedores</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <!-- Filtro de usuarios -->
+          <div class="filter-container">
+            <mat-form-field appearance="outline" class="filter-field">
+              <mat-label>Filtrar proveedores</mat-label>
+              <input matInput [(ngModel)]="userFilter" (keyup)="applyUserFilter()" placeholder="Buscar por nombre o email">
+              <mat-icon matSuffix>search</mat-icon>
+              <button *ngIf="userFilter" matSuffix mat-icon-button aria-label="Clear" (click)="userFilter=''; applyUserFilter()">
+                <mat-icon>close</mat-icon>
+              </button>
+            </mat-form-field>
+          </div>
+
+          <!-- Mensaje de carga -->
+          <div *ngIf="loadingUsers.providers" class="loading-container">
+            <mat-spinner diameter="40"></mat-spinner>
+            <p>Cargando proveedores...</p>
+          </div>
+
+          <!-- Mensaje de error -->
+          <div *ngIf="errorUsers.providers" class="error-message">
+            <mat-icon color="warn">error</mat-icon>
+            <span>{{ errorUsers.providers }}</span>
+          </div>
+
+          <!-- Tabla de proveedores -->
+          <div class="table-container" *ngIf="!loadingUsers.providers && !errorUsers.providers">
+            <table mat-table [dataSource]="filteredProviderUsers" class="mat-elevation-z2">
+              <!-- UID Column -->
+              <ng-container matColumnDef="firebaseUid">
+                <th mat-header-cell *matHeaderCellDef> ID </th>
+                <td mat-cell *matCellDef="let user"> {{ user?.firebaseUid ? user.firebaseUid.substring(0, 8) + '...' : 'N/A' }} </td>
+              </ng-container>
+
+              <!-- Nombre Column -->
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef> Nombre </th>
+                <td mat-cell *matCellDef="let user"> {{ user?.name || 'Sin nombre' }} </td>
+              </ng-container>
+
+              <!-- Email Column -->
+              <ng-container matColumnDef="email">
+                <th mat-header-cell *matHeaderCellDef> Email </th>
+                <td mat-cell *matCellDef="let user"> {{ user?.email || 'Sin email' }} </td>
+              </ng-container>
+
+              <!-- Role Column -->
+              <ng-container matColumnDef="role">
+                <th mat-header-cell *matHeaderCellDef> Rol </th>
+                <td mat-cell *matCellDef="let user"> {{ getUserRoleName(user) }} </td>
+              </ng-container>
+
+              <!-- Último Login Column -->
+              <ng-container matColumnDef="lastLoginAt">
+                <th mat-header-cell *matHeaderCellDef> Último ingreso </th>
+                <td mat-cell *matCellDef="let user"> {{ user?.lastLoginAt ? formatDateTime(user.lastLoginAt) : 'Nunca' }} </td>
+              </ng-container>
+
+              <!-- Fecha Registro Column -->
+              <ng-container matColumnDef="registrationDate">
+                <th mat-header-cell *matHeaderCellDef> Fecha de registro </th>
+                <td mat-cell *matCellDef="let user"> {{ user?.registrationDate ? formatDateTime(user.registrationDate) : 'Desconocida' }} </td>
+              </ng-container>
+
+              <!-- Estado Column -->
+              <ng-container matColumnDef="enabled">
+                <th mat-header-cell *matHeaderCellDef> Estado </th>
+                <td mat-cell *matCellDef="let user">
+                  <div class="status-container">
+                    <span class="status-indicator" [ngClass]="{'active-status': user?.enabled, 'inactive-status': !user?.enabled}"></span>
+                    <span>{{ user?.enabled ? 'Activo' : 'Inactivo' }}</span>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Acciones Column -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef> Acciones </th>
+                <td mat-cell *matCellDef="let user">
+                  <button mat-icon-button color="{{ user.enabled ? 'warn' : 'primary' }}" 
+                    (click)="toggleUserStatus(user)" 
+                    [matTooltip]="user.enabled ? 'Desactivar Usuario' : 'Activar Usuario'">
+                    <mat-icon>{{ user.enabled ? 'block' : 'check_circle' }}</mat-icon>
+                  </button>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="userColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: userColumns;"></tr>
+              
+              <!-- Fila mostrada cuando no hay datos -->
+              <tr class="mat-row" *matNoDataRow>
+                <td class="mat-cell empty-row" [attr.colspan]="userColumns.length">
+                  No se encontraron proveedores.
+                </td>
+              </tr>
+            </table>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-tab>
+
+    <!-- Tab Espacios (única pestaña) -->
+    <mat-tab label="Espacios">
+      <mat-card class="management-card">
+        <mat-card-header>
+          <mat-card-title>Administración de Espacios</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <!-- Filtro de espacios -->
+          <div class="filter-container">
+            <mat-form-field appearance="outline" class="filter-field">
+              <mat-label>Filtrar espacios</mat-label>
+              <input matInput [(ngModel)]="spaceFilter" (keyup)="applySpaceFilter()" placeholder="Buscar por nombre, proveedor o tipo">
+              <mat-icon matSuffix>search</mat-icon>
+              <button *ngIf="spaceFilter" matSuffix mat-icon-button aria-label="Clear" (click)="spaceFilter=''; applySpaceFilter()">
+                <mat-icon>close</mat-icon>
+              </button>
+            </mat-form-field>
+          </div>
+
+          <!-- Mensaje de carga -->
+          <div *ngIf="loadingSpaces" class="loading-container">
+            <mat-spinner diameter="40"></mat-spinner>
+            <p>Cargando espacios...</p>
+          </div>
+
+          <!-- Mensaje de error -->
+          <div *ngIf="errorSpaces" class="error-message">
+            <mat-icon color="warn">error</mat-icon>
+            <span>{{ errorSpaces }}</span>
+          </div>
+
+          <!-- Tabla de espacios -->
+          <div class="table-container" *ngIf="!loadingSpaces && !errorSpaces">
+            <table mat-table [dataSource]="filteredSpaces" class="mat-elevation-z2">
+              <!-- ID Column -->
+              <ng-container matColumnDef="id">
+                <th mat-header-cell *matHeaderCellDef> ID </th>
+                <td mat-cell *matCellDef="let space"> {{ space.id }} </td>
+              </ng-container>
+
+              <!-- Nombre Column -->
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef> Nombre </th>
+                <td mat-cell *matCellDef="let space"> {{ space?.name || 'Sin nombre' }} </td>
+              </ng-container>
+
+              <!-- Tipo Column -->
+              <ng-container matColumnDef="spaceType">
+                <th mat-header-cell *matHeaderCellDef> Tipo </th>
+                <td mat-cell *matCellDef="let space"> {{ space?.spaceType || 'Sin especificar' }} </td>
+              </ng-container>
+
+              <!-- Ciudad Column -->
+              <ng-container matColumnDef="address.city">
+                <th mat-header-cell *matHeaderCellDef> Ciudad </th>
+                <td mat-cell *matCellDef="let space"> {{ space?.address?.city || 'Sin especificar' }} </td>
+              </ng-container>
+
+              <!-- Capacidad Column -->
+              <ng-container matColumnDef="capacity">
+                <th mat-header-cell *matHeaderCellDef> Capacidad </th>
+                <td mat-cell *matCellDef="let space"> {{ space?.capacity || 'N/A' }} </td>
+              </ng-container>
+
+              <!-- Precio Hora Column -->
+              <ng-container matColumnDef="pricePerHour">
+                <th mat-header-cell *matHeaderCellDef> Precio por hora </th>
+                <td mat-cell *matCellDef="let space"> {{ space?.pricePerHour ? formatCurrency(space.pricePerHour) : 'N/A' }} </td>
+              </ng-container>
+
+              <!-- Estado Column -->
+              <ng-container matColumnDef="active">
+                <th mat-header-cell *matHeaderCellDef> Estado </th>
+                <td mat-cell *matCellDef="let space">
+                  <div class="status-container">
+                    <span class="status-indicator" [ngClass]="{'active-status': space?.active, 'inactive-status': !space?.active}"></span>
+                    <span>{{ space?.active ? 'Activo' : 'Inactivo' }}</span>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Acciones Column -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef> Acciones </th>
+                <td mat-cell *matCellDef="let space">
+                  <button mat-icon-button color="{{ space.active ? 'warn' : 'primary' }}" 
+                    (click)="toggleSpaceStatus(space)" 
+                    [matTooltip]="space.active ? 'Desactivar Espacio' : 'Activar Espacio'">
+                    <mat-icon>{{ space.active ? 'block' : 'check_circle' }}</mat-icon>
+                  </button>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="spaceColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: spaceColumns;"></tr>
+              
+              <!-- Fila mostrada cuando no hay datos -->
+              <tr class="mat-row" *matNoDataRow>
+                <td class="mat-cell empty-row" [attr.colspan]="spaceColumns.length">
+                  No se encontraron espacios.
+                </td>
+              </tr>
+            </table>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-tab>
+  </mat-tab-group>
+</div> 

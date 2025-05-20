@@ -1,9 +1,9 @@
-import { ApplicationConfig, importProvidersFrom } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom, ComponentRef, Type } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
 import { getAuth, provideAuth } from '@angular/fire/auth';
 import { environment } from '../environment/environment';
-import {  provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { routes } from './app.routes';
 import { provideFirestore } from '@angular/fire/firestore';
 import { getFirestore } from 'firebase/firestore';
@@ -17,9 +17,23 @@ import { LOCALE_ID } from '@angular/core';
 import { httpErrorInterceptor } from '../interceptors/http-error.interceptor';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { ENVIRONMENT_INITIALIZER } from '@angular/core';
 
 // Registrar los datos de localización para español
 registerLocaleData(localeEs);
+
+// Función para suprimir warnings de consola
+const suppressConsoleWarnings = () => {
+  const originalConsoleWarn = console.warn;
+  console.warn = function(message?: any, ...optionalParams: any[]): void {
+    // Ignorar warnings específicos de NG0912
+    if (message && typeof message === 'string' && 
+        (message.includes('NG0912') || message.includes('Component ID generation collision'))) {
+      return;
+    }
+    originalConsoleWarn.apply(console, [message, ...optionalParams]);
+  };
+};
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -36,6 +50,14 @@ export const appConfig: ApplicationConfig = {
     provideFirebaseApp(() => initializeApp(environment.firebase)),
     provideAuth(() => getAuth()),
     provideFirestore(() => getFirestore()),
+    // Suprimir warnings de Angular
+    {
+      provide: ENVIRONMENT_INITIALIZER,
+      multi: true,
+      useValue: () => {
+        suppressConsoleWarnings();
+      }
+    },
     ProfileService,
     { provide: LOCALE_ID, useValue: 'es' },
     {
