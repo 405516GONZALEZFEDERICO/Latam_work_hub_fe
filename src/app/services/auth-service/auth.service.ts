@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, runInInjectionContext, EnvironmentInjector, NgZone } from '@angular/core';
 import { Auth, GoogleAuthProvider, signInWithPopup, signOut, signInWithEmailAndPassword, onAuthStateChanged, browserLocalPersistence, browserSessionPersistence, setPersistence, sendPasswordResetEmail } from '@angular/fire/auth';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -11,6 +11,8 @@ export class AuthService {
   private auth = inject(Auth);
   private http = inject(HttpClient);
   private router = inject(Router);
+  private environmentInjector = inject(EnvironmentInjector);
+  private ngZone = inject(NgZone);
 
   // Usa environment para la URL base con el segmento /auth
   private API_BASE_URL = `${environment.apiUrl}/auth`;
@@ -21,6 +23,7 @@ export class AuthService {
   private userSubject = new BehaviorSubject<User | null>(null);
   private isInitialized = false;
   private lastTokenRefresh = 0;
+  private persistenceInitialized = false;
   
   // Public observables that components can subscribe to
   public authState$ = this.authStateSubject.asObservable();
@@ -61,138 +64,130 @@ export class AuthService {
     const initialAuthState = this.checkInitialAuthState();
     this.authStateSubject.next(initialAuthState);
     
-    // Aplicar persistencia local para prevenir pérdida de sesión al recargar
-    try {
-      // Aplicar persistencia de forma inmediata
-      setPersistence(this.auth, browserLocalPersistence)
-        .then(() => {
-        })
-        .catch(error => {
-          console.error('Error al configurar persistencia local:', error);
-          // Intentar con otro tipo de persistencia si la primera falla
-          setPersistence(this.auth, browserSessionPersistence)
-            .catch(err => console.error('Error setting session persistence:', err));
-        });
-    } catch (error) {
-      console.warn('Firebase persistence not supported in this environment:', error);
-    }
-    
-    // Escuchar cambios en el estado de autenticación de Firebase
-    onAuthStateChanged(this.auth, async (user) => {
-      this.isInitialized = true;
-      
-      if (user) {
-        // Verificar si hay un conflicto entre el usuario en Firebase y el usuario en localStorage
-        const storedUser = localStorage.getItem('currentUserData');
-        if (storedUser) {
-          try {
-            const parsedUser = JSON.parse(storedUser);
-            if (parsedUser.uid !== user.uid) {
-              // Limpiar localStorage para prevenir conflictos
-              localStorage.removeItem('currentUserData');
-              localStorage.removeItem('userDataTimestamp');
-            }
-          } catch (e) {
-            console.error('Error al verificar conflicto de usuarios:', e);
-          }
-        }
-        
-        // Intentar recuperar datos de localStorage primero
-        const cachedUser = this.getUserFromLocalStorage(user.uid);
-        
-        if (cachedUser && cachedUser.uid === user.uid) {
-          // Si tenemos datos en caché válidos, los usamos inmediatamente
-          this.currentUserData = cachedUser;
-          this.userSubject.next(cachedUser);
-          this.authStateSubject.next(true);
+    // Escuchar cambios en el estado de autenticación de Firebase de forma segura
+    this.ngZone.runOutsideAngular(() => {
+      onAuthStateChanged(this.auth, async (user) => {
+        this.ngZone.run(() => {
+          this.isInitialized = true;
           
-          // Asegurar que esté actualizado en localStorage (por si acaso)
-          localStorage.setItem('currentUserData', JSON.stringify(cachedUser));
-          localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
-          
-          // Verificar si el token necesita actualizarse (más de 30 minutos)
-          const now = new Date().getTime();
-          if (now - this.lastTokenRefresh > 1800000) {
-            try {
-              // Usar import dinámico para evitar errores de tipo
-              const firebaseAuthModule = await import('@firebase/auth');
-              // Refrescar el token silenciosamente
-              const newToken = await (user as import('@firebase/auth').User).getIdToken(true);
-              if (newToken && this.currentUserData) {
-                this.currentUserData.idToken = newToken;
-                this.userSubject.next(this.currentUserData);
-                localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
-                localStorage.setItem('userDataTimestamp', now.toString());
-                this.lastTokenRefresh = now;
+          if (user) {
+            // Verificar si hay un conflicto entre el usuario en Firebase y el usuario en localStorage
+            const storedUser = localStorage.getItem('currentUserData');
+            if (storedUser) {
+              try {
+                const parsedUser = JSON.parse(storedUser);
+                if (parsedUser.uid !== user.uid) {
+                  // Limpiar localStorage para prevenir conflictos
+                  localStorage.removeItem('currentUserData');
+                  localStorage.removeItem('userDataTimestamp');
+                }
+              } catch (e) {
+                console.error('Error al verificar conflicto de usuarios:', e);
               }
-            } catch (error) {
-              console.error('Error al refrescar token en background:', error);
             }
-          }
-        } else {
-          try {
-            // Usar import dinámico para evitar errores de tipo
-            const firebaseAuthModule = await import('@firebase/auth');
-            // Si no tenemos datos en caché o están expirados, obtener un nuevo token
-            const idToken = await (user as import('@firebase/auth').User).getIdToken();
             
-            // Intentar recuperar el rol anterior de localStorage
+            // Intentar recuperar datos de localStorage primero
             const cachedUser = this.getUserFromLocalStorage(user.uid);
-            const previousRole = cachedUser?.role || 'DEFAULT';
             
-            // Usar datos básicos mientras verificamos el rol
-            this.currentUserData = {
-              uid: user.uid,
-              email: user.email!,
-              emailVerified: user.emailVerified,
-              role: previousRole, // Usar el rol previo si existe, no DEFAULT automáticamente
-              refreshToken: user.refreshToken,
-              photoURL: user.photoURL || '',
-              idToken: idToken 
-            };
-            this.userSubject.next(this.currentUserData);
-            this.authStateSubject.next(true);
+            if (cachedUser && cachedUser.uid === user.uid) {
+              // Si tenemos datos en caché válidos, los usamos inmediatamente
+              this.currentUserData = cachedUser;
+              this.userSubject.next(cachedUser);
+              this.authStateSubject.next(true);
+              
+              // Asegurar que esté actualizado en localStorage (por si acaso)
+              localStorage.setItem('currentUserData', JSON.stringify(cachedUser));
+              localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
+              
+              // Verificar si el token necesita actualizarse (más de 30 minutos)
+              const now = new Date().getTime();
+              if (now - this.lastTokenRefresh > 1800000) {
+                try {
+                  // Refrescar el token silenciosamente
+                  user.getIdToken(true).then(newToken => {
+                    if (newToken && this.currentUserData) {
+                      this.currentUserData.idToken = newToken;
+                      this.userSubject.next(this.currentUserData);
+                      localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
+                      localStorage.setItem('userDataTimestamp', now.toString());
+                      this.lastTokenRefresh = now;
+                    }
+                  });
+                } catch (error) {
+                  console.error('Error al refrescar token en background:', error);
+                }
+              }
+            } else {
+              try {
+                // Si no tenemos datos en caché o están expirados, obtener un nuevo token
+                user.getIdToken().then(idToken => {
+                  // Intentar recuperar el rol anterior de localStorage
+                  const cachedUser = this.getUserFromLocalStorage(user.uid);
+                  const previousRole = cachedUser?.role || 'DEFAULT';
+                  
+                  // Usar datos básicos mientras verificamos el rol
+                  this.currentUserData = {
+                    uid: user.uid,
+                    email: user.email!,
+                    emailVerified: user.emailVerified,
+                    role: previousRole, // Usar el rol previo si existe, no DEFAULT automáticamente
+                    refreshToken: user.refreshToken,
+                    photoURL: user.photoURL || '',
+                    idToken: idToken 
+                  };
+                  this.userSubject.next(this.currentUserData);
+                  this.authStateSubject.next(true);
+                  
+                  // Verificar rol con el backend
+                  this.verifyUserRole(idToken);
+                  this.lastTokenRefresh = new Date().getTime();
+                });
+              } catch (error) {
+                console.error('Error al obtener token:', error);
+                // Intentar usar datos básicos sin token
+                this.currentUserData = {
+                  uid: user.uid,
+                  email: user.email!,
+                  emailVerified: user.emailVerified,
+                  role: 'DEFAULT' as UserRole,
+                  refreshToken: user.refreshToken,
+                  photoURL: user.photoURL || '',
+                  idToken: '' 
+                };
+                this.userSubject.next(this.currentUserData);
+                this.authStateSubject.next(true);
+              }
+            }
+          } else {
+            // No hay usuario en Firebase, pero podría haber en localStorage
+            const cachedUser = this.getUserFromLocalStorage();
             
-            // Verificar rol con el backend
-            this.verifyUserRole(idToken);
-            this.lastTokenRefresh = new Date().getTime();
-          } catch (error) {
-            console.error('Error al obtener token:', error);
-            // Intentar usar datos básicos sin token
-            this.currentUserData = {
-              uid: user.uid,
-              email: user.email!,
-              emailVerified: user.emailVerified,
-              role: 'DEFAULT' as UserRole,
-              refreshToken: user.refreshToken,
-              photoURL: user.photoURL || '',
-              idToken: '' 
-            };
-            this.userSubject.next(this.currentUserData);
-            this.authStateSubject.next(true);
+            if (cachedUser && this.isTokenValid(cachedUser)) {
+              this.currentUserData = cachedUser;
+              this.userSubject.next(cachedUser);
+              this.authStateSubject.next(true);
+              
+              // No limpiamos localStorage para permitir futuras restauraciones
+              return;
+            }
+            
+            // Si no hay usuario en caché o su token no es válido, limpiar todo
+            this.currentUserData = null;
+            this.userSubject.next(null);
+            this.authStateSubject.next(false);
+            localStorage.removeItem('currentUserData');
+            localStorage.removeItem('userDataTimestamp');
           }
-        }
-      } else {
-        // No hay usuario en Firebase, pero podría haber en localStorage
-        const cachedUser = this.getUserFromLocalStorage();
-        
-        if (cachedUser && this.isTokenValid(cachedUser)) {
-          this.currentUserData = cachedUser;
-          this.userSubject.next(cachedUser);
-          this.authStateSubject.next(true);
-          
-          // No limpiamos localStorage para permitir futuras restauraciones
-          return;
-        }
-        
-        // Si no hay usuario en caché o su token no es válido, limpiar todo
-        this.currentUserData = null;
-        this.userSubject.next(null);
-        this.authStateSubject.next(false);
-        localStorage.removeItem('currentUserData');
-        localStorage.removeItem('userDataTimestamp');
-      }
+        });
+      });
     });
+  }
+  
+  // Método privado para configurar la persistencia (solo una vez)
+  private async ensurePersistenceSet(): Promise<void> {
+    // Solo marcar como inicializado sin intentar configurar persistence
+    this.persistenceInitialized = true;
+    return Promise.resolve();
   }
   
   // Obtener información del rol desde localStorage
@@ -347,77 +342,160 @@ async loginWithGoogle(isRegistration: boolean = false): Promise<void> {
           .set('idToken', idToken)
           .set('isRegistration', isRegistration ? 'true' : 'false'),
         headers: { 'Content-Type': 'application/json' }
-      })
-    );
-    
-    // 3. Only if backend validates successfully, continue with login
-    if (this.auth.currentUser) {
-      // Set up user with role from backend
-      this.currentUserData = {
-        uid: this.auth.currentUser.uid,
-        email: this.auth.currentUser.email!,
-        emailVerified: this.auth.currentUser.emailVerified,
-        role: backendValidation.role as UserRole,
-        idToken: idToken,
-        refreshToken: this.auth.currentUser.refreshToken,
-        photoURL: backendValidation.photoUrl || this.auth.currentUser.photoURL || ''
-      };
+      }).subscribe({
+        next: (response) => {
+
+          if (this.auth.currentUser) {
+            // Verificar si ya existe un rol en localStorage
+            const cachedUser = this.getUserFromLocalStorage(this.auth.currentUser.uid);
+            const roleFromBackend = response.role || 'DEFAULT';
+            const persistedRole = cachedUser?.role;
+            
+            // Priorizar el rol persistido si es diferente a DEFAULT y el backend devuelve DEFAULT
+            let finalRole: string;
+            
+            if (isRegistration) {
+              // Si es registro, siempre usar DEFAULT para forzar selección de rol
+              finalRole = 'DEFAULT';
+            } else {
+              // Si es login, usar lógica normal
+              finalRole = (roleFromBackend === 'DEFAULT' && persistedRole && persistedRole !== 'DEFAULT')
+                ? persistedRole
+                : roleFromBackend;
+            }
+              
+            // Actualizar usuario con los datos del backend
+            this.currentUserData = {
+              uid: this.auth.currentUser.uid,
+              email: this.auth.currentUser.email!,
+              emailVerified: this.auth.currentUser.emailVerified,
+              role: finalRole as UserRole,
+              idToken: idToken,
+              refreshToken: this.auth.currentUser.refreshToken,
+              photoURL: response.photoUrl || this.auth.currentUser.photoURL || ''
+            };
+            
+            this.userSubject.next(this.currentUserData);
+            this.authStateSubject.next(true);
+            
+            // Guardar en localStorage siempre
+            localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
+            localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
+            
+            // Si es un registro o tiene rol DEFAULT, redirigir a selección de rol
+            if (isRegistration || finalRole === 'DEFAULT') {
+              // Usar método directo para evitar problemas de ruteo
+              this.navigateToRoleSelection();
+            } else {
+              this.router.navigate(['/home']);
+            }
+          } else {
+            throw new Error('No se pudo completar el proceso de autenticación.');
+          }
+        },
+        error: (error) => {
+          console.error('Error en autenticación con backend:', error);
+          // Verificar si es un error de ruta
+          if (error && error.message && (error.message.includes('select-rol') || error.message.includes('select-role'))) {
+            this.handleRouteError(error);
+          } else {
+            // Manejo genérico de errores
+            console.error('Error desconocido en proceso de autenticación:', error);
+            
+            // Incluso con error, intentar navegar según corresponda
+            const user = this.auth.currentUser;
+            if (user) {
+              
+              // Crear datos mínimos del usuario
+              this.currentUserData = {
+                uid: user.uid,
+                email: user.email!,
+                emailVerified: user.emailVerified,
+                role: 'DEFAULT' as UserRole, // Asignar DEFAULT como fallback
+                refreshToken: user.refreshToken,
+                photoURL: user.photoURL || '',
+                idToken: '' 
+              };
+              
+              // Actualizar el estado
+              this.userSubject.next(this.currentUserData);
+              this.authStateSubject.next(true);
+              
+              // Guardar en localStorage
+              localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
+              localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
+              
+              // Redirigir a selección de rol en caso de error
+              this.navigateToRoleSelection();
+            } else {
+              throw new Error('Error en autenticación y no hay usuario disponible');
+            }
+          }
+        }
+      });
+    } catch (error: any) {
+      console.error('Error crítico en proceso de Google auth:', error);
       
-      this.userSubject.next(this.currentUserData);
-      this.authStateSubject.next(true);
+      let errorMessage = 'Error al procesar la autenticación con Google';
       
-      localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
-      localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
-      
-      // Navigate based on role
-      if (backendValidation.role === 'DEFAULT' || isRegistration) {
+      if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = 'Proceso cancelado. La ventana fue cerrada.';
+      } else if (error.code === 'auth/popup-blocked') {
+        errorMessage = 'El navegador bloqueó la ventana emergente. Por favor, permita ventanas emergentes e intente nuevamente.';
+      } else if (error.message && (error.message.includes('select-rol') || error.message.includes('select-role'))) {
+        // Error de ruta - intentar redirigir a la ruta correcta
         this.navigateToRoleSelection();
-      } else {
-        this.router.navigate(['/home']);
+        return;
       }
+      
+      throw new Error(errorMessage);
     }
-  } catch (error: any) {
-    // If ANY part fails (including backend validation), clean up and log out
-    console.error('Error en autenticación con Google:', error);
-    
-    // Sign out from Firebase to undo the previous sign in
-    await signOut(this.auth);
-    
-    // Clear all storage
-    localStorage.removeItem('currentUserData');
-    localStorage.removeItem('userDataTimestamp');
-    
-    // Throw a consistent error
-    throw new Error('No se pudo completar la autenticación. Verifica que el servidor esté disponible.');
   }
-}
 
   register(email: string, password: string): Observable<string> {
-    const params = new HttpParams()
-      .set('email', email)
-      .set('password', password);
-    
-    return this.http.post(`${this.API_BASE_URL}/register`, null, {
-      params: params,
-      responseType: 'text',
-      headers: { 'Content-Type': 'application/json' }
-    }).pipe(
-      switchMap(response => {
-        // Si el registro fue exitoso, ahora iniciamos sesión con las credenciales
-        return from(signInWithEmailAndPassword(this.auth, email, password)).pipe(
-          switchMap(userCredential => {
-            return of(response);
+    return from(this.ensurePersistenceSet()).pipe(
+      switchMap(() => {
+        const params = new HttpParams()
+          .set('email', email)
+          .set('password', password);
+        
+        return this.http.post(`${this.API_BASE_URL}/register`, null, {
+          params: params,
+          responseType: 'text',
+          headers: { 'Content-Type': 'application/json' }
+        }).pipe(
+          switchMap(response => {
+            // Use ngZone and runInInjectionContext for Firebase operations
+            return from(new Promise<string>((resolve, reject) => {
+              this.ngZone.runOutsideAngular(() => {
+                runInInjectionContext(this.environmentInjector, () => {
+                  // Si el registro fue exitoso, ahora iniciamos sesión con las credenciales
+                  signInWithEmailAndPassword(this.auth, email, password)
+                    .then(userCredential => {
+                      this.ngZone.run(() => {
+                        resolve(response);
+                      });
+                    })
+                    .catch(error => {
+                      this.ngZone.run(() => {
+                        console.error('Error signing in after registration:', error);
+                        reject(error);
+                      });
+                    });
+                });
+              });
+            }));
+          }),
+          catchError(error => {
+            console.error('Register error:', error);
+            return throwError(() => error);
           })
         );
-      }),
-      catchError(error => {
-        console.error('Register error:', error);
-        return throwError(() => error);
       })
     );
   }
 
-  updateUserRole(uid: string, role: UserRole): Observable<any> {
+  updateUserRole(uid: string, role: UserRole, adminKey?: string): Observable<any> {
     
     // Primero, obtenemos el token ID actual
     return from(this.getIdToken()).pipe(
@@ -427,10 +505,15 @@ async loginWithGoogle(isRegistration: boolean = false): Promise<void> {
           return throwError(() => new Error('No se pudo obtener el token de autenticación'));
         }
         
+        // Crear objeto de solicitud con o sin adminKey
+        const requestData: any = { uid, roleName: role };
+        if (adminKey) {
+          requestData.adminKey = adminKey;
+        }
         
         // Enviamos la solicitud al backend para actualizar el rol
         return this.http.post<any>(`${this.API_BASE_URL}/roles/assign`, 
-          { uid, roleName: role },
+          requestData,
           { 
             headers: { 
               'Content-Type': 'application/json',
@@ -480,13 +563,11 @@ async loginWithGoogle(isRegistration: boolean = false): Promise<void> {
   }
 
   loginWithEmail(email: string, password: string): Observable<any> {
-    // Siempre usar persistencia local
-    // Add at the start of both login methods
-    this.clearAllStorages();
-    const persistenceType = browserLocalPersistence;
-    
-    return from(setPersistence(this.auth, persistenceType)).pipe(
+    // Add at the start of login methods
+    return from(this.ensurePersistenceSet()).pipe(
       switchMap(() => {
+        this.clearAllStorages();
+        
         const params = new HttpParams()
           .set('email', email)
           .set('password', password);
@@ -496,173 +577,179 @@ async loginWithGoogle(isRegistration: boolean = false): Promise<void> {
           headers: { 'Content-Type': 'application/json' } 
         }).pipe(
           switchMap(response => {
-            return from(signInWithEmailAndPassword(this.auth, email, password)).pipe(
-              switchMap(userCredential => {
-                // Verificar si hay un usuario diferente en localStorage y limpiarlo
-                const cachedUser = this.getUserFromLocalStorage();
-                if (cachedUser && cachedUser.uid !== userCredential.user.uid) {
-                  localStorage.removeItem('currentUserData');
-                  localStorage.removeItem('userDataTimestamp');
-                }
-                
-                return from(userCredential.user.getIdToken()).pipe(
-                  map(idToken => {
-                    // Verificar si ya existe un rol en localStorage
-                    const cachedUser = this.getUserFromLocalStorage(userCredential.user.uid);
-                    const roleFromBackend = response.role || 'DEFAULT';
-                    const persistedRole = cachedUser?.role;
-                    
-                    // Priorizar el rol persistido si es diferente a DEFAULT y el backend devuelve DEFAULT
-                    const finalRole = (roleFromBackend === 'DEFAULT' && persistedRole && persistedRole !== 'DEFAULT')
-                      ? persistedRole
-                      : roleFromBackend;
-                      
-                    // Actualizar el estado del usuario con los datos del backend
-                    this.currentUserData = {
-                      uid: userCredential.user.uid,
-                      email: userCredential.user.email!,
-                      emailVerified: userCredential.user.emailVerified,
-                      role: finalRole as UserRole,
-                      idToken: idToken,
-                      refreshToken: userCredential.user.refreshToken,
-                      photoURL: response.photoUrl || userCredential.user.photoURL || ''
-                    };
-                    
-                    this.userSubject.next(this.currentUserData);
-                    this.authStateSubject.next(true);
-                    
-                    // Siempre guardar en localStorage, independientemente de rememberMe
-                    localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
-                    localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
+            // Use ngZone and runInInjectionContext for Firebase operations
+            return from(new Promise<any>((resolve, reject) => {
+              this.ngZone.runOutsideAngular(() => {
+                runInInjectionContext(this.environmentInjector, () => {
+                  signInWithEmailAndPassword(this.auth, email, password)
+                    .then(userCredential => {
+                      this.ngZone.run(() => {
+                        // Verificar si hay un usuario diferente en localStorage y limpiarlo
+                        const cachedUser = this.getUserFromLocalStorage();
+                        if (cachedUser && cachedUser.uid !== userCredential.user.uid) {
+                          localStorage.removeItem('currentUserData');
+                          localStorage.removeItem('userDataTimestamp');
+                        }
+                        
+                        // Get token
+                        userCredential.user.getIdToken()
+                          .then(idToken => {
+                            // Verificar si ya existe un rol en localStorage
+                            const cachedUser = this.getUserFromLocalStorage(userCredential.user.uid);
+                            const roleFromBackend = response.role || 'DEFAULT';
+                            const persistedRole = cachedUser?.role;
+                            
+                            // Priorizar el rol persistido si es diferente a DEFAULT y el backend devuelve DEFAULT
+                            const finalRole = (roleFromBackend === 'DEFAULT' && persistedRole && persistedRole !== 'DEFAULT')
+                              ? persistedRole
+                              : roleFromBackend;
+                              
+                            // Actualizar el estado del usuario con los datos del backend
+                            this.currentUserData = {
+                              uid: userCredential.user.uid,
+                              email: userCredential.user.email!,
+                              emailVerified: userCredential.user.emailVerified,
+                              role: finalRole as UserRole,
+                              idToken: idToken,
+                              refreshToken: userCredential.user.refreshToken,
+                              photoURL: response.photoUrl || userCredential.user.photoURL || ''
+                            };
+                            
+                            this.userSubject.next(this.currentUserData);
+                            this.authStateSubject.next(true);
+                            
+                            // Siempre guardar en localStorage, independientemente de rememberMe
+                            localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
+                            localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
 
-                    // Determinar la ruta basada en el rol
-                    if (finalRole === 'DEFAULT') {
-                      this.navigateToRoleSelection();
-                    } else {
-                      this.router.navigate(['/home']);
-                    }
-                    
-                    return { 
-                      success: true, 
-                      role: finalRole,
-                      needsRole: finalRole === 'DEFAULT'
-                    };
-                  })
-                );
-              })
-            );
+                            // Determinar la ruta basada en el rol
+                            if (finalRole === 'DEFAULT') {
+                              this.navigateToRoleSelection();
+                            } else {
+                              this.router.navigate(['/home']);
+                            }
+                            
+                            resolve({ 
+                              success: true, 
+                              role: finalRole,
+                              needsRole: finalRole === 'DEFAULT'
+                            });
+                          })
+                          .catch(error => {
+                            console.error('Error getting token:', error);
+                            reject(error);
+                          });
+                      });
+                    })
+                    .catch(error => {
+                      this.ngZone.run(() => {
+                        console.error('Error signing in:', error);
+                        reject(error);
+                      });
+                    });
+                });
+              });
+            }));
           })
         );
       })
     );
   }
 
-  // async logout(): Promise<void> {
-  //   try {
-      
-  //     // 1. Obtener token antes de limpiar datos (si existe)
-  //     const token = this.currentUserData?.idToken || await this.getIdToken();
-      
-  //     // 2. Limpiar datos locales
-  //     this.currentUserData = null;
-  //     this.userSubject.next(null);
-  //     this.authStateSubject.next(false);
-      
-  //     // 3. Limpiar completamente localStorage
-  //     localStorage.removeItem('currentUserData');
-  //     localStorage.removeItem('userDataTimestamp');
-      
-  //     // 4. Limpiar cualquier otro item de localStorage relacionado con Firebase
-  //     // Esto es importante para evitar que queden rastros de la sesión anterior
-  //     for (let i = 0; i < localStorage.length; i++) {
-  //       const key = localStorage.key(i);
-  //       if (key && (key.includes('firebase') || key.includes('firebaseui') || key.includes('auth'))) {
-  //         localStorage.removeItem(key);
-  //         // Ajustar el índice después de eliminar
-  //         i--;
-  //       }
-  //     }
-      
-  //     // 5. Cerrar sesión en Firebase
-  //     await signOut(this.auth);
-      
-  //     // 7. Navegar a la página de login para asegurar reinicio completo
-  //     this.router.navigate(['/login']);
-      
-  //     return Promise.resolve();
-  //   } catch (error) {
-  //     // Incluso si hay error, intentar limpiar localStorage y navegar a login
-  //     localStorage.removeItem('currentUserData');
-  //     localStorage.removeItem('userDataTimestamp');
-  //     this.router.navigate(['/login']);
-      
-  //     return Promise.reject(error);
-  //   }
-  // }
-
-// filepath: c:\Users\Federico gonzalez\Desktop\Latam_work_hub_fe\src\app\services\auth-service\auth.service.ts
-
-async logout(): Promise<void> {
-  try {
-    // Clear all Firebase auth state
-    await signOut(this.auth);
-    
-    // Clear all local state
-    this.currentUserData = null;
-    this.userSubject.next(null);
-    this.authStateSubject.next(false);
-    
-    // Clear localStorage comprehensively
-    localStorage.clear(); // Clear everything to be thorough
-    sessionStorage.clear(); // Clear session storage too
-    
-    // Clear any Firebase specific items that might persist
-    indexedDB.deleteDatabase('firebaseLocalStorageDb');
-    
-    // Force clear Firebase auth persistence
+  async logout(): Promise<void> {
     try {
-      await setPersistence(this.auth, browserSessionPersistence);
-    } catch (e) {
-      console.warn('Error clearing Firebase persistence:', e);
+      // Clear all Firebase auth state within the proper injection context
+      await new Promise<void>((resolve) => {
+        // Usar directamente runInInjectionContext sin ngZone
+        runInInjectionContext(this.environmentInjector, async () => {
+          try {
+            await signOut(this.auth);
+            
+            // Clear all local state
+            this.currentUserData = null;
+            this.userSubject.next(null);
+            this.authStateSubject.next(false);
+            
+            // Clear localStorage comprehensively
+            await this.clearAllStorages();
+            
+            // Force navigation
+            window.location.href = '/login';
+            resolve();
+          } catch (error) {
+            console.error('Logout error:', error);
+            // Even if there's an error, try to clean up
+            await this.clearAllStorages();
+            window.location.href = '/login';
+            resolve();
+          }
+        });
+      });
+      
+      return Promise.resolve();
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if there's an error, try to clean up
+      await this.clearAllStorages();
+      window.location.href = '/login';
+      return Promise.reject(error);
     }
+  }
 
-    // Navigate to login and force page refresh
-    window.location.href = '/login';
-    
-    return Promise.resolve();
-  } catch (error) {
-    console.error('Logout error:', error);
-    // Even if there's an error, try to clean up
+  private async clearAllStorages(): Promise<void> {
+    // Clear standard storage
     localStorage.clear();
     sessionStorage.clear();
-    window.location.href = '/login';
-    return Promise.reject(error);
-  }
-}
-private async clearAllStorages(): Promise<void> {
-  // Clear standard storage
-  localStorage.clear();
-  sessionStorage.clear();
-  
-  // Clear IndexedDB
-  const databases = await window.indexedDB.databases();
-  databases.forEach(db => {
-    if (db.name) {
-      window.indexedDB.deleteDatabase(db.name);
+    
+    // Clear Firebase-specific tokens and OAuth state
+    try {
+      // Limpiar específicamente datos relacionados con Firebase
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (
+            key.includes('firebase') || 
+            key.includes('firebaseui') || 
+            key.includes('auth') ||
+            key.includes('token') ||
+            key.includes('oauth')
+        )) {
+          localStorage.removeItem(key);
+          i--; // Ajustar índice después de eliminar
+        }
+      }
+    } catch (e) {
+      console.error('Error limpiando datos específicos de Firebase:', e);
     }
-  });
-  
-  // Clear cookies
-  document.cookie.split(";").forEach(c => {
-    document.cookie = c.replace(/^ +/, "")
-      .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-  });
-}
-updateCurrentUser(user: User): void {
-  this.currentUserData = user; // Actualiza el usuario localmente
-  this.userSubject.next(user); // Notifica a los observadores
-  localStorage.setItem('currentUserData', JSON.stringify(user)); // Guarda en localStorage
-}
+    
+    // Clear IndexedDB
+    try {
+      const databases = await window.indexedDB.databases();
+      databases.forEach(db => {
+        if (db.name) {
+          window.indexedDB.deleteDatabase(db.name);
+        }
+      });
+    } catch (e) {
+      console.error('Error limpiando IndexedDB:', e);
+    }
+    
+    // Clear cookies
+    try {
+      document.cookie.split(";").forEach(c => {
+        document.cookie = c.replace(/^ +/, "")
+          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+    } catch (e) {
+      console.error('Error limpiando cookies:', e);
+    }
+  }
+
+  updateCurrentUser(user: User): void {
+    this.currentUserData = user; // Actualiza el usuario localmente
+    this.userSubject.next(user); // Notifica a los observadores
+    localStorage.setItem('currentUserData', JSON.stringify(user)); // Guarda en localStorage
+  }
+
   getIdToken(): Promise<string | null> {
     if (!this.auth.currentUser) {
       // Si no hay usuario activo en Firebase, intentar obtener el token de localStorage
@@ -673,11 +760,19 @@ updateCurrentUser(user: User): void {
       return Promise.resolve(null);
     }
     
-    // Usar import dinámico para evitar errores de tipo
-    return import('@firebase/auth').then(firebaseAuth => {
-      return (this.auth.currentUser as import('@firebase/auth').User).getIdToken();
-    }).catch(err => {
-      return null;
+    // Usar injection context para operaciones de Firebase
+    return new Promise((resolve) => {
+      runInInjectionContext(this.environmentInjector, () => {
+        import('@firebase/auth').then(firebaseAuth => {
+          if (this.auth.currentUser) {
+            (this.auth.currentUser as import('@firebase/auth').User).getIdToken()
+              .then(token => resolve(token))
+              .catch(() => resolve(null));
+          } else {
+            resolve(null);
+          }
+        }).catch(() => resolve(null));
+      });
     });
   }
   
@@ -712,32 +807,38 @@ updateCurrentUser(user: User): void {
       // Caso 1: Hay usuario en Firebase, intentar refrescar directamente
       if (this.auth.currentUser) {
         
-        // Usar la técnica de importación dinámica para acceder a los tipos correctos
-        import('firebase/auth').then(firebaseAuth => {
-          (this.auth.currentUser as import('@firebase/auth').User).getIdToken(true)
-            .then(newToken => {
-              
-              // Actualizar el token en los datos del usuario
-              if (this.currentUserData) {
-                this.currentUserData.idToken = newToken;
-                this.userSubject.next(this.currentUserData);
-                this.lastTokenRefresh = new Date().getTime();
-                
-                // Actualizar en localStorage para mantener persistencia entre pestañas
-                localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
-                localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
-              }
-              
-              subscriber.next(newToken);
-              subscriber.complete();
-            })
-            .catch(error => {
-              console.error('Error refrescando token en Firebase:', error);
+        // Usar runInInjectionContext para operaciones de Firebase
+        runInInjectionContext(this.environmentInjector, () => {
+          import('firebase/auth').then(firebaseAuth => {
+            if (this.auth.currentUser) {
+              (this.auth.currentUser as import('@firebase/auth').User).getIdToken(true)
+                .then(newToken => {
+                  
+                  // Actualizar el token en los datos del usuario
+                  if (this.currentUserData) {
+                    this.currentUserData.idToken = newToken;
+                    this.userSubject.next(this.currentUserData);
+                    this.lastTokenRefresh = new Date().getTime();
+                    
+                    // Actualizar en localStorage para mantener persistencia entre pestañas
+                    localStorage.setItem('currentUserData', JSON.stringify(this.currentUserData));
+                    localStorage.setItem('userDataTimestamp', new Date().getTime().toString());
+                  }
+                  
+                  subscriber.next(newToken);
+                  subscriber.complete();
+                })
+                .catch(error => {
+                  console.error('Error refrescando token en Firebase:', error);
+                  this.tryRecoverFromLocalStorage(subscriber);
+                });
+            } else {
               this.tryRecoverFromLocalStorage(subscriber);
-            });
-        }).catch(err => {
-          console.error('Error cargando módulo de Firebase Auth:', err);
-          this.tryRecoverFromLocalStorage(subscriber);
+            }
+          }).catch(err => {
+            console.error('Error cargando módulo de Firebase Auth:', err);
+            this.tryRecoverFromLocalStorage(subscriber);
+          });
         });
         
         return;
@@ -907,18 +1008,18 @@ updateCurrentUser(user: User): void {
     }
   }
 
-navigateToRoleSelection(): void {
-  
-  setTimeout(() => {
-    this.router.navigate(['/select-role']).then(success => { // Changed from '/select-rol' to '/select-role'
-      if (!success) {
-        console.warn('Navegación con Angular Router falló, usando redirección directa');
+  navigateToRoleSelection(): void {
+    
+    setTimeout(() => {
+      this.router.navigate(['/select-role']).then(success => { // Changed from '/select-rol' to '/select-role'
+        if (!success) {
+          console.warn('Navegación con Angular Router falló, usando redirección directa');
+          window.location.href = window.location.origin + '/select-role';
+        }
+      }).catch(err => {
+        console.error('Error al navegar con router:', err);
         window.location.href = window.location.origin + '/select-role';
-      }
-    }).catch(err => {
-      console.error('Error al navegar con router:', err);
-      window.location.href = window.location.origin + '/select-role';
-    });
-  }, 100);
-}
+      });
+    }, 100);
+  }
 }

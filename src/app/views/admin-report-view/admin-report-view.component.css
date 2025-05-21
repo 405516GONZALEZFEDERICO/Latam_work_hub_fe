@@ -1,0 +1,219 @@
+.reports-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.page-title {
+  color: #3f51b5;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* KPI Dashboard */
+.kpi-dashboard {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: center;
+  margin-bottom: 25px;
+}
+
+.kpi-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  padding: 15px;
+  text-align: center;
+  min-width: 150px;
+  transition: transform 0.3s ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.kpi-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #3f51b5;
+  margin-bottom: 5px;
+}
+
+.kpi-label {
+  color: #666;
+  font-size: 14px;
+}
+
+/* Loader */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+}
+
+/* Error message */
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 15px;
+  border-radius: 5px;
+  margin: 20px 0;
+  text-align: center;
+}
+
+/* Filters */
+.filters-card {
+  margin-bottom: 20px;
+}
+
+.filters-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  align-items: center;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+/* Export Actions */
+.export-actions {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+  justify-content: flex-end;
+}
+
+/* DataTables */
+.table-container {
+  overflow-x: auto;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+table {
+  width: 100%;
+}
+
+.mat-header-cell {
+  background-color: #f5f5f5;
+  color: #333;
+  font-weight: bold;
+}
+
+.mat-cell, .mat-header-cell {
+  padding: 12px 15px;
+}
+
+.mat-row:hover {
+  background-color: rgba(63, 81, 181, 0.04);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .kpi-dashboard {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .kpi-card {
+    width: 100%;
+    max-width: 250px;
+  }
+  
+  .filters-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-buttons {
+    margin-left: 0;
+    justify-content: center;
+  }
+  
+  .export-actions {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+.admin-actions {
+  margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.admin-actions button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #3f51b5;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.admin-actions button:hover {
+  background-color: #303f9f;
+}
+.error-message {
+  background-color: #ffebee;
+  border-left: 4px solid #f44336;
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.error-message mat-icon {
+  color: #f44336;
+}
+
+.error-message span {
+  flex: 1;
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.export-btn-green {
+  background-color: #4CAF50 !important;
+  color: white !important;
+  margin-right: 8px;
+}
+
+.export-btn-red {
+  background-color: #F44336 !important;
+  color: white !important;
+  margin-right: 8px;
+}
+
+.export-actions {
+  margin-bottom: 16px;
+  padding: 8px;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

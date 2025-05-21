@@ -13,10 +13,14 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environment/environment';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { FormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 
 interface RoleAssignmentRequestDto {
   uid: string;
   roleName: UserRole;
+  adminKey?: string; // Campo opcional para la clave de administrador
 }
 
 @Component({
@@ -27,7 +31,10 @@ interface RoleAssignmentRequestDto {
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    FormsModule,
+    MatFormFieldModule,
+    MatInputModule
   ],
   templateUrl: './view-select-rol.component.html',
   styleUrls: ['./view-select-rol.component.css'],
@@ -36,6 +43,7 @@ export class RoleSelectionComponent implements OnInit {
   selectedRole: UserRole | null = null;
   isLoading = false;
   errorMessage: string | null = null;
+  adminKey: string = ''; // Propiedad para almacenar la clave de administrador
   
   constructor(
     private router: Router,
@@ -53,18 +61,41 @@ export class RoleSelectionComponent implements OnInit {
   
   selectRole(role: UserRole): void {
     this.selectedRole = role;
-    this.errorMessage = null; 
+    this.errorMessage = null;
+    
+    // Si cambia de rol y no es ADMIN, limpiar la clave
+    if (role !== 'ADMIN') {
+      this.adminKey = '';
+    }
   }
   
   isRoleSelected(role: string): boolean {
     return this.selectedRole === role;
   }
   
+  // Método para validar si el rol seleccionado es válido para continuar
+  isRoleValid(): boolean {
+    if (!this.selectedRole) return false;
+    
+    // Si es ADMIN, verificar que haya ingresado una clave
+    if (this.selectedRole === 'ADMIN') {
+      return this.adminKey.trim().length > 0;
+    }
+    
+    return true; // Para otros roles, solo verificar que haya un rol seleccionado
+  }
+  
   continue(): void {
-    if (!this.selectedRole) {
-      this.snackBar.open('Por favor selecciona un rol', 'Cerrar', {
-        duration: 3000
-      });
+    if (!this.isRoleValid()) {
+      if (this.selectedRole === 'ADMIN' && !this.adminKey) {
+        this.snackBar.open('Por favor ingresa la clave de administrador', 'Cerrar', {
+          duration: 3000
+        });
+      } else {
+        this.snackBar.open('Por favor selecciona un rol', 'Cerrar', {
+          duration: 3000
+        });
+      }
       return;
     }
     
@@ -79,9 +110,19 @@ export class RoleSelectionComponent implements OnInit {
       return;
     }
     
+    // Crear el objeto de solicitud
+    const requestData: RoleAssignmentRequestDto = {
+      uid: currentUser.uid,
+      roleName: this.selectedRole as UserRole
+    };
     
-    // Usar el servicio de autenticación para actualizar el rol (que manejará errores)
-    this.authService.updateUserRole(currentUser.uid, this.selectedRole as UserRole)
+    // Si es ADMIN, agregar la clave al objeto de solicitud
+    if (this.selectedRole === 'ADMIN') {
+      requestData.adminKey = this.adminKey;
+    }
+    
+    // Usar el servicio de autenticación para actualizar el rol
+    this.authService.updateUserRole(currentUser.uid, this.selectedRole as UserRole, this.adminKey)
       .pipe(
         finalize(() => {
           this.isLoading = false;
@@ -111,6 +152,11 @@ export class RoleSelectionComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error al actualizar rol:', error);
+          
+          if (this.selectedRole === 'ADMIN' && error?.error?.message === 'Clave de administrador incorrecta') {
+            this.handleError('Clave de administrador incorrecta. Inténtalo nuevamente.');
+            return;
+          }
           
           // Si ocurrió un error pero el rol se actualizó localmente, continuar
           const updatedUser = this.authService.getCurrentUserSync();
