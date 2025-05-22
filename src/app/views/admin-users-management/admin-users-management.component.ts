@@ -70,7 +70,7 @@ export class AdminUsersManagementComponent implements OnInit {
   errorSpaces: string | null = null;
 
   // Columnas de las tablas
-  userColumns: string[] = ['firebaseUid', 'name', 'email', 'role', 'lastLoginAt', 'registrationDate', 'enabled', 'actions'];
+  userColumns: string[] = ['firebaseUid', 'name', 'email', 'lastLoginAt', 'registrationDate', 'enabled', 'actions'];
   spaceColumns: string[] = ['id', 'name', 'spaceType', 'address.city', 'capacity', 'pricePerHour', 'active', 'actions'];
 
   // Filtrado
@@ -164,6 +164,17 @@ export class AdminUsersManagementComponent implements OnInit {
   }
 
   toggleUserStatus(user: AdminUser): void {
+    console.log('Intentando cambiar estado del usuario:', user);
+    console.log('Firebase UID del usuario:', user.firebaseUid);
+    
+    if (!user.firebaseUid) {
+      console.error('Error: El usuario no tiene un UID de Firebase válido', user);
+      this.snackBar.open('Error: El usuario no tiene un identificador válido', 'Cerrar', {
+        duration: 5000
+      });
+      return;
+    }
+    
     this.adminDashboardService.toggleUserStatus(user).subscribe({
       next: (result) => {
         if (result) {
@@ -278,7 +289,34 @@ export class AdminUsersManagementComponent implements OnInit {
    * Obtiene el nombre del rol de un usuario
    */
   getUserRoleName(user: AdminUser): string {
-    if (!user || !user.role) return 'Desconocido';
-    return user.role.name || 'Desconocido';
+    if (!user) return 'Desconocido';
+    
+    console.log('Obteniendo rol para usuario:', user);
+    
+    // Si no hay rol, devolver el valor por defecto según el contexto
+    if (!user.role) {
+      if (this.selectedTab === 0) return 'CLIENTE';
+      if (this.selectedTab === 1) return 'PROVEEDOR';
+      return 'Desconocido';
+    }
+    
+    // Si el rol es un string, devolverlo directamente
+    if (typeof user.role === 'string') {
+      return user.role;
+    }
+    
+    // Si es un objeto, intentar devolver la propiedad name
+    if (user.role && typeof user.role === 'object' && 'name' in user.role) {
+      return user.role.name || 'Desconocido';
+    }
+    
+    // Si llegamos aquí, no pudimos determinar el rol correctamente
+    console.warn('Formato de rol no reconocido:', user.role);
+    
+    // Devolver un valor basado en la pestaña actual
+    if (this.selectedTab === 0) return 'CLIENTE';
+    if (this.selectedTab === 1) return 'PROVEEDOR';
+    
+    return 'Desconocido';
   }
 } 

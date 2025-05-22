@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { environment } from '../../../environment/environment';
 import { AdminUser } from '../../models/admin.model';
-import { map } from 'rxjs/operators';
+import { map, switchMap, catchError, tap } from 'rxjs/operators';
+import { AuthService } from '../auth-service/auth.service';
 
 // Interfaces para los DTOs
 export interface KpiCardsDto {
@@ -39,7 +40,10 @@ export class AdminDashboardService {
   private usersUrl = `${environment.apiUrl}/users`;
   private spacesUrl = `${environment.apiUrl}/spaces`;
 
-  constructor(private http: HttpClient) { }
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) { }
 
   /**
    * Obtiene los KPIs principales para el dashboard
@@ -77,12 +81,20 @@ export class AdminDashboardService {
    * @param roleName Rol de los usuarios a buscar (CLIENTE, PROVEEDOR, etc.)
    */
   getUsersList(roleName: string): Observable<AdminUser[]> {
-    return this.http.get<any[]>(`${this.usersUrl}/get-user-list`, {
-      params: { roleName }
+    return this.http.get<any>(`${this.usersUrl}/get-user-list`, {
+      params: new HttpParams().set('roleName', roleName)
     }).pipe(
-      map(users => {
-        if (!users) return [];
+      map(response => {
+        // La API devuelve una estructura paginada con el array en la propiedad 'content'
+        const users = response && response.content ? response.content : [];
+        if (!Array.isArray(users)) {
+          return [];
+        }
         return users.map(user => this.mapToAdminUser(user));
+      }),
+      catchError(error => {
+        console.error('Error al obtener usuarios:', error);
+        return throwError(() => error);
       })
     );
   }
@@ -106,7 +118,7 @@ export class AdminDashboardService {
    */
   private mapToAdminUser(user: any): AdminUser {
     return {
-      id: user.id || 0,
+      id: user.userId || user.id || 0,
       name: user.name || 'Sin nombre',
       email: user.email || '',
       firebaseUid: user.firebaseUid || '',
@@ -115,10 +127,9 @@ export class AdminDashboardService {
       documentNumber: user.documentNumber || '',
       jobTitle: user.jobTitle || '',
       department: user.department || '',
-      role: user.role || { name: 'Desconocido' },
-      enabled: user.enabled !== undefined ? user.enabled : true,
-      // Estas propiedades podrían venir de Firebase o del backend
-      lastLoginAt: user.lastLoginAt || null,
+      role: user.role || '',
+      enabled: user.status === 'Activo',
+      lastLoginAt: user.lastLoginDate || null,
       registrationDate: user.registrationDate || null
     };
   }
@@ -127,6 +138,10 @@ export class AdminDashboardService {
    * Activa o desactiva un usuario según su estado actual
    */
   toggleUserStatus(userData: AdminUser): Observable<boolean> {
+    if (!userData || !userData.firebaseUid) {
+      return throwError(() => new Error('No se proporcionó un UID de usuario válido'));
+    }
+    
     if (userData.enabled) {
       return this.deactivateUser(userData.firebaseUid);
     } else {
@@ -139,7 +154,14 @@ export class AdminDashboardService {
    * @param userUid ID del usuario
    */
   activateUser(userUid: string): Observable<boolean> {
-    return this.http.patch<boolean>(`${this.usersUrl}/activate-account/${userUid}`, {});
+    if (!userUid) {
+      return throwError(() => new Error('UID no válido para activar la cuenta'));
+    }
+    
+    const url = `${this.usersUrl}/activate-account/${userUid}`;
+    return this.http.patch<boolean>(url, {}).pipe(
+      catchError(error => throwError(() => error))
+    );
   }
 
   /**
@@ -147,6 +169,47 @@ export class AdminDashboardService {
    * @param userUid ID del usuario
    */
   deactivateUser(userUid: string): Observable<boolean> {
-    return this.http.patch<boolean>(`${this.usersUrl}/desactivate-account/${userUid}`, {});
+    if (!userUid) {
+      return throwError(() => new Error('UID no válido para desactivar la cuenta'));
+    }
+    
+    const url = `${this.usersUrl}/desactivate-account/${userUid}`;
+    return this.http.patch<boolean>(url, {}).pipe(
+      catchError(error => {
+        if (error.status === 404) {
+          // Si hay un 404, intentar con la ortografía alternativa
+          return this.http.patch<boolean>(`${this.usersUrl}/deactivate-account/${userUid}`, {});
+        }
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Desactiva el usuario actual basado en el UID del AuthService
+   */
+  deactivateCurrentUser(): Observable<boolean> {
+    const currentUser = this.authService.getCurrentUserSync();
+    if (!currentUser || !currentUser.uid) {
+      console.error('Error: No hay un usuario autenticado');
+      return throwError(() => new Error('No hay un usuario autenticado'));
+    }
+    
+    console.log('Desactivando usuario actual con UID:', currentUser.uid);
+    return this.deactivateUser(currentUser.uid);
+  }
+
+  /**
+   * Activa el usuario actual basado en el UID del AuthService
+   */
+  activateCurrentUser(): Observable<boolean> {
+    const currentUser = this.authService.getCurrentUserSync();
+    if (!currentUser || !currentUser.uid) {
+      console.error('Error: No hay un usuario autenticado');
+      return throwError(() => new Error('No hay un usuario autenticado'));
+    }
+    
+    console.log('Activando usuario actual con UID:', currentUser.uid);
+    return this.activateUser(currentUser.uid);
   }
 } 

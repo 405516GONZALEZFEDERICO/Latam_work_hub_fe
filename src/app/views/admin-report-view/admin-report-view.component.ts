@@ -480,14 +480,8 @@ export class AdminReportViewComponent implements OnInit {
     }
 
     try {
-      // Mostrar un diálogo para elegir formato
-      const format = window.confirm('¿Desea exportar en formato Excel? Presione OK para Excel o Cancelar para CSV.');
-
-      if (format) {
-        this.exportService.exportToExcel(data, fileName);
-      } else {
-        this.exportService.exportToCSV(data, fileName);
-      }
+      // Exportar directamente en formato Excel
+      this.exportService.exportToExcel(data, fileName);
     } catch (err: any) {
       this.error = `Error al exportar: ${err.message || 'Error desconocido'}`;
     }
@@ -703,5 +697,67 @@ export class AdminReportViewComponent implements OnInit {
     }
 
     return '';
+  }
+
+  // Método para exportar los datos a CSV (similar al Excel pero específico para CSV)
+  exportToCSV(): void {
+    let data: any[] = [];
+    let filename = '';
+    let columns: string[] = [];
+
+    switch (this.selectedReport) {
+      case 'spaces':
+        data = this.prepareDataForExport(this.spaceData);
+        filename = 'reporte_espacios';
+        columns = this.spaceColumns;
+        break;
+      case 'bookings':
+        data = this.prepareDataForExport(this.bookingData);
+        filename = 'reporte_reservas';
+        columns = this.bookingColumns;
+        break;
+      case 'users':
+        data = this.prepareDataForExport(this.userData);
+        filename = 'reporte_usuarios';
+        columns = this.userColumns;
+        break;
+      case 'contracts':
+        data = this.prepareDataForExport(this.contractData);
+        filename = 'reporte_contratos';
+        columns = this.contractColumns;
+        break;
+      case 'invoices':
+        data = this.prepareDataForExport(this.invoiceData);
+        filename = 'reporte_facturas';
+        columns = this.invoiceColumns;
+        break;
+      case 'expiringContracts':
+        data = this.prepareDataForExport(this.expiringContractData);
+        filename = 'alerta_contratos_por_vencer';
+        columns = this.expiringContractColumns;
+        break;
+      case 'overdueInvoices':
+        data = this.prepareDataForExport(this.overdueInvoiceData);
+        filename = 'alerta_facturas_vencidas';
+        columns = this.overdueInvoiceColumns;
+        break;
+    }
+
+    // Añadir timestamp para evitar sobrescritura
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    filename = `${filename}_${timestamp}.csv`;
+
+    this.exportService.exportToCSV(data, filename);
+  }
+
+  // Método para manejar el ordenamiento en las tablas
+  onSortChange(sort: Sort): void {
+    // Si no hay una dirección activa o la columna es inválida, no hacemos nada
+    if (!sort.active || sort.direction === '') {
+      return;
+    }
+
+    // Aplicamos el ordenamiento en la tabla y luego recargamos los datos
+    this.loadCurrentReport();
   }
 }

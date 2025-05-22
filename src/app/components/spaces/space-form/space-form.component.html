@@ -13,6 +13,10 @@
             <mat-form-field appearance="outline" class="w-100">
               <mat-label>Nombre del Espacio</mat-label>
               <input matInput formControlName="name" placeholder="Ingrese nombre del espacio">
+              <mat-error *ngIf="isFieldInvalid('name')">
+                <span *ngIf="spaceForm.get('name')?.hasError('required')">Este campo es obligatorio</span>
+                <span *ngIf="spaceForm.get('name')?.hasError('onlyText')">El nombre solo debe contener texto</span>
+              </mat-error>
             </mat-form-field>
           </div>
 
@@ -20,6 +24,9 @@
             <mat-form-field appearance="outline" class="w-100">
               <mat-label>Descripción</mat-label>
               <textarea matInput formControlName="description" rows="4" placeholder="Describa su espacio"></textarea>
+              <mat-error *ngIf="isFieldInvalid('description')">
+                <span *ngIf="spaceForm.get('description')?.hasError('required')">Este campo es obligatorio</span>
+              </mat-error>
             </mat-form-field>
           </div>
 
@@ -35,6 +42,7 @@
                     {{type.label}}
                   </mat-option>
                 </mat-select>
+                <mat-error *ngIf="isFieldInvalid('type')">Este campo es obligatorio</mat-error>
               </mat-form-field>
             </div>
 
@@ -42,6 +50,11 @@
               <mat-form-field appearance="outline" class="w-100">
                 <mat-label>Capacidad</mat-label>
                 <input matInput type="number" formControlName="capacity" placeholder="Número de personas">
+                <mat-error *ngIf="isFieldInvalid('capacity')">
+                  <span *ngIf="spaceForm.get('capacity')?.hasError('required')">Este campo es obligatorio</span>
+                  <span *ngIf="spaceForm.get('capacity')?.hasError('min')">Mínimo 1 persona</span>
+                  <span *ngIf="spaceForm.get('capacity')?.hasError('onlyNumbers')">Solo números permitidos</span>
+                </mat-error>
               </mat-form-field>
             </div>
 
@@ -49,6 +62,10 @@
               <mat-form-field appearance="outline" class="w-100">
                 <mat-label>Área (m²)</mat-label>
                 <input matInput type="number" formControlName="area" placeholder="Área del espacio">
+                <mat-error *ngIf="isFieldInvalid('area')">
+                  <span *ngIf="spaceForm.get('area')?.hasError('min')">Mínimo 1 m²</span>
+                  <span *ngIf="spaceForm.get('area')?.hasError('onlyNumbers')">Solo números permitidos</span>
+                </mat-error>
               </mat-form-field>
             </div>
           </div>
@@ -64,6 +81,11 @@
                 <mat-label>Precio por Hora</mat-label>
                 <input matInput type="number" formControlName="priceHour" placeholder="0.00">
                 <span matPrefix>$&nbsp;</span>
+                <mat-error *ngIf="isFieldInvalid('priceHour')">
+                  <span *ngIf="spaceForm.get('priceHour')?.hasError('required')">Este campo es obligatorio</span>
+                  <span *ngIf="spaceForm.get('priceHour')?.hasError('min')">Mínimo $0</span>
+                  <span *ngIf="spaceForm.get('priceHour')?.hasError('onlyNumbers')">Solo números permitidos</span>
+                </mat-error>
               </mat-form-field>
             </div>
 
@@ -72,6 +94,10 @@
                 <mat-label>Precio por Día</mat-label>
                 <input matInput type="number" formControlName="priceDay" placeholder="0.00">
                 <span matPrefix>$&nbsp;</span>
+                <mat-error *ngIf="isFieldInvalid('priceDay')">
+                  <span *ngIf="spaceForm.get('priceDay')?.hasError('min')">Mínimo $0</span>
+                  <span *ngIf="spaceForm.get('priceDay')?.hasError('onlyNumbers')">Solo números permitidos</span>
+                </mat-error>
               </mat-form-field>
             </div>
 
@@ -80,8 +106,17 @@
                 <mat-label>Precio por Mes</mat-label>
                 <input matInput type="number" formControlName="priceMonth" placeholder="0.00">
                 <span matPrefix>$&nbsp;</span>
+                <mat-error *ngIf="isFieldInvalid('priceMonth')">
+                  <span *ngIf="spaceForm.get('priceMonth')?.hasError('min')">Mínimo $0</span>
+                  <span *ngIf="spaceForm.get('priceMonth')?.hasError('onlyNumbers')">Solo números permitidos</span>
+                </mat-error>
               </mat-form-field>
             </div>
+          </div>
+
+          <!-- Mensaje de error para validación de precio -->
+          <div *ngIf="spaceForm.hasError('noPriceSpecified')" class="alert alert-warning" role="alert">
+            <small>Debe especificar al menos un precio (hora, día o mes)</small>
           </div>
         </div>
 
@@ -196,7 +231,10 @@
                       <mat-form-field appearance="outline" class="w-100">
                         <mat-label>Nombre de la calle</mat-label>
                         <input matInput formControlName="streetName" />
-                        <mat-error *ngIf="isFieldInvalid('streetName')">Este campo es requerido</mat-error>
+                        <mat-error *ngIf="isAddressFieldInvalid('streetName')">
+                          <span *ngIf="addressForm.get('streetName')?.hasError('required')">Este campo es obligatorio</span>
+                          <span *ngIf="addressForm.get('streetName')?.hasError('onlyText')">El nombre debe contener solo texto, no números</span>
+                        </mat-error>
                       </mat-form-field>
                     </div>
 
@@ -204,7 +242,10 @@
                       <mat-form-field appearance="outline" class="w-100">
                         <mat-label>Número</mat-label>
                         <input matInput formControlName="streetNumber" />
-                        <mat-error *ngIf="isFieldInvalid('streetNumber')">Este campo es requerido</mat-error>
+                        <mat-error *ngIf="isAddressFieldInvalid('streetNumber')">
+                          <span *ngIf="addressForm.get('streetNumber')?.hasError('required')">Este campo es obligatorio</span>
+                          <span *ngIf="addressForm.get('streetNumber')?.hasError('onlyNumbers')">Solo números permitidos</span>
+                        </mat-error>
                       </mat-form-field>
                     </div>
                   </div>
@@ -212,15 +253,21 @@
                   <div class="row">
                     <div class="col-md-4 mb-3">
                       <mat-form-field appearance="outline" class="w-100">
-                        <mat-label>Piso (opcional)</mat-label>
+                        <mat-label>Piso</mat-label>
                         <input matInput formControlName="floor" />
+                        <mat-error *ngIf="isAddressFieldInvalid('floor')">
+                          <span *ngIf="addressForm.get('floor')?.hasError('onlyNumbers')">Solo números permitidos</span>
+                        </mat-error>
                       </mat-form-field>
                     </div>
 
                     <div class="col-md-4 mb-3">
                       <mat-form-field appearance="outline" class="w-100">
-                        <mat-label>Departamento (opcional)</mat-label>
-                        <input matInput formControlName="apartment" />
+                        <mat-label>Departamento</mat-label>
+                        <input matInput formControlName="apartment" placeholder="Ej: A, B, C" />
+                        <mat-error *ngIf="isAddressFieldInvalid('apartment')">
+                          <span *ngIf="addressForm.get('apartment')?.hasError('apartmentFormat')">Ingrese solo letras (A, B, C...)</span>
+                        </mat-error>
                       </mat-form-field>
                     </div>
 
@@ -228,7 +275,10 @@
                       <mat-form-field appearance="outline" class="w-100">
                         <mat-label>Código Postal</mat-label>
                         <input matInput formControlName="postalCode" />
-                        <mat-error *ngIf="isFieldInvalid('postalCode')">Este campo es requerido</mat-error>
+                        <mat-error *ngIf="isAddressFieldInvalid('postalCode')">
+                          <span *ngIf="addressForm.get('postalCode')?.hasError('required')">Este campo es obligatorio</span>
+                          <span *ngIf="addressForm.get('postalCode')?.hasError('onlyNumbers')">Solo números permitidos</span>
+                        </mat-error>
                       </mat-form-field>
                     </div>
                   </div>
@@ -310,9 +360,13 @@
           <button type="button" mat-stroked-button (click)="cancel()">
             Cancelar
           </button>
-          <button type="submit" mat-flat-button color="primary" [disabled]="isSubmitting">
-            <span *ngIf="!isSubmitting">{{ isEdit ? 'Actualizar Espacio' : 'Crear Espacio' }}</span>
-            <mat-spinner *ngIf="isSubmitting" diameter="24" class="spinner-button"></mat-spinner>
+          <button type="submit" mat-flat-button color="primary" [disabled]="spaceForm.invalid || isSubmitting">
+            <ng-container *ngIf="!isSubmitting">{{ isEdit ? 'Actualizar Espacio' : 'Crear Espacio' }}</ng-container>
+            <ng-container *ngIf="isSubmitting">
+              <span *ngIf="submitTimer">Enviando... (clic para cancelar)</span>
+              <mat-spinner *ngIf="!submitTimer" diameter="24" class="spinner-inline"></mat-spinner>
+              <span *ngIf="!submitTimer">Procesando...</span>
+            </ng-container>
           </button>
         </div>
         

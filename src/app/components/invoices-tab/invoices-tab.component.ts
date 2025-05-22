@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { RentalService, RentalContractResponse, InvoiceHistoryDto, PaginatedResponse } from '../../services/rental/rental.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatCardModule } from '@angular/material/card';
@@ -12,13 +12,13 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth-service/auth.service';
 import { FormControl, ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { forkJoin, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { forkJoin, of, Subject } from 'rxjs';
+import { catchError, map, takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-invoices-tab',
   templateUrl: './invoices-tab.component.html',
-  styleUrls: ['./invoices-tab.component.scss'],
+  styleUrls: ['./invoices-tab.component.css'],
   imports: [
     CommonModule,
     MatCardModule,
@@ -34,7 +34,7 @@ import { catchError, map } from 'rxjs/operators';
   ],
   standalone: true
 })
-export class InvoicesTabComponent implements OnInit {
+export class InvoicesTabComponent implements OnInit, OnDestroy {
   invoices: InvoiceHistoryDto[] = [];
   filteredInvoices: InvoiceHistoryDto[] = [];
   displayedInvoices: InvoiceHistoryDto[] = [];
@@ -49,6 +49,8 @@ export class InvoicesTabComponent implements OnInit {
   pageSizeOptions: number[] = [5, 10, 25, 50];
   currentPage: number = 0;
 
+  private destroy$ = new Subject<void>();
+
   constructor(
     private rentalService: RentalService,
     private authService: AuthService,
@@ -58,90 +60,104 @@ export class InvoicesTabComponent implements OnInit {
   ngOnInit(): void {
     console.log('InvoicesTabComponent: Inicializando componente');
     // Suscribirse a cambios en el filtro
-    this.statusFilter.valueChanges.subscribe((value) => {
-      console.log('InvoicesTabComponent: Filtro cambiado:', value);
-      this.applyFilters();
-    });
+    this.statusFilter.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((value) => {
+        console.log('InvoicesTabComponent: Filtro cambiado:', value);
+        this.applyFilters();
+      });
     
     this.loadInvoices();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   loadInvoices(): void {
     this.loading = true;
     console.log('InvoicesTabComponent: Cargando facturas...');
-    this.authService.getCurrentUser().subscribe({
-      next: (user) => {
-        if (!user) {
-          this.loading = false;
-          this.snackBar.open('Usuario no encontrado', 'Cerrar', { duration: 3000 });
-          return;
-        }
+    this.authService.getCurrentUser()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (user) => {
+          if (!user) {
+            this.loading = false;
+            this.snackBar.open('Usuario no encontrado', 'Cerrar', { duration: 3000 });
+            return;
+          }
 
-        // Obtener todos los contratos del usuario
-        this.rentalService.getUserContracts(user.uid).subscribe({
-          next: (response: PaginatedResponse<RentalContractResponse>) => {
-            if (!response.content || response.content.length === 0) {
-              this.loading = false;
-              return;
-            }
-            
-            // Crear un array de observables para obtener las facturas de cada contrato
-            const invoiceObservables = response.content.map(rental => 
-              this.rentalService.getContractInvoices(rental.id).pipe(
-                catchError(() => of([]))
-              )
-            );
-            
-            // Combinar todos los observables
-            forkJoin(invoiceObservables).subscribe({
-              next: (results) => {
-                // Aplanar el array de arrays de facturas
-                const allInvoices: InvoiceHistoryDto[] = [];
-                results.forEach(invoiceArray => {
-                  if (invoiceArray && invoiceArray.length) {
-                    allInvoices.push(...invoiceArray);
-                  }
-                });
-                
-                this.invoices = allInvoices;
-                
-                if (!this.invoices.every(invoice => invoice.issueDate)) {
-                  console.warn('Algunas facturas no tienen fecha de emisión');
+          // Obtener todos los contratos del usuario
+          this.rentalService.getUserContracts(user.uid)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+              next: (response: PaginatedResponse<RentalContractResponse>) => {
+                if (!response.content || response.content.length === 0) {
+                  this.loading = false;
+                  return;
                 }
                 
-                this.invoices.sort((a, b) => {
-                  if (!a.issueDate || !b.issueDate) return 0;
-                  return new Date(b.issueDate).getTime() - new Date(a.issueDate).getTime();
-                });
-                this.applyFilters();
-                this.loading = false;
+                // Crear un array de observables para obtener las facturas de cada contrato
+                const invoiceObservables = response.content.map(rental => 
+                  this.rentalService.getContractInvoices(rental.id).pipe(
+                    takeUntil(this.destroy$),
+                    catchError(() => of([]))
+                  )
+                );
+                
+                // Combinar todos los observables
+                forkJoin(invoiceObservables)
+                  .pipe(takeUntil(this.destroy$))
+                  .subscribe({
+                    next: (results) => {
+                      // Aplanar el array de arrays de facturas
+                      const allInvoices: InvoiceHistoryDto[] = [];
+                      results.forEach(invoiceArray => {
+                        if (invoiceArray && invoiceArray.length) {
+                          allInvoices.push(...invoiceArray);
+                        }
+                      });
+                      
+                      this.invoices = allInvoices;
+                      
+                      if (!this.invoices.every(invoice => invoice.issueDate)) {
+                        console.warn('Algunas facturas no tienen fecha de emisión');
+                      }
+                      
+                      this.invoices.sort((a, b) => {
+                        if (!a.issueDate || !b.issueDate) return 0;
+                        return new Date(b.issueDate).getTime() - new Date(a.issueDate).getTime();
+                      });
+                      this.applyFilters();
+                      this.loading = false;
+                    },
+                    error: (error) => {
+                      console.error('Error al cargar las facturas:', error);
+                      this.loading = false;
+                      this.snackBar.open('Error al cargar las facturas', 'Cerrar', {
+                        duration: 3000
+                      });
+                    }
+                  });
               },
               error: (error) => {
-                console.error('Error al cargar las facturas:', error);
+                console.error('Error al cargar los contratos:', error);
                 this.loading = false;
-                this.snackBar.open('Error al cargar las facturas', 'Cerrar', {
+                this.snackBar.open('Error al cargar los contratos', 'Cerrar', {
                   duration: 3000
                 });
               }
             });
-          },
-          error: (error) => {
-            console.error('Error al cargar los contratos:', error);
-            this.loading = false;
-            this.snackBar.open('Error al cargar los contratos', 'Cerrar', {
-              duration: 3000
-            });
-          }
-        });
-      },
-      error: (error) => {
-        console.error('Error al obtener usuario:', error);
-        this.loading = false;
-        this.snackBar.open('Error al obtener información de usuario', 'Cerrar', {
-          duration: 3000
-        });
-      }
-    });
+        },
+        error: (error) => {
+          console.error('Error al obtener usuario:', error);
+          this.loading = false;
+          this.snackBar.open('Error al obtener información de usuario', 'Cerrar', {
+            duration: 3000
+          });
+        }
+      });
   }
 
   applyFilters(): void {

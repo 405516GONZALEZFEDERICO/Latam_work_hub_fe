@@ -34,7 +34,7 @@ export interface AdminUser {
   documentType?: string;
   documentNumber?: string;
   jobTitle?: string;
-  role?: {
+  role?: string | {
     id?: number;
     name?: string;
   };

@@ -1,13 +1,13 @@
 import { Component, EventEmitter, Input, OnInit, Output, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { UserRole } from '../../../models/user';
 import { AddressService } from '../../../services/address/address.service';
 import { CompanyService } from '../../../services/company/company.service';
@@ -17,6 +17,19 @@ import { CompanyInfoDto } from '../../../models/company-info.dto';
 import { catchError, finalize, Subject, takeUntil, EMPTY, debounceTime } from 'rxjs';
 import { ErrorHandlerService } from '../../../services/error/error-handler.service';
 import { ProviderTypeService, ProviderType } from '../../../services/provider.service/provider-type.service';
+
+// Custom validator for phone numbers
+export function phoneNumberValidator(): (control: AbstractControl) => ValidationErrors | null {
+  return (control: AbstractControl): ValidationErrors | null => {
+    if (!control.value) {
+      return null; // Empty value is valid
+    }
+    
+    // Allow only numbers, spaces, +, and -
+    const isValid = /^[0-9+\-\s()]*$/.test(control.value);
+    return isValid ? null : { phoneFormat: true };
+  };
+}
 
 @Component({
   selector: 'app-company-form',
@@ -29,7 +42,8 @@ import { ProviderTypeService, ProviderType } from '../../../services/provider.se
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatSnackBarModule
   ],
   templateUrl: './company-form.component.html',
   styleUrls: ['./company-form.component.css']
@@ -227,7 +241,7 @@ export class CompanyFormComponent implements OnInit, OnDestroy {
       name: ['', needsRequired ? [Validators.required] : []],
       legalName: ['', needsRequired ? [Validators.required] : []],
       taxId: ['', needsRequired ? [Validators.required] : []],
-      phone: [''],
+      phone: ['', [phoneNumberValidator()]],
       email: ['', [Validators.email]],
       website: [''],
       contactPerson: [''],
@@ -239,6 +253,18 @@ export class CompanyFormComponent implements OnInit, OnDestroy {
       this.companyForm.disable();
     } else {
       this.companyForm.enable();
+      
+      // Marcar campos como tocados para mostrar validaciones
+      if (needsRequired) {
+        setTimeout(() => {
+          Object.keys(this.companyForm.controls).forEach(key => {
+            const control = this.companyForm.get(key);
+            if (control && control.validator) {
+              control.markAsTouched();
+            }
+          });
+        }, 500);
+      }
     }
   }
 
@@ -315,10 +341,23 @@ export class CompanyFormComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (response) => {
-          // ... existing success handling
+          // Mostrar mensaje de éxito mejorado
+          this.snackBar.open('¡Información de la empresa guardada exitosamente!', 'Cerrar', {
+            duration: 4000,
+            horizontalPosition: 'center',
+            verticalPosition: 'top',
+            panelClass: ['success-snackbar', 'custom-notification']
+          });
+          
+          this.formSubmitted.emit(response);
         },
         error: (error) => {
-          // ... existing error handling
+          this.apiError = error;
+          const errorMessage = 'Error al guardar los datos de la empresa';
+          this.snackBar.open(errorMessage, 'Cerrar', {
+            duration: 5000,
+            panelClass: ['error-snackbar']
+          });
           this.isSubmitting = false;
         }
       });

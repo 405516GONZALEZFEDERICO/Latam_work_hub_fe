@@ -34,7 +34,7 @@
           </div>
 
           <!-- Tabla de clientes -->
-          <div class="table-container" *ngIf="!loadingUsers.clients && !errorUsers.clients">
+          <div class="table-container" *ngIf="!loadingUsers.clients">
             <table mat-table [dataSource]="filteredClientUsers" class="mat-elevation-z2">
               <!-- UID Column -->
               <ng-container matColumnDef="firebaseUid">
@@ -142,7 +142,7 @@
           </div>
 
           <!-- Tabla de proveedores -->
-          <div class="table-container" *ngIf="!loadingUsers.providers && !errorUsers.providers">
+          <div class="table-container" *ngIf="!loadingUsers.providers">
             <table mat-table [dataSource]="filteredProviderUsers" class="mat-elevation-z2">
               <!-- UID Column -->
               <ng-container matColumnDef="firebaseUid">
@@ -250,7 +250,7 @@
           </div>
 
           <!-- Tabla de espacios -->
-          <div class="table-container" *ngIf="!loadingSpaces && !errorSpaces">
+          <div class="table-container" *ngIf="!loadingSpaces">
             <table mat-table [dataSource]="filteredSpaces" class="mat-elevation-z2">
               <!-- ID Column -->
               <ng-container matColumnDef="id">

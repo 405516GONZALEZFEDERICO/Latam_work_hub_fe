@@ -164,9 +164,9 @@
         <span>{{ error.spaceType }}</span>
       </div>
 
-      <div *ngIf="!loading.spaceType && !error.spaceType && spaceTypeData.length > 0" class="chart">
+      <div *ngIf="!loading.spaceType && !error.spaceType" class="chart">
         <ngx-charts-bar-vertical
-          [results]="spaceTypeData"
+          [results]="spaceTypeData.length > 0 ? spaceTypeData : sampleSpaceTypeData"
           [xAxis]="showXAxis"
           [yAxis]="showYAxis"
           [legend]="false"

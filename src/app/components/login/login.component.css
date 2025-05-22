@@ -127,7 +127,7 @@ button[type="submit"] {
   width: 100%;
   padding: 12px 16px;
   border-radius: var(--border-radius-button);
-  border: 1px solid rgba(117, 117, 117, 0.2);
+  border: 1px solid #dadce0;
   background-color: white;
   display: flex;
   align-items: center;
@@ -138,6 +138,7 @@ button[type="submit"] {
   cursor: pointer;
   transition: all 0.2s ease;
   height: 48px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .google-btn img {
@@ -148,7 +149,8 @@ button[type="submit"] {
 
 .google-btn:hover {
   background-color: #f9f9f9;
-  border-color: rgba(117, 117, 117, 0.3);
+  border-color: #c6c6c6;
+  box-shadow: 0 1px 3px rgba(60,64,67,0.3);
 }
 
 /* Sign up prompt */

@@ -6,12 +6,27 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { ReactiveFormsModule, FormGroup, FormBuilder, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormGroup, FormBuilder, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Address } from '../../../models/address.model';
 import { AddressService } from '../../../services/address/address.service';
 import { City, DivisionType } from '../../../models/city.model';
 import { Country } from '../../../models/country.model';
 import { finalize } from 'rxjs/operators';
+import { numberOnlyValidator, textOnlyValidator } from '../personal-data-form/personal-data-form.component';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+
+// Custom validator for apartment letters (A, B, C, etc.)
+export function apartmentLetterValidator() {
+  return (control: AbstractControl): ValidationErrors | null => {
+    if (!control.value) {
+      return null; // Empty value is valid
+    }
+    
+    // Allow only letters (A-Z, a-z)
+    const isValid = /^[a-zA-Z]+$/.test(control.value);
+    return isValid ? null : { apartmentFormat: true };
+  };
+}
 
 @Component({
   selector: 'app-address-stepper',
@@ -24,7 +39,8 @@ import { finalize } from 'rxjs/operators';
     MatInputModule,
     MatSelectModule,
     MatProgressSpinnerModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    MatSnackBarModule
   ],
   templateUrl: './address-stepper.component.html',
   styleUrls: ['./address-stepper.component.css'],
@@ -68,7 +84,8 @@ export class AddressStepperComponent implements OnInit, OnChanges {
   
   constructor(
     private fb: FormBuilder,
-    private addressService: AddressService
+    private addressService: AddressService,
+    private snackBar: MatSnackBar
   ) {}
   
   ngOnInit(): void {
@@ -130,15 +147,25 @@ export class AddressStepperComponent implements OnInit, OnChanges {
     this.addressForm = this.fb.group({
       countryId: ['', Validators.required],
       cityId: ['', Validators.required],
-      streetName: ['', Validators.required],
-      streetNumber: ['', Validators.required],
-      floor: [''],
-      apartment: [''],
-      postalCode: ['', Validators.required],
+      streetName: ['', [Validators.required, textOnlyValidator()]],
+      streetNumber: ['', [Validators.required, numberOnlyValidator()]],
+      floor: ['', numberOnlyValidator()],
+      apartment: ['', apartmentLetterValidator()],
+      postalCode: ['', [Validators.required, numberOnlyValidator()]],
       // Campos para ciudad personalizada
-      customCityName: [''],
-      customDivisionName: [''],
+      customCityName: ['', textOnlyValidator()],
+      customDivisionName: ['', textOnlyValidator()],
       customDivisionType: ['']
+    }, { updateOn: 'change' });
+    
+    // Forzar la validación inmediata al marcar los campos como tocados
+    this.addressForm.valueChanges.subscribe(() => {
+      Object.keys(this.addressForm.controls).forEach(key => {
+        const control = this.addressForm.get(key);
+        if (control && !control.pristine) {
+          control.markAsTouched();
+        }
+      });
     });
     
     // Si hay una dirección existente, llenar el formulario
@@ -300,8 +327,8 @@ export class AddressStepperComponent implements OnInit, OnChanges {
   }
   
   isFieldInvalid(fieldName: string): boolean {
-    const field = this.addressForm.get(fieldName);
-    return field ? field.invalid : false;
+    const control = this.addressForm.get(fieldName);
+    return (control?.invalid && control?.touched) || false;
   }
   
   getDivisionTypeLabel(type: string): string {
@@ -310,40 +337,26 @@ export class AddressStepperComponent implements OnInit, OnChanges {
   }
   
   nextStep(): void {
-    // Validar paso actual antes de continuar
+    // Validar campos del paso actual antes de avanzar
     if (this.currentStep === 0) {
+      // Validar país y ciudad
       const countryControl = this.addressForm.get('countryId');
       const cityControl = this.addressForm.get('cityId');
       
-      // Validar campos de ciudad personalizada si es necesario
-      if (this.showCustomCity) {
-        const customCityName = this.addressForm.get('customCityName');
-        const customDivisionName = this.addressForm.get('customDivisionName');
-        const customDivisionType = this.addressForm.get('customDivisionType');
-        
-        if (customCityName) customCityName.setValidators(Validators.required);
-        if (customDivisionName) customDivisionName.setValidators(Validators.required);
-        if (customDivisionType) customDivisionType.setValidators(Validators.required);
-        
-        if (customCityName) customCityName.updateValueAndValidity();
-        if (customDivisionName) customDivisionName.updateValueAndValidity();
-        if (customDivisionType) customDivisionType.updateValueAndValidity();
-        
-        if ((customCityName?.invalid || customDivisionName?.invalid || customDivisionType?.invalid)) {
-          if (customCityName) customCityName.markAsTouched();
-          if (customDivisionName) customDivisionName.markAsTouched();
-          if (customDivisionType) customDivisionType.markAsTouched();
-          return;
-        }
-      }
+      // Marcar estos campos como tocados para mostrar errores
+      countryControl?.markAsTouched();
+      cityControl?.markAsTouched();
       
-      if (countryControl && cityControl && countryControl.valid && cityControl.valid) {
-        // Actualizar clases de host para barra de progreso
-        this.currentStep++;
-      } else {
-        if (countryControl) countryControl.markAsTouched();
-        if (cityControl) cityControl.markAsTouched();
+      if (countryControl?.invalid || cityControl?.invalid) {
+        // Mostrar un mensaje o impedir el avance
+        // No avanzar si son inválidos
+        return;
       }
+    }
+    
+    // Avanzar al siguiente paso si hay validación
+    if (this.currentStep < this.steps.length - 1) {
+      this.currentStep++;
     }
   }
   
@@ -358,97 +371,120 @@ export class AddressStepperComponent implements OnInit, OnChanges {
   }
   
   onSubmit(): void {
-    if (this.addressForm.valid) {
-      const formValue = this.addressForm.value;
-      let address: Address;
-      
-      if (this.showCustomCity) {
-        // Usar datos de ciudad personalizada
-        const selectedCountry = this.countries.find(c => c.id === formValue.countryId);
-        const city: City = {
-          id: 0, // El ID será asignado por el backend
-          name: formValue.customCityName,
-          divisionName: formValue.customDivisionName,
-          divisionType: formValue.customDivisionType as DivisionType,
-          country: {
-            id: formValue.countryId,
-            name: selectedCountry?.name || ''
-          }
-        };
-        
-        address = {
-          ...(this.isEditMode && this.existingAddress ? { id: this.existingAddress.id } : {}),
-          streetName: formValue.streetName,
-          streetNumber: formValue.streetNumber,
-          floor: formValue.floor,
-          apartment: formValue.apartment,
-          postalCode: formValue.postalCode,
-          city: city
-        };
-      } else {
-        // Usar ciudad seleccionada de la lista
-        const selectedCity = this.filteredCities.find(city => city.id === formValue.cityId);
-        
-        if (!selectedCity) {
-          console.error('No se encontró la ciudad seleccionada');
-          return;
+    // Marcar todos los campos como tocados para mostrar errores
+    Object.keys(this.addressForm.controls).forEach(key => {
+      this.addressForm.get(key)?.markAsTouched();
+    });
+    
+    if (this.addressForm.invalid) {
+      this.snackBar.open('Por favor corrige los errores en el formulario', 'Cerrar', {
+        duration: 3000,
+        panelClass: ['error-snackbar']
+      });
+      return; // No continuar si hay errores
+    }
+    
+    const formValue = this.addressForm.value;
+    let address: Address;
+    
+    if (this.showCustomCity) {
+      // Usar datos de ciudad personalizada
+      const selectedCountry = this.countries.find(c => c.id === formValue.countryId);
+      const city: City = {
+        id: 0, // El ID será asignado por el backend
+        name: formValue.customCityName,
+        divisionName: formValue.customDivisionName,
+        divisionType: formValue.customDivisionType as DivisionType,
+        country: {
+          id: formValue.countryId,
+          name: selectedCountry?.name || ''
         }
-        
-        address = {
-          ...(this.isEditMode && this.existingAddress ? { id: this.existingAddress.id } : {}),
-          streetName: formValue.streetName,
-          streetNumber: formValue.streetNumber,
-          floor: formValue.floor,
-          apartment: formValue.apartment,
-          postalCode: formValue.postalCode,
-          city: selectedCity
-        };
-      }
+      };
       
-      // Actualizar los datos de dirección actuales
-      this.currentAddressData = address;
+      address = {
+        ...(this.isEditMode && this.existingAddress ? { id: this.existingAddress.id } : {}),
+        streetName: formValue.streetName,
+        streetNumber: formValue.streetNumber,
+        floor: formValue.floor,
+        apartment: formValue.apartment,
+        postalCode: formValue.postalCode,
+        city: city
+      };
+    } else {
+      // Usar ciudad seleccionada de la lista
+      const selectedCity = this.filteredCities.find(city => city.id === formValue.cityId);
       
-      // Verificar que el userId esté definido para crear una nueva dirección
-      if (!this.userId && !this.isEditMode) {
+      if (!selectedCity) {
+        console.error('No se encontró la ciudad seleccionada');
         return;
       }
       
-      // Guardar la dirección en el backend
-      this.isLoading = true;
-      
-      if (this.isEditMode && this.existingAddress?.id) {
-        // Actualizar dirección existente
-        this.addressService.updateAddress(this.existingAddress.id, address)
-          .pipe(finalize(() => this.isLoading = false))
-          .subscribe({
-            next: (updatedAddress) => {
-              // Emitir evento con la dirección actualizada
-              this.addressSaved.emit(updatedAddress);
-            },
-            error: (error) => {
-              console.error('Error al actualizar la dirección', error);
-            }
-          });
-      } else {
-        // Crear nueva dirección
-        this.addressService.saveAddress(address, this.userId!)
-          .pipe(finalize(() => this.isLoading = false))
-          .subscribe({
-            next: (savedAddress) => {
-              // Emitir evento con la dirección guardada
-              this.addressSaved.emit(savedAddress);
-            },
-            error: (error) => {
-              console.error('Error al guardar la dirección', error);
-            }
-          });
-      }
+      address = {
+        ...(this.isEditMode && this.existingAddress ? { id: this.existingAddress.id } : {}),
+        streetName: formValue.streetName,
+        streetNumber: formValue.streetNumber,
+        floor: formValue.floor,
+        apartment: formValue.apartment,
+        postalCode: formValue.postalCode,
+        city: selectedCity
+      };
+    }
+    
+    // Actualizar los datos de dirección actuales
+    this.currentAddressData = address;
+    
+    // Verificar que el userId esté definido para crear una nueva dirección
+    if (!this.userId && !this.isEditMode) {
+      return;
+    }
+    
+    // Guardar la dirección en el backend
+    this.isLoading = true;
+    
+    if (this.isEditMode && this.existingAddress?.id) {
+      // Actualizar dirección existente
+      this.addressService.updateAddress(this.existingAddress.id, address)
+        .pipe(finalize(() => this.isLoading = false))
+        .subscribe({
+          next: (updatedAddress) => {
+            // Mostrar notificación de éxito
+            this.snackBar.open('¡Dirección actualizada con éxito!', 'Cerrar', {
+              duration: 3000,
+              panelClass: ['success-snackbar']
+            });
+            // Emitir evento con la dirección actualizada
+            this.addressSaved.emit(updatedAddress);
+          },
+          error: (error) => {
+            console.error('Error al actualizar la dirección', error);
+            this.snackBar.open('Error al actualizar la dirección', 'Cerrar', {
+              duration: 3000,
+              panelClass: ['error-snackbar']
+            });
+          }
+        });
     } else {
-      // Marcar todos los campos como tocados para mostrar errores de validación
-      Object.keys(this.addressForm.controls).forEach(key => {
-        const control = this.addressForm.get(key);
-        if (control) control.markAsTouched();
-      });
+      // Crear nueva dirección
+      this.addressService.saveAddress(address, this.userId!)
+        .pipe(finalize(() => this.isLoading = false))
+        .subscribe({
+          next: (savedAddress) => {
+            // Mostrar notificación de éxito
+            this.snackBar.open('¡Dirección guardada con éxito!', 'Cerrar', {
+              duration: 3000,
+              panelClass: ['success-snackbar']
+            });
+            // Emitir evento con la dirección guardada
+            this.addressSaved.emit(savedAddress);
+          },
+          error: (error) => {
+            console.error('Error al guardar la dirección', error);
+            this.snackBar.open('Error al guardar la dirección', 'Cerrar', {
+              duration: 3000,
+              panelClass: ['error-snackbar']
+            });
+          }
+        });
     }
   }
   

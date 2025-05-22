@@ -103,4 +103,43 @@ export class AddressService {
         })
       );
   }
+
+  // Nuevo método para obtener la dirección de un espacio específico
+  getAddressBySpaceId(spaceId: number): Observable<Address | null> {
+    const params = new HttpParams().set('spaceId', spaceId);
+    return this.http.get<any>(`${this.API_BASE_URL}/spaces/address`, { params })
+      .pipe(
+        map(response => {
+          if (!response) return null;
+          
+          // Manejar diferentes formatos de respuesta, igual que en getAddressByUserUid
+          if (response.hasOwnProperty('present')) {
+            if (!response.present || response.empty) return null;
+            if (response.value) return response.value;
+          }
+          
+          if (response.streetName) return response;
+          
+          return null;
+        }),
+        catchError(error => {
+          console.error('Error obteniendo dirección por spaceId:', error);
+          return of(null);
+        })
+      );
+  }
+
+  getCityAndCountryIds(cityName: string, countryName: string): Observable<any> {
+    const params = new HttpParams()
+      .set('cityName', cityName)
+      .set('countryName', countryName);
+    
+    return this.http.get<any>(`${this.API_BASE_URL}/spaces/city-country`, { params })
+      .pipe(
+        catchError(error => {
+          console.error('Error obteniendo IDs de ciudad y país:', error);
+          return of(null);
+        })
+      );
+  }
 } 

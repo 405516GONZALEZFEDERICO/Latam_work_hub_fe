@@ -1,5 +1,6 @@
-import { Component, EventEmitter, OnInit, Output, ViewEncapsulation, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, Input, OnChanges, SimpleChanges } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, OnInit, Output, ViewEncapsulation, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, Input, OnChanges, SimpleChanges, LOCALE_ID, Inject } from '@angular/core';
+import { CommonModule, registerLocaleData } from '@angular/common';
+import localeEs from '@angular/common/locales/es';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ProfileService } from '../../../services/profile/profile.service';
@@ -7,7 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule, DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
+import { MatNativeDateModule, DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE, NativeDateAdapter } from '@angular/material/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../services/auth-service/auth.service';
 import { User, UserRole } from '../../../models/user';
@@ -16,10 +17,62 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { Location } from '@angular/common';
 import { PersonalDataUserDto } from '../../../models/personal-data-user-dto';
-import { catchError, EMPTY, finalize, Subject, takeUntil } from 'rxjs';
+import { catchError, EMPTY, finalize, Subject, takeUntil, take } from 'rxjs';
 import { Address } from '../../../models/address.model';
 import { AddressStepperComponent } from '../address-stepper/address-stepper.component';
 import { AddressService } from '../../../services/address/address.service';
+
+// Registrar los datos de localización español
+registerLocaleData(localeEs);
+
+// Adaptador de fecha personalizado para forzar formato DD/MM/YYYY
+export class CustomDateAdapter extends NativeDateAdapter {
+  override parse(value: any): Date | null {
+    if (!value || value === '') return null;
+    
+    // Forzar formato DD/MM/YYYY para entradas como "03/09/1997"
+    if (typeof value === 'string') {
+      // Verificar si es formato DD/MM/YYYY
+      const ddmmyyyyRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+      const ddmmyyyyMatch = ddmmyyyyRegex.exec(value);
+      
+      if (ddmmyyyyMatch) {
+        const day = parseInt(ddmmyyyyMatch[1], 10);
+        const month = parseInt(ddmmyyyyMatch[2], 10) - 1; // Los meses en JS empiezan en 0
+        const year = parseInt(ddmmyyyyMatch[3], 10);
+        
+        return new Date(year, month, day, 12, 0, 0);
+      }
+      
+      // Verificar si es formato DDMMYYYY (sin separadores)
+      const noSeparatorRegex = /^(\d{2})(\d{2})(\d{4})$/;
+      const noSeparatorMatch = noSeparatorRegex.exec(value);
+      
+      if (noSeparatorMatch) {
+        const day = parseInt(noSeparatorMatch[1], 10);
+        const month = parseInt(noSeparatorMatch[2], 10) - 1; // Los meses en JS empiezan en 0
+        const year = parseInt(noSeparatorMatch[3], 10);
+        
+        return new Date(year, month, day, 12, 0, 0);
+      }
+    }
+    
+    // Si no coincide con nuestros formatos, dejar que el adaptador nativo lo maneje
+    return super.parse(value);
+  }
+  
+  override format(date: Date, displayFormat: Object): string {
+    // Siempre formatear como DD/MM/YYYY
+    if (displayFormat === 'input') {
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+    
+    return super.format(date, displayFormat);
+  }
+}
 
 // Formato de fecha personalizado
 export const MY_DATE_FORMATS = {
@@ -130,6 +183,73 @@ export function documentValidator(): ValidatorFn {
   };
 }
 
+// Validador para campos numéricos
+export function numberOnlyValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    if (!control.value) {
+      return null;
+    }
+    
+    // Permite solo dígitos
+    const isValid = /^\d+$/.test(control.value.toString());
+    return isValid ? null : { onlyNumbers: true };
+  };
+}
+
+// Validador para campos de texto (sin números)
+export function textOnlyValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    if (!control.value) {
+      return null;
+    }
+    
+    // Permite solo letras, espacios y caracteres acentuados
+    const isValid = /^[a-zA-ZÀ-ÿ\s]+$/.test(control.value);
+    return isValid ? null : { onlyText: true };
+  };
+}
+
+// Validador para formato de fecha
+export function dateFormatValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    if (!control.value) {
+      return null;
+    }
+    
+    // Si es un objeto Date, es válido
+    if (control.value instanceof Date && !isNaN(control.value.getTime())) {
+      return null;
+    }
+    
+    // Si es un string, validar formato DD/MM/YYYY
+    if (typeof control.value === 'string') {
+      const regex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+      const match = regex.exec(control.value);
+      
+      if (!match) return { invalidDateFormat: true };
+      
+      const day = parseInt(match[1], 10);
+      const month = parseInt(match[2], 10) - 1; // Los meses en JS empiezan en 0
+      const year = parseInt(match[3], 10);
+      
+      const date = new Date(year, month, day);
+      
+      // Verificar que la fecha sea válida
+      if (
+        date.getFullYear() !== year ||
+        date.getMonth() !== month ||
+        date.getDate() !== day
+      ) {
+        return { invalidDate: true };
+      }
+      
+      return null;
+    }
+    
+    return { invalidDateFormat: true };
+  };
+}
+
 @Component({
   selector: 'app-personal-data-form',
   standalone: true,
@@ -152,7 +272,8 @@ export function documentValidator(): ValidatorFn {
   encapsulation: ViewEncapsulation.None,
   providers: [
     { provide: MAT_DATE_LOCALE, useValue: 'es' },
-    { provide: MAT_DATE_FORMATS, useValue: MY_DATE_FORMATS }
+    { provide: MAT_DATE_FORMATS, useValue: MY_DATE_FORMATS },
+    { provide: DateAdapter, useClass: CustomDateAdapter, deps: [MAT_DATE_LOCALE] }
   ]
 })
 export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
@@ -206,14 +327,31 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
     private addressService: AddressService
   ) {
     this.personalDataForm = this.fb.group({
-      fullName: ['', Validators.required],
+      fullName: ['', [Validators.required, textOnlyValidator()]],
       email: [{value: '', disabled: true}, [Validators.required, Validators.email]],
-      birthDate: ['', [Validators.required, ageValidator(18)]],
+      birthDate: ['', [Validators.required, ageValidator(18), dateFormatValidator()]],
       documentType: ['', Validators.required],
-      documentNumber: ['', Validators.required],
-      jobTitle: [''],
-      department: ['']
-    }, { validators: documentValidator() });
+      documentNumber: ['', [Validators.required, numberOnlyValidator()]],
+      jobTitle: ['', [textOnlyValidator()]],
+      department: ['', [textOnlyValidator()]]
+    }, { validators: documentValidator(), updateOn: 'change' });
+    
+    // Preload email from current user
+    const currentUser = this.authService.getCurrentUserSync();
+    if (currentUser && currentUser.email) {
+      this.personalDataForm.get('email')?.setValue(currentUser.email);
+      // Always disable the email field
+      this.personalDataForm.get('email')?.disable();
+    }
+
+    // Aplicar validación inmediata al cambiar valores
+    this.personalDataForm.valueChanges.subscribe(() => {
+      Object.keys(this.personalDataForm.controls).forEach(key => {
+        const control = this.personalDataForm.get(key);
+        control?.markAsDirty();
+        control?.updateValueAndValidity();
+      });
+    });
 
     // Suscribirse a cambios en el campo birthDate para mostrar inmediatamente el formato
     this.personalDataForm.get('birthDate')?.valueChanges
@@ -273,16 +411,72 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
   }
   
   ngOnInit(): void {
-    // Obtener el ID del usuario una sola vez
-    const user = this.authService.getCurrentUserSync();
-    if (user && user.uid) {
-      this.currentUserId = user.uid;
-      
-      // Cargar datos solo si se debe cargar y la pestaña está activa
-      if (this.shouldLoadData && this.isActiveTab) {
-        this.loadDataIfNeeded();
+    // Inicializar el formulario con validadores
+    this.personalDataForm = this.fb.group({
+      fullName: ['', [Validators.required, textOnlyValidator()]],
+      email: [{value: '', disabled: true}, [Validators.required, Validators.email]],
+      birthDate: ['', [Validators.required, ageValidator(18), dateFormatValidator()]],
+      documentType: ['', Validators.required],
+      documentNumber: ['', [Validators.required, numberOnlyValidator()]],
+      jobTitle: ['', [textOnlyValidator()]],
+      department: ['', [textOnlyValidator()]]
+    }, { validators: documentValidator(), updateOn: 'change' });
+    
+    // Marcar todos los campos como tocados para mostrar errores de inmediato
+    Object.keys(this.personalDataForm.controls).forEach(key => {
+      const control = this.personalDataForm.get(key);
+      control?.markAsTouched();
+      control?.markAsDirty();
+    });
+    
+    // Obtener el usuario actual y su ID
+    this.authService.currentUser$.pipe(
+      takeUntil(this.destroy$),
+      take(1) // tomar solo una emisión
+    ).subscribe(user => {
+      if (user && user.uid) {
+        this.currentUserId = user.uid;
+        // Cargar datos del usuario
+        this.loadUserData();
+        // Cargar dirección
+        this.loadAddress();
       }
-    }
+    });
+    
+    // Suscribirse a cambios en documentType para mostrar validaciones dinámicas
+    this.personalDataForm.get('documentType')?.valueChanges.subscribe(() => {
+      this.personalDataForm.get('documentNumber')?.updateValueAndValidity();
+      this.personalDataForm.get('documentNumber')?.markAsTouched();
+    });
+    
+    // Suscribirse a cambios en birthDate para convertir formatos de texto a Date si es necesario
+    this.personalDataForm.get('birthDate')?.valueChanges.subscribe(value => {
+      if (typeof value === 'string' && value) {
+        const regex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+        const match = regex.exec(value);
+        
+        if (match) {
+          const day = parseInt(match[1], 10);
+          const month = parseInt(match[2], 10) - 1;
+          const year = parseInt(match[3], 10);
+          
+          const date = new Date(year, month, day);
+          if (!isNaN(date.getTime())) {
+            this.personalDataForm.get('birthDate')?.setValue(date, { emitEvent: false });
+          }
+        } else if (/^\d{8}$/.test(value)) {
+          // Formato DDMMYYYY sin separadores
+          const day = parseInt(value.substring(0, 2), 10);
+          const month = parseInt(value.substring(2, 4), 10) - 1;
+          const year = parseInt(value.substring(4, 8), 10);
+          
+          const date = new Date(year, month, day);
+          if (!isNaN(date.getTime())) {
+            this.personalDataForm.get('birthDate')?.setValue(date, { emitEvent: false });
+          }
+        }
+      }
+    });
   }
   
   // Nuevo método para cargar datos cuando cambia la tab
@@ -311,72 +505,71 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
     this.isLoading = true;
     this.dataLoaded = false;
     
-    // Obtener el usuario actual
-    this.authService.currentUser$.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(user => {
-      if (user && user.uid) {
-        this.currentUserId = user.uid;
+    if (!this.currentUserId) {
+      console.error('No se puede cargar datos sin un ID de usuario');
+      this.isLoading = false;
+      this.dataLoaded = true;
+      return;
+    }
+    
+    // Cargar datos personales usando el servicio
+    this.profileService.getPersonalData(this.currentUserId).pipe(
+      takeUntil(this.destroy$),
+      finalize(() => {
+        // Finalizar carga después de obtener datos o error
+        setTimeout(() => {
+          this.isLoading = false;
+          this.dataLoaded = true;
+        }, 300); // Pequeño delay para mostrar el spinner
+      })
+    ).subscribe({
+      next: (personalData) => {
+        console.log('Datos personales recibidos:', personalData);
         
-        // Cargar datos personales
-        this.profileService.getPersonalData(this.currentUserId).pipe(
-          takeUntil(this.destroy$),
-          finalize(() => {
-            // Finalizar carga después de obtener datos o error
-            setTimeout(() => {
-              this.isLoading = false;
-              this.dataLoaded = true;
-            }, 300); // Pequeño delay para mostrar el spinner
-          })
-        ).subscribe({
-          next: (personalData) => {
-            
-            if (personalData) {
-              // Rellenar formulario con datos recibidos
-              if (personalData.photoUrl) {
-                this.profilePicture = this.ensureCompleteUrl(personalData.photoUrl);
-              }
-              
-              this.personalDataForm.patchValue({
-                fullName: personalData.name || '',
-                email: personalData.email || user.email || '',
-                birthDate: personalData.birthDate ? new Date(personalData.birthDate) : null,
-                documentType: personalData.documentType || '',
-                documentNumber: personalData.documentNumber || '',
-                jobTitle: personalData.jobTitle || '',
-                department: personalData.department || ''
-              });
-              
-              // Emitir evento de datos cargados
-              this.profileDataLoaded.emit(personalData);
-            } else {
-              // No hay datos personales, llenar solo el email desde el usuario
-              this.personalDataForm.patchValue({
-                email: user.email || ''
-              });
-            }
-            
-            // Continuar con la carga de dirección
-            this.loadAddress();
-          },
-          error: (error) => {
-            console.error('Error al cargar datos personales:', error);
-            // Llenar solo el email en caso de error
-            this.personalDataForm.patchValue({
-              email: user.email || ''
-            });
-            
-            // Mostrar mensaje de error
-            this.snackBar.open('Error al cargar datos personales', 'Cerrar', {
-              duration: 5000,
-              panelClass: ['snackbar-error']
-            });
+        // Obtener el email del usuario actual para asegurarnos de tenerlo
+        const currentUser = this.authService.getCurrentUserSync();
+        const userEmail = currentUser?.email || '';
+        
+        if (personalData) {
+          // Rellenar formulario con datos recibidos
+          if (personalData.photoUrl) {
+            this.profilePicture = this.ensureCompleteUrl(personalData.photoUrl);
           }
+          
+          this.personalDataForm.patchValue({
+            fullName: personalData.name || '',
+            email: personalData.email || userEmail,
+            birthDate: personalData.birthDate ? new Date(personalData.birthDate) : null,
+            documentType: personalData.documentType || '',
+            documentNumber: personalData.documentNumber || '',
+            jobTitle: personalData.jobTitle || '',
+            department: personalData.department || ''
+          });
+          
+          // Emitir evento de datos cargados
+          this.profileDataLoaded.emit(personalData);
+        } else {
+          // No hay datos personales, llenar solo el email desde el usuario
+          this.personalDataForm.patchValue({
+            email: userEmail
+          });
+        }
+      },
+      error: (error) => {
+        console.error('Error al cargar datos personales:', error);
+        // Llenar solo el email en caso de error
+        const currentUser = this.authService.getCurrentUserSync();
+        if (currentUser?.email) {
+          this.personalDataForm.patchValue({
+            email: currentUser.email
+          });
+        }
+        
+        // Mostrar mensaje de error
+        this.snackBar.open('Error al cargar datos personales', 'Cerrar', {
+          duration: 5000,
+          panelClass: ['error-snackbar']
         });
-      } else {
-        console.error('No hay usuario autenticado o falta UID');
-        this.isLoading = false;
-        this.dataLoaded = true;
       }
     });
   }
@@ -497,61 +690,56 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
   
   isFieldInvalid(field: string): boolean {
     const control = this.personalDataForm.get(field);
-    return (control?.invalid && (control?.dirty || control?.touched)) || false;
+    // Considera el campo inválido incluso si solo está tocado (más estricto)
+    return !!control && control.invalid && control.touched;
   }
   
   onSubmit(): void {
+    // Si el formulario no es válido, marcar todos los campos como tocados
     if (this.personalDataForm.invalid) {
+      this.personalDataForm.markAllAsTouched();
       return;
     }
     
-    // Activar spinner durante el envío
     this.isLoading = true;
     
-    // Obtener valores del formulario
-    const formValues = this.personalDataForm.value;
-    
-    // Construir objeto de datos personales
-    const personalData: PersonalDataUserDto = {
+    // Construir el DTO con los datos del formulario
+    const userData: PersonalDataUserDto = {
       uid: this.currentUserId,
-      name: formValues.fullName,
-      email: formValues.email,
-      birthDate: formValues.birthDate ? formValues.birthDate.toISOString().split('T')[0] : null,
-      documentType: formValues.documentType,
-      documentNumber: formValues.documentNumber,
-      jobTitle: formValues.jobTitle || '',
-      department: formValues.department || '',
+      name: this.personalDataForm.get('fullName')?.value,
+      email: this.personalDataForm.get('email')?.value,
+      birthDate: this.personalDataForm.get('birthDate')?.value,
+      documentType: this.personalDataForm.get('documentType')?.value,
+      documentNumber: this.personalDataForm.get('documentNumber')?.value,
+      jobTitle: this.personalDataForm.get('jobTitle')?.value,
+      department: this.personalDataForm.get('department')?.value,
+      photoUrl: this.profilePicture || ''
     };
-    
-    
-    // Enviar datos al servicio
-    this.profileService.updateOrCreatePersonalData(this.currentUserId, personalData)
+
+    // Guardar los datos del usuario
+    this.profileService.updateOrCreatePersonalData(this.currentUserId, userData)
       .pipe(
-        finalize(() => {
-          // Añadir un pequeño retraso para que el spinner sea visible
-          setTimeout(() => {
-            this.isLoading = false;
-          }, 300);
-        })
+        finalize(() => this.isLoading = false),
+        takeUntil(this.destroy$)
       )
       .subscribe({
-        next: (response) => {
+        next: (response: PersonalDataUserDto) => {
+          console.log('Datos personales actualizados:', response);
+          this.formSubmitted.emit(userData);
           
-          // Notificar al usuario
-          this.snackBar.open('Información personal guardada correctamente', 'Cerrar', {
-            duration: 3000,
+          // Mostrar mensaje de éxito mejorado
+          this.snackBar.open('¡Información personal guardada con éxito!', 'Cerrar', {
+            duration: 4000,
+            horizontalPosition: 'center',
+            verticalPosition: 'top',
+            panelClass: ['success-snackbar', 'custom-notification']
           });
-          
-          // Emitir evento de formulario enviado
-          this.formSubmitted.emit(personalData);
         },
-        error: (error) => {
-          console.error('Error al guardar datos personales:', error);
-          
-          // Notificar al usuario
+        error: (error: any) => {
+          console.error('Error al actualizar datos personales:', error);
           this.snackBar.open('Error al guardar la información personal', 'Cerrar', {
-            duration: 5000,
-            panelClass: ['snackbar-error']
+            duration: 3000,
+            panelClass: ['error-snackbar']
           });
         }
       });
@@ -581,18 +769,19 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
 
   // Método para obtener el mensaje de error de fecha de nacimiento
   getBirthDateErrorMessage(): string {
-    const control = this.personalDataForm.get('birthDate');
+    const birthDateControl = this.personalDataForm.get('birthDate');
+    if (!birthDateControl) return '';
     
-    if (control?.hasError('required')) {
+    if (birthDateControl.hasError('required')) {
       return 'La fecha de nacimiento es requerida';
     }
     
-    if (control?.hasError('invalidDate')) {
-      return 'Fecha inválida';
+    if (birthDateControl.hasError('minAge')) {
+      return `Debes tener al menos 18 años de edad`;
     }
     
-    if (control?.hasError('minAge')) {
-      return `Debe ser mayor de 18 años`;
+    if (birthDateControl.hasError('invalidDate') || birthDateControl.hasError('invalidDateFormat')) {
+      return 'El formato de fecha debe ser DD/MM/AAAA';
     }
     
     return '';

@@ -710,3 +710,40 @@ app-address-stepper {
 ::ng-deep .loading-container .mat-progress-spinner circle {
   stroke: #0071e3 !important;
 }
+
+/* Estilos para campos inválidos */
+.field-invalid .mat-mdc-form-field-subscript-wrapper {
+  display: block !important;
+}
+
+.field-invalid .mat-mdc-text-field-wrapper {
+  border-color: #f44336 !important;
+  background-color: rgba(244, 67, 54, 0.03) !important;
+}
+
+.mat-mdc-form-field.ng-invalid.ng-touched .mat-mdc-text-field-wrapper {
+  border-color: #f44336 !important;
+  border-width: 2px !important;
+  background-color: rgba(244, 67, 54, 0.03) !important;
+}
+
+.mat-mdc-form-field.ng-invalid.ng-touched .mat-mdc-form-field-label {
+  color: #f44336 !important;
+}
+
+.alert.alert-warning {
+  background-color: #fff3e0;
+  color: #e65100;
+  padding: 10px 15px;
+  border-radius: 4px;
+  border-left: 4px solid #ff9800;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.mat-mdc-form-field-error {
+  color: #f44336;
+  font-size: 12px;
+  margin-top: 3px;
+  display: block;
+}

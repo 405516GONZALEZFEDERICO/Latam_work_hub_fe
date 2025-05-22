@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterModule } from '@angular/router';
 import { DeactivateAccountComponent } from '../../components/profile/deactivate-account/deactivate-account.component';
+import { Subject } from 'rxjs';
 
 @Component({
   selector: 'app-settings',
@@ -14,7 +15,13 @@ import { DeactivateAccountComponent } from '../../components/profile/deactivate-
     DeactivateAccountComponent
   ],
   templateUrl: './settings.component.html',
-  styleUrls: ['./settings.component.scss']
+  styleUrls: ['./settings.component.css']
 })
-export class SettingsComponent {
+export class SettingsComponent implements OnDestroy {
+  private destroy$ = new Subject<void>();
+  
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 } 

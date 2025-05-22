@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, tap, map } from 'rxjs/operators';
-import { Space, SpaceDto, AmenityDto, FilterState, AddressEntity } from '../../models/space.model';
+import { Space, SpaceDto, SpaceCreationDto, AmenityDto, FilterState, AddressEntity } from '../../models/space.model';
 import { environment } from '../../../environment/environment';
 import { AdminSpace } from '../../models/admin.model';
 import { AuthService } from '../auth-service/auth.service';
@@ -98,7 +98,7 @@ export class SpaceService {
   }
 
   // Create new space
-  createSpace(spaceDto: SpaceDto, images: File[]): Observable<boolean> {
+  createSpace(spaceDto: SpaceCreationDto, images: File[]): Observable<boolean> {
     // Deep clone el objeto para trabajar con una copia
     const spaceToSend = JSON.parse(JSON.stringify(spaceDto));
     
@@ -112,19 +112,26 @@ export class SpaceService {
     }
     
     // Convertir precios a números (por si acaso)
-    spaceToSend.pricePerHour = Number(spaceToSend.pricePerHour);
-    spaceToSend.pricePerDay = Number(spaceToSend.pricePerDay);
-    spaceToSend.pricePerMonth = Number(spaceToSend.pricePerMonth);
+    spaceToSend.pricePerHour = Number(spaceToSend.pricePerHour || 0);
+    spaceToSend.pricePerDay = Number(spaceToSend.pricePerDay || 0);
+    spaceToSend.pricePerMonth = Number(spaceToSend.pricePerMonth || 0);
+    
+    // Asegurar que type sea un objeto con id
+    if (spaceToSend.type && typeof spaceToSend.type !== 'object') {
+      spaceToSend.type = { id: Number(spaceToSend.type) };
+    } else if (spaceToSend.type && spaceToSend.type.id) {
+      spaceToSend.type.id = Number(spaceToSend.type.id);
+    }
     
     // Convertir amenities.price a número
     if (spaceToSend.amenities && spaceToSend.amenities.length) {
       spaceToSend.amenities = spaceToSend.amenities.map((amenity: any) => ({
-        ...amenity,
-        price: Number(amenity.price)
+        name: amenity.name,
+        price: Number(amenity.price || 0)
       }));
     }
     
-
+    console.log('Enviando al servidor:', JSON.stringify(spaceToSend, null, 2));
 
     const formData = new FormData();
 
@@ -146,19 +153,54 @@ export class SpaceService {
       tap(response => console.log('Espacio creado exitosamente:', response)),
       catchError(error => {
         console.error('Error al crear el espacio:', error);
+        console.error('Detalles del error:', error.error);
         return throwError(() => new Error('Error al crear el espacio'));
       })
     );
   }
 
-  updateSpace(spaceId: string, spaceDto: SpaceDto, images: File[]): Observable<any> {
+  updateSpace(spaceId: string, spaceDto: SpaceCreationDto, images: File[]): Observable<any> {
     const url = `${this.apiUrl}/${spaceId}`;
+    
+    // Deep clone el objeto para trabajar con una copia
+    const spaceToSend = JSON.parse(JSON.stringify(spaceDto));
+    
+    // Asegurar que cityId y countryId sean números
+    if (spaceToSend.cityId) {
+      spaceToSend.cityId = Number(spaceToSend.cityId);
+    }
+    
+    if (spaceToSend.countryId) {
+      spaceToSend.countryId = Number(spaceToSend.countryId);
+    }
+    
+    // Convertir precios a números (por si acaso)
+    spaceToSend.pricePerHour = Number(spaceToSend.pricePerHour || 0);
+    spaceToSend.pricePerDay = Number(spaceToSend.pricePerDay || 0);
+    spaceToSend.pricePerMonth = Number(spaceToSend.pricePerMonth || 0);
+    
+    // Asegurar que type sea un objeto con id
+    if (spaceToSend.type && typeof spaceToSend.type !== 'object') {
+      spaceToSend.type = { id: Number(spaceToSend.type) };
+    } else if (spaceToSend.type && spaceToSend.type.id) {
+      spaceToSend.type.id = Number(spaceToSend.type.id);
+    }
+    
+    // Convertir amenities.price a número
+    if (spaceToSend.amenities && spaceToSend.amenities.length) {
+      spaceToSend.amenities = spaceToSend.amenities.map((amenity: any) => ({
+        name: amenity.name,
+        price: Number(amenity.price || 0)
+      }));
+    }
+    
+    console.log('Enviando al servidor (update):', JSON.stringify(spaceToSend, null, 2));
     
     // Create a FormData object to send both the space data and images
     const formData = new FormData();
     
     // Add the space data as JSON
-    formData.append('space', new Blob([JSON.stringify(spaceDto)], {
+    formData.append('space', new Blob([JSON.stringify(spaceToSend)], {
       type: 'application/json'
     }));
     
@@ -181,6 +223,7 @@ export class SpaceService {
           errorMsg = error.message;
         }
         
+        console.error('Detalles del error:', error.error);
         return throwError(() => new Error(errorMsg));
       })
     );

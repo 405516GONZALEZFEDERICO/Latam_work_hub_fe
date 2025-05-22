@@ -33,16 +33,35 @@ export class ExportService {
     // Clonamos los datos para no modificar los originales
     const dataForExport = this.prepareDataForExport(data);
     
-    const replacer = (key: any, value: any) => value === null ? '' : value;
     const header = Object.keys(dataForExport[0]);
-    const csv = [
+    
+    // Crear filas de CSV sin usar JSON.stringify para evitar comillas
+    const csvRows = [
+      // Fila de encabezado
       header.join(','),
-      ...dataForExport.map(row => header.map(fieldName => 
-        JSON.stringify(row[fieldName], replacer)).join(',')
-      )
-    ].join('\r\n');
+      // Filas de datos
+      ...dataForExport.map(row => {
+        return header.map(fieldName => {
+          const value = row[fieldName];
+          // Si el valor contiene comas, comillas o saltos de línea, escaparlo adecuadamente
+          if (value === null || value === undefined) {
+            return '';
+          } else if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
+            // Escapar comillas duplicándolas y envolver en comillas si es necesario
+            return '"' + value.replace(/"/g, '""') + '"';
+          } else {
+            return value;
+          }
+        }).join(',');
+      })
+    ];
 
-    const csvBlob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    // Unir filas con saltos de línea CRLF (estándar para CSV)
+    const csvContent = csvRows.join('\r\n');
+
+    // Crear blob con BOM para que Excel reconozca correctamente los caracteres especiales
+    const BOM = '\uFEFF'; // Marca de orden de bytes (BOM) para UTF-8
+    const csvBlob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
     this.saveAsFile(csvBlob, `${fileName}.csv`, 'text/csv');
   }
 
@@ -157,6 +176,7 @@ export class ExportService {
         <head>
           <title>${title}</title>
           ${styles}
+          <meta charset="UTF-8">
         </head>
         <body>
           <h1>${title}</h1>

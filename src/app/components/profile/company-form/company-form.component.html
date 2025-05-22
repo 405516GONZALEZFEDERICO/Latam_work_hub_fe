@@ -29,6 +29,14 @@
   <!-- Main form container -->
   <div [hidden]="isLoadingCompanyData">
     <form *ngIf="!isLoadingCompanyData" [formGroup]="companyForm" (ngSubmit)="onSubmit()" class="form-fields">
+      <!-- Alerta de validación general -->
+      <div *ngIf="companyForm.invalid && companyForm.touched" class="alert alert-warning mb-3">
+        <mat-icon class="alert-icon">warning</mat-icon>
+        <div class="alert-content">
+          <strong>Hay campos con errores.</strong> Por favor, verifica la información de empresa para continuar.
+        </div>
+      </div>
+      
       <!-- Fila 1: Nombre comercial y Razón social -->
       <div class="form-flex-row">
         <div class="form-flex-col">
@@ -75,6 +83,7 @@
               formControlName="phone" 
               type="tel" 
               placeholder="+1 234 567 8900">
+            <mat-error *ngIf="formControls['phone'].hasError('phoneFormat')">El teléfono debe contener solo números, espacios y símbolos + - ()</mat-error>
           </mat-form-field>
         </div>
       </div>

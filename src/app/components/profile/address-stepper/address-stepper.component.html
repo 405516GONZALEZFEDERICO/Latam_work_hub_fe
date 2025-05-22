@@ -21,31 +21,39 @@
 
   <!-- Formulario de dirección cargado correctamente -->
   <ng-container *ngIf="!loadingCountries && !loadingCities && !isLoading">
+    <!-- Mensaje de validación general -->
+    <div *ngIf="addressForm.invalid && addressForm.touched" class="validation-alert">
+      Por favor completa todos los campos requeridos para continuar.
+    </div>
+    
     <form [formGroup]="addressForm" (ngSubmit)="onSubmit()">
       <!-- Paso 1: Selección de país y ciudad -->
       <div *ngIf="currentStep === 0">
         <div class="full-width">
-          <mat-form-field class="full-width" appearance="outline">
+          <mat-form-field class="full-width" appearance="outline" [class.invalid-field]="isFieldInvalid('countryId')">
             <mat-label>País</mat-label>
             <mat-select formControlName="countryId">
               <mat-option *ngFor="let country of countries" [value]="country.id">
                 {{ country.name }}
               </mat-option>
             </mat-select>
-            <mat-error *ngIf="isFieldInvalid('countryId')">Este campo es requerido</mat-error>
+            <mat-error *ngIf="isFieldInvalid('countryId')">Debes seleccionar un país</mat-error>
           </mat-form-field>
         </div>
 
         <div class="full-width">
-          <mat-form-field class="full-width" appearance="outline">
+          <mat-form-field class="full-width" appearance="outline" [class.invalid-field]="isFieldInvalid('cityId')">
             <mat-label>Ciudad</mat-label>
             <mat-select formControlName="cityId">
+              <mat-option *ngIf="filteredCities.length === 0 && addressForm.get('countryId')?.value" disabled>
+                No hay ciudades disponibles para este país
+              </mat-option>
               <mat-option *ngFor="let city of filteredCities" [value]="city.id">
                 {{ city.name }}
               </mat-option>
               <mat-option value="custom">Ingresar ciudad manualmente</mat-option>
             </mat-select>
-            <mat-error *ngIf="isFieldInvalid('cityId')">Este campo es requerido</mat-error>
+            <mat-error *ngIf="isFieldInvalid('cityId')">Debes seleccionar una ciudad</mat-error>
           </mat-form-field>
         </div>
 
@@ -77,45 +85,53 @@
       <!-- Paso 2: Detalles de la dirección -->
       <div *ngIf="currentStep === 1">
         <div class="full-width">
-          <mat-form-field class="full-width" appearance="outline">
+          <mat-form-field class="full-width" appearance="outline" [class.invalid-field]="isFieldInvalid('streetName')">
             <mat-label>Nombre de la calle</mat-label>
             <input matInput formControlName="streetName" />
-            <mat-error *ngIf="isFieldInvalid('streetName')">Este campo es requerido</mat-error>
+            <mat-error *ngIf="addressForm.get('streetName')?.hasError('required')">El nombre de la calle es requerido</mat-error>
+            <mat-error *ngIf="addressForm.get('streetName')?.hasError('onlyText')">El nombre debe contener solo texto, no números</mat-error>
           </mat-form-field>
         </div>
 
         <div class="full-width">
-          <mat-form-field class="full-width" appearance="outline">
+          <mat-form-field class="full-width" appearance="outline" [class.invalid-field]="isFieldInvalid('streetNumber')">
             <mat-label>Número</mat-label>
             <input matInput formControlName="streetNumber" />
-            <mat-error *ngIf="isFieldInvalid('streetNumber')">Este campo es requerido</mat-error>
+            <mat-error *ngIf="addressForm.get('streetNumber')?.hasError('required')">El número es requerido</mat-error>
+            <mat-error *ngIf="addressForm.get('streetNumber')?.hasError('onlyNumbers')">Ingrese solo números</mat-error>
           </mat-form-field>
         </div>
 
         <div class="flex-row">
-          <mat-form-field class="equal-field" appearance="outline">
+          <mat-form-field class="equal-field" appearance="outline" [class.invalid-field]="isFieldInvalid('floor')">
             <mat-label>Piso (opcional)</mat-label>
             <input matInput formControlName="floor" />
+            <mat-error *ngIf="addressForm.get('floor')?.hasError('onlyNumbers')">Ingrese solo números</mat-error>
           </mat-form-field>
 
-          <mat-form-field class="equal-field" appearance="outline">
+          <mat-form-field class="equal-field" appearance="outline" [class.invalid-field]="isFieldInvalid('apartment')">
             <mat-label>Departamento (opcional)</mat-label>
-            <input matInput formControlName="apartment" />
+            <input matInput formControlName="apartment" placeholder="Ej: A, B, C">
+            <mat-error *ngIf="addressForm.get('apartment')?.hasError('apartmentFormat')">Ingrese solo letras (A, B, C...)</mat-error>
           </mat-form-field>
         </div>
 
         <div class="full-width">
-          <mat-form-field class="full-width" appearance="outline">
+          <mat-form-field class="full-width" appearance="outline" [class.invalid-field]="isFieldInvalid('postalCode')">
             <mat-label>Código Postal</mat-label>
             <input matInput formControlName="postalCode" />
-            <mat-error *ngIf="isFieldInvalid('postalCode')">Este campo es requerido</mat-error>
+            <mat-error *ngIf="addressForm.get('postalCode')?.hasError('required')">El código postal es requerido</mat-error>
+            <mat-error *ngIf="addressForm.get('postalCode')?.hasError('onlyNumbers')">Ingrese solo números</mat-error>
           </mat-form-field>
         </div>
       </div>
 
       <div class="button-container">
-        <!-- Paso 1: Solo botón Siguiente alineado a la derecha -->
+        <!-- Paso 1: Botones Cancelar y Siguiente -->
         <div *ngIf="currentStep === 0" class="action-buttons">
+          <button mat-stroked-button type="button" class="cancel-button" (click)="cancel()">
+            Cancelar
+          </button>
           <button 
             mat-flat-button 
             color="primary" 
@@ -130,8 +146,12 @@
           </button>
         </div>
         
-        <!-- Paso 2: Solo botón Guardar alineado a la derecha -->
+        <!-- Paso 2: Botones Volver y Guardar -->
         <div *ngIf="currentStep === 1" class="action-buttons">
+          <button mat-stroked-button type="button" class="back-button" (click)="previousStep()">
+            <mat-icon>arrow_back</mat-icon>
+            Volver
+          </button>
           <button
             mat-flat-button
             color="primary"

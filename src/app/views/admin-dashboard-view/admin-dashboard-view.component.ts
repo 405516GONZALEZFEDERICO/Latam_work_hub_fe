@@ -51,6 +51,15 @@ export class AdminDashboardViewComponent implements OnInit, AfterViewInit {
   // Datos de reservas por tipo de espacio
   spaceTypeData: any[] = [];
   
+  // Datos de ejemplo para el gráfico cuando no hay datos reales
+  sampleSpaceTypeData: any[] = [
+    { name: 'Oficina', value: 0 },
+    { name: 'Sala de Reuniones', value: 0 },
+    { name: 'Espacio Coworking', value: 0 },
+    { name: 'Sala de Conferencias', value: 0 },
+    { name: 'Estudio', value: 0 }
+  ];
+  
   // Datos de horas pico
   peakHoursData: any[] = [];
   
