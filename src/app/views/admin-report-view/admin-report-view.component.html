@@ -40,8 +40,6 @@
           <mat-form-field appearance="outline" *ngIf="showFilter('status')">
             <mat-label>Estado</mat-label>
             <mat-select formControlName="status">
-              <mat-option value="">Todos</mat-option>
-              
               <!-- Estados de usuario -->
               <mat-optgroup label="Estados de Usuario" *ngIf="selectedReport === 'users'">
                 <mat-option value="ACTIVE">Activo</mat-option>
@@ -104,7 +102,6 @@
           <mat-form-field appearance="outline" *ngIf="showFilter('role')">
             <mat-label>Rol</mat-label>
             <mat-select formControlName="role" (selectionChange)="onRoleFilterChange($event)">
-              <mat-option value="">Todos</mat-option>
               <mat-option value="CLIENTE">Cliente</mat-option>
               <mat-option value="PROVEEDOR">Proveedor</mat-option>
               <mat-option value="ADMIN">Administrador</mat-option>
@@ -216,7 +213,7 @@
       </div>
       
       <div class="table-container mat-elevation-z1">
-        <table mat-table [dataSource]="bookingData" matSort>
+        <table mat-table [dataSource]="bookingData" matSort (matSortChange)="onSortChange($event)">
           <ng-container matColumnDef="bookingId">
             <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
             <td mat-cell *matCellDef="let item">{{item.bookingId}}</td>
@@ -296,7 +293,7 @@
       </div>
       
       <div class="table-container mat-elevation-z1">
-        <table mat-table [dataSource]="userData" matSort>
+        <table mat-table [dataSource]="userData" matSort (matSortChange)="onSortChange($event)">
           <ng-container matColumnDef="userId">
             <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
             <td mat-cell *matCellDef="let item">{{item.userId}}</td>
@@ -390,7 +387,7 @@
       </div>
       
       <div class="table-container mat-elevation-z1">
-        <table mat-table [dataSource]="contractData" matSort>
+        <table mat-table [dataSource]="contractData" matSort (matSortChange)="onSortChange($event)">
           <ng-container matColumnDef="contractId">
             <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
             <td mat-cell *matCellDef="let item">{{item.contractId}}</td>
@@ -464,7 +461,7 @@
       </div>
       
       <div class="table-container mat-elevation-z1">
-        <table mat-table [dataSource]="invoiceData" matSort>
+        <table mat-table [dataSource]="invoiceData" matSort (matSortChange)="onSortChange($event)">
           <ng-container matColumnDef="invoiceId">
             <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
             <td mat-cell *matCellDef="let item">{{item.invoiceId}}</td>
@@ -533,7 +530,7 @@
       </div>
       
       <div class="table-container mat-elevation-z1">
-        <table mat-table [dataSource]="expiringContractData" matSort>
+        <table mat-table [dataSource]="expiringContractData" matSort (matSortChange)="onSortChange($event)">
           <ng-container matColumnDef="contractId">
             <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
             <td mat-cell *matCellDef="let item">{{item.contractId}}</td>
@@ -592,7 +589,7 @@
       </div>
       
       <div class="table-container mat-elevation-z1">
-        <table mat-table [dataSource]="overdueInvoiceData" matSort>
+        <table mat-table [dataSource]="overdueInvoiceData" matSort (matSortChange)="onSortChange($event)">
           <ng-container matColumnDef="invoiceId">
             <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
             <td mat-cell *matCellDef="let item">{{item.invoiceId}}</td>

@@ -81,16 +81,42 @@ export class AdminDashboardService {
    * @param roleName Rol de los usuarios a buscar (CLIENTE, PROVEEDOR, etc.)
    */
   getUsersList(roleName: string): Observable<AdminUser[]> {
-    return this.http.get<any>(`${this.usersUrl}/get-user-list`, {
-      params: new HttpParams().set('roleName', roleName)
-    }).pipe(
+    // Usar la URL correcta para obtener usuarios de la API
+    const url = `${environment.apiUrl}/reports-admin/users`;
+    
+    return this.http.get<any>(url).pipe(
       map(response => {
-        // La API devuelve una estructura paginada con el array en la propiedad 'content'
-        const users = response && response.content ? response.content : [];
-        if (!Array.isArray(users)) {
+        // Extraer el array de usuarios desde la propiedad content de la respuesta paginada
+        if (!response || !response.content || !Array.isArray(response.content)) {
+          console.error('Respuesta inesperada de la API:', response);
           return [];
         }
-        return users.map(user => this.mapToAdminUser(user));
+        
+        const users = response.content;
+        
+        // Si se especificó un rol, filtrar por ese rol
+        const filteredUsers = roleName ? users.filter((user: any) => user.role === roleName) : users;
+        
+        return filteredUsers.map((user: any) => ({
+          id: user.userId,
+          name: user.name || 'Sin nombre',
+          email: user.email || '',
+          firebaseUid: user.firebaseUid || '',
+          birthDay: user.birthDay || null,
+          documentType: user.documentType || '',
+          documentNumber: user.documentNumber || '',
+          jobTitle: user.jobTitle || '',
+          department: user.department || '',
+          role: user.role || '',
+          enabled: user.status === 'Activo',
+          lastLoginAt: user.lastLoginDate, // Usar los nombres exactos del backend
+          registrationDate: user.registrationDate, // Usar los nombres exactos del backend
+          totalSpaces: user.totalSpaces,
+          activeContracts: user.activeContracts,
+          totalRevenue: user.totalRevenue,
+          totalBookings: user.totalBookings,
+          totalSpending: user.totalSpending
+        }));
       }),
       catchError(error => {
         console.error('Error al obtener usuarios:', error);
@@ -103,6 +129,7 @@ export class AdminDashboardService {
    * Obtiene la lista de usuarios con rol cliente
    */
   getClientUsers(): Observable<AdminUser[]> {
+    // Obtener todos los usuarios y filtrar por rol CLIENTE
     return this.getUsersList('CLIENTE');
   }
 
@@ -110,28 +137,8 @@ export class AdminDashboardService {
    * Obtiene la lista de usuarios con rol proveedor
    */
   getProviderUsers(): Observable<AdminUser[]> {
+    // Obtener todos los usuarios y filtrar por rol PROVEEDOR
     return this.getUsersList('PROVEEDOR');
-  }
-
-  /**
-   * Función auxiliar para mapear un usuario a AdminUser
-   */
-  private mapToAdminUser(user: any): AdminUser {
-    return {
-      id: user.userId || user.id || 0,
-      name: user.name || 'Sin nombre',
-      email: user.email || '',
-      firebaseUid: user.firebaseUid || '',
-      birthDay: user.birthDay || null,
-      documentType: user.documentType || '',
-      documentNumber: user.documentNumber || '',
-      jobTitle: user.jobTitle || '',
-      department: user.department || '',
-      role: user.role || '',
-      enabled: user.status === 'Activo',
-      lastLoginAt: user.lastLoginDate || null,
-      registrationDate: user.registrationDate || null
-    };
   }
 
   /**

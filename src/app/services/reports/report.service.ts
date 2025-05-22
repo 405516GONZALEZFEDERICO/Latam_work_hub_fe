@@ -41,11 +41,15 @@ export class ReportService {
 
   constructor(private http: HttpClient) { }
 
-  // Convertir el objeto de filtros a HttpParams
-  private buildParams<T>(filters?: T, page = 0, size = 10): HttpParams {
+  private buildParams<T>(filters?: T, page = 0, size = 10, sortField?: string, sortDirection?: string): HttpParams {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
+    
+    // Añadir parámetros de ordenamiento si están disponibles
+    if (sortField && sortDirection) {
+      params = params.set('sort', `${sortField},${sortDirection}`);
+    }
     
     if (!filters) return params;
     
@@ -61,38 +65,38 @@ export class ReportService {
 
   // Endpoints de informes
   
-  getSpacesReport(filters?: SpaceReportFilters, page = 0, size = 10): Observable<PageResponse<SpaceReportRow>> {
-    const params = this.buildParams<SpaceReportFilters>(filters, page, size);
+  getSpacesReport(filters?: SpaceReportFilters, page = 0, size = 10, sortField?: string, sortDirection?: string): Observable<PageResponse<SpaceReportRow>> {
+    const params = this.buildParams<SpaceReportFilters>(filters, page, size, sortField, sortDirection);
     return this.http.get<PageResponse<SpaceReportRow>>(`${this.apiUrl}/spaces`, { params });
   }
 
-  getBookingsReport(filters?: BookingReportFilters, page = 0, size = 10): Observable<PageResponse<BookingReportRow>> {
-    const params = this.buildParams<BookingReportFilters>(filters, page, size);
+  getBookingsReport(filters?: BookingReportFilters, page = 0, size = 10, sortField?: string, sortDirection?: string): Observable<PageResponse<BookingReportRow>> {
+    const params = this.buildParams<BookingReportFilters>(filters, page, size, sortField, sortDirection);
     return this.http.get<PageResponse<BookingReportRow>>(`${this.apiUrl}/bookings`, { params });
   }
 
-  getUsersReport(filters?: UserReportFilters, page = 0, size = 10): Observable<PageResponse<UserReportRow>> {
-    const params = this.buildParams<UserReportFilters>(filters, page, size);
+  getUsersReport(filters?: UserReportFilters, page = 0, size = 10, sortField?: string, sortDirection?: string): Observable<PageResponse<UserReportRow>> {
+    const params = this.buildParams<UserReportFilters>(filters, page, size, sortField, sortDirection);
     return this.http.get<PageResponse<UserReportRow>>(`${this.apiUrl}/users`, { params });
   }
 
-  getContractsReport(filters?: ContractReportFilters, page = 0, size = 10): Observable<PageResponse<ContractReportRow>> {
-    const params = this.buildParams<ContractReportFilters>(filters, page, size);
+  getContractsReport(filters?: ContractReportFilters, page = 0, size = 10, sortField?: string, sortDirection?: string): Observable<PageResponse<ContractReportRow>> {
+    const params = this.buildParams<ContractReportFilters>(filters, page, size, sortField, sortDirection);
     return this.http.get<PageResponse<ContractReportRow>>(`${this.apiUrl}/contracts`, { params });
   }
 
-  getInvoicesReport(filters?: InvoiceReportFilters, page = 0, size = 10): Observable<PageResponse<InvoiceReportRow>> {
-    const params = this.buildParams<InvoiceReportFilters>(filters, page, size);
+  getInvoicesReport(filters?: InvoiceReportFilters, page = 0, size = 10, sortField?: string, sortDirection?: string): Observable<PageResponse<InvoiceReportRow>> {
+    const params = this.buildParams<InvoiceReportFilters>(filters, page, size, sortField, sortDirection);
     return this.http.get<PageResponse<InvoiceReportRow>>(`${this.apiUrl}/invoices`, { params });
   }
 
-  getExpiringContractsAlerts(filters?: ExpiringContractsAlertFilters, page = 0, size = 10): Observable<PageResponse<ExpiringContractAlert>> {
-    const params = this.buildParams<ExpiringContractsAlertFilters>(filters, page, size);
+  getExpiringContractsAlerts(filters?: ExpiringContractsAlertFilters, page = 0, size = 10, sortField?: string, sortDirection?: string): Observable<PageResponse<ExpiringContractAlert>> {
+    const params = this.buildParams<ExpiringContractsAlertFilters>(filters, page, size, sortField, sortDirection);
     return this.http.get<PageResponse<ExpiringContractAlert>>(`${this.apiUrl}/alerts/expiring-contracts`, { params });
   }
 
-  getOverdueInvoicesAlerts(filters?: OverdueInvoicesAlertFilters, page = 0, size = 10): Observable<PageResponse<OverdueInvoiceAlert>> {
-    const params = this.buildParams<OverdueInvoicesAlertFilters>(filters, page, size);
+  getOverdueInvoicesAlerts(filters?: OverdueInvoicesAlertFilters, page = 0, size = 10, sortField?: string, sortDirection?: string): Observable<PageResponse<OverdueInvoiceAlert>> {
+    const params = this.buildParams<OverdueInvoicesAlertFilters>(filters, page, size, sortField, sortDirection);
     return this.http.get<PageResponse<OverdueInvoiceAlert>>(`${this.apiUrl}/alerts/overdue-invoices`, { params });
   }
 }

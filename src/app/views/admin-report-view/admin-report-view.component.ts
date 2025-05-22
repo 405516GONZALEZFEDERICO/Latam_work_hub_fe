@@ -90,14 +90,18 @@ export class AdminReportViewComponent implements OnInit {
   // Control de tabs
   selectedTabIndex = 0; // Para el binding bidireccional con mat-tab-group
 
+  // Variables para control del ordenamiento
+  sortActive: string = '';
+  sortDirection: string = '';
+
   // Columnas para las tablas
-  spaceColumns: string[] = ['spaceId', 'spaceName', 'providerName', 'bookingCount', 'revenueGenerated', 'status'];
-  bookingColumns: string[] = ['bookingId', 'spaceName', 'clientName', 'providerName', 'startDate', 'endDate', 'durationHours', 'status', 'amount'];
-  userColumns: string[] = ['userId', 'name', 'email', 'role', 'activeContracts', 'registrationDate', 'lastLoginDate', 'status'];
-  contractColumns: string[] = ['contractId', 'spaceName', 'tenantName', 'ownerName', 'startDate', 'endDate', 'amount', 'status'];
-  invoiceColumns: string[] = ['invoiceId', 'clientName', 'issueDate', 'dueDate', 'totalAmount', 'pendingAmount', 'status'];
-  expiringContractColumns: string[] = ['contractId', 'spaceName', 'tenantName', 'expiryDate', 'daysUntilExpiry'];
-  overdueInvoiceColumns: string[] = ['invoiceId', 'clientName', 'dueDate', 'daysOverdue', 'overdueAmount'];
+  spaceColumns: string[] = ['spaceName', 'providerName', 'bookingCount', 'revenueGenerated', 'status'];
+  bookingColumns: string[] = ['spaceName', 'clientName', 'providerName', 'startDate', 'endDate', 'durationHours', 'status', 'amount'];
+  userColumns: string[] = ['name', 'email', 'role', 'activeContracts', 'registrationDate', 'lastLoginDate', 'status'];
+  contractColumns: string[] = ['spaceName', 'tenantName', 'ownerName', 'startDate', 'endDate', 'amount', 'status'];
+  invoiceColumns: string[] = ['clientName', 'issueDate', 'dueDate', 'totalAmount', 'pendingAmount', 'status'];
+  expiringContractColumns: string[] = ['spaceName', 'tenantName', 'expiryDate', 'daysUntilExpiry'];
+  overdueInvoiceColumns: string[] = ['clientName', 'dueDate', 'daysOverdue', 'overdueAmount'];
 
   // Variables para el control de columnas condicionales
   selectedUserRole: string = '';
@@ -124,29 +128,21 @@ export class AdminReportViewComponent implements OnInit {
       minDaysOverdue: ['']
     });
 
-    // Agregar validador para asegurar que endDate no sea anterior a startDate
+    // Validador para cuando cambia la fecha de fin
     this.filterForm.get('endDate')?.valueChanges.subscribe(endDateValue => {
-      if (endDateValue) {
-        const startDateValue = this.filterForm.get('startDate')?.value;
-        if (startDateValue && new Date(endDateValue) < new Date(startDateValue)) {
-          this.filterForm.get('endDate')?.setErrors({ 'dateError': 'La fecha de fin no puede ser anterior a la de inicio' });
-        } else {
-          // Limpiar solo este error específico, manteniendo otros errores si existen
-          const currentErrors = this.filterForm.get('endDate')?.errors;
-          if (currentErrors) {
-            delete currentErrors['dateError'];
-            if (Object.keys(currentErrors).length === 0) {
-              this.filterForm.get('endDate')?.setErrors(null);
-            } else {
-              this.filterForm.get('endDate')?.setErrors(currentErrors);
-            }
-          }
-        }
-      }
+      this.validateDates();
+    });
+
+    // Validador para cuando cambia la fecha de inicio
+    this.filterForm.get('startDate')?.valueChanges.subscribe(startDateValue => {
+      this.validateDates();
     });
   }
 
   ngOnInit(): void {
+    // Establecer valores predeterminados para los filtros
+    this.setDefaultFilterValues();
+    
     this.loadCurrentReport();
   }
 
@@ -274,11 +270,13 @@ export class AdminReportViewComponent implements OnInit {
 
   // Carga el reporte seleccionado actualmente
   loadCurrentReport(): void {
-    this.loading = true;
-    // No reseteamos error aquí para mantener mensajes de errores de exportación
-    const filters = this.getFilters();
-
     try {
+      // Resetear el estado de error
+      this.error = null;
+      
+      this.loading = true;
+      const filters = this.getFilters();
+
       // Usar un objeto para mapear los tipos de informe a sus métodos de carga
       const reportLoaders: { [key: string]: () => void } = {
         'spaces': () => this.loadSpacesReport(filters),
@@ -301,7 +299,7 @@ export class AdminReportViewComponent implements OnInit {
     } catch (error) {
       console.error('Error loading report:', error);
       this.loading = false;
-      // No establecemos error aquí para evitar afectar la visualización de los tabs
+      // No establecer mensaje de error aquí para evitar afectar la visualización de los tabs
       console.error('Error al cargar el informe. El servidor podría no estar disponible.');
 
       // Intentar cargar datos de espacios como fallback sin afectar la visualización
@@ -313,37 +311,37 @@ export class AdminReportViewComponent implements OnInit {
 
   // Métodos para cargar cada tipo de reporte
   loadSpacesReport(filters: SpaceReportFilters): void {
-    this.reportService.getSpacesReport(filters, this.pageIndex, this.pageSize)
+    this.reportService.getSpacesReport(filters, this.pageIndex, this.pageSize, this.sortActive, this.sortDirection)
       .subscribe(this.handleReportResponse<SpaceReportRow>((data) => this.spaceData = data));
   }
 
   loadBookingsReport(filters: BookingReportFilters): void {
-    this.reportService.getBookingsReport(filters, this.pageIndex, this.pageSize)
+    this.reportService.getBookingsReport(filters, this.pageIndex, this.pageSize, this.sortActive, this.sortDirection)
       .subscribe(this.handleReportResponse<BookingReportRow>((data) => this.bookingData = data));
   }
 
   loadUsersReport(filters: UserReportFilters): void {
-    this.reportService.getUsersReport(filters, this.pageIndex, this.pageSize)
+    this.reportService.getUsersReport(filters, this.pageIndex, this.pageSize, this.sortActive, this.sortDirection)
       .subscribe(this.handleReportResponse<UserReportRow>((data) => this.userData = data));
   }
 
   loadContractsReport(filters: ContractReportFilters): void {
-    this.reportService.getContractsReport(filters, this.pageIndex, this.pageSize)
+    this.reportService.getContractsReport(filters, this.pageIndex, this.pageSize, this.sortActive, this.sortDirection)
       .subscribe(this.handleReportResponse<ContractReportRow>((data) => this.contractData = data));
   }
 
   loadInvoicesReport(filters: InvoiceReportFilters): void {
-    this.reportService.getInvoicesReport(filters, this.pageIndex, this.pageSize)
+    this.reportService.getInvoicesReport(filters, this.pageIndex, this.pageSize, this.sortActive, this.sortDirection)
       .subscribe(this.handleReportResponse<InvoiceReportRow>((data) => this.invoiceData = data));
   }
 
   loadExpiringContractsAlerts(filters: ExpiringContractsAlertFilters): void {
-    this.reportService.getExpiringContractsAlerts(filters, this.pageIndex, this.pageSize)
+    this.reportService.getExpiringContractsAlerts(filters, this.pageIndex, this.pageSize, this.sortActive, this.sortDirection)
       .subscribe(this.handleReportResponse<ExpiringContractAlert>((data) => this.expiringContractData = data));
   }
 
   loadOverdueInvoicesAlerts(filters: OverdueInvoicesAlertFilters): void {
-    this.reportService.getOverdueInvoicesAlerts(filters, this.pageIndex, this.pageSize)
+    this.reportService.getOverdueInvoicesAlerts(filters, this.pageIndex, this.pageSize, this.sortActive, this.sortDirection)
       .subscribe(this.handleReportResponse<OverdueInvoiceAlert>((data) => this.overdueInvoiceData = data));
   }
 
@@ -358,13 +356,8 @@ export class AdminReportViewComponent implements OnInit {
           console.warn('Response received but no content found:', response);
           dataHandler([] as any);
           this.totalItems = 0;
-          // Usar un mensaje temporal que no afecte la navegación entre tabs
-          const errorMsg = 'No se encontraron datos para este informe';
-          console.warn(errorMsg);
-          // Mostrar un mensaje temporal
-          setTimeout(() => {
-            alert(errorMsg);
-          }, 100);
+          // Confiar en la directiva matNoDataRow para mostrar mensaje de "No hay datos disponibles"
+          this.loading = false;
         }
         this.loading = false;
       },
@@ -376,12 +369,9 @@ export class AdminReportViewComponent implements OnInit {
         this.totalItems = 0;
         this.loading = false;
 
-        // Establecer un mensaje de error que no bloquee la navegación entre tabs
-        if (err.status === 0) {
-          this.error = 'No se pudo conectar con el servidor. Por favor, verifica tu conexión.';
-        } else {
-          this.error = `Error al cargar el informe: ${err.message || 'Error desconocido'}`;
-        }
+        // No mostrar mensaje de error en la interfaz cuando no se encuentran datos
+        // Solo registrar en consola para diagnóstico
+        console.error('Error loading report:', err);
       }
     };
   }
@@ -403,6 +393,9 @@ export class AdminReportViewComponent implements OnInit {
       // Actualizar el reporte seleccionado
       this.selectedReport = reportTypes[tabIndex];
 
+      // Establecer valores predeterminados según el tipo de informe
+      this.setDefaultFilterValues();
+
       // Forzar la detección de cambios para actualizar la visibilidad de los campos
       this.changeDetectorRef.detectChanges();
 
@@ -414,8 +407,51 @@ export class AdminReportViewComponent implements OnInit {
     }
   }
 
+  // Método para establecer valores predeterminados en los filtros según el tipo de informe
+  private setDefaultFilterValues(): void {
+    // Si el informe actual utiliza el filtro de estado, establecer un valor predeterminado
+    if (this.showFilter('status')) {
+      let defaultStatus = '';
+      
+      switch (this.selectedReport) {
+        case 'users':
+          defaultStatus = 'ACTIVE';
+          break;
+        case 'spaces':
+          defaultStatus = 'DISPONIBLE';
+          break;
+        case 'bookings':
+          defaultStatus = 'CONFIRMED';
+          break;
+        case 'contracts':
+          defaultStatus = 'ACTIVE';
+          break;
+        case 'invoices':
+        case 'overdueInvoices':
+          defaultStatus = 'ISSUED';
+          break;
+      }
+      
+      if (defaultStatus) {
+        this.filterForm.get('status')?.setValue(defaultStatus);
+      }
+    }
+
+    // Si el informe actual utiliza el filtro de rol, establecer un valor predeterminado
+    if (this.showFilter('role') && this.selectedReport === 'users') {
+      this.filterForm.get('role')?.setValue('CLIENTE');
+      this.updateUserColumnsBasedOnRole('CLIENTE');
+    }
+    
+    // Validar fechas después de establecer los valores predeterminados
+    this.validateDates();
+  }
+
   // Método para aplicar filtros y validar antes de enviar
   applyFilters(): void {
+    // Validar fechas primero
+    this.validateDates();
+    
     // Validar el formulario antes de aplicar los filtros
     if (this.filterForm.invalid) {
       // Marcar todos los campos como tocados para mostrar los errores
@@ -475,7 +511,7 @@ export class AdminReportViewComponent implements OnInit {
     }
 
     if (data.length === 0) {
-      this.error = 'No hay datos para exportar.';
+      console.warn('No hay datos para exportar a Excel.');
       return;
     }
 
@@ -483,7 +519,7 @@ export class AdminReportViewComponent implements OnInit {
       // Exportar directamente en formato Excel
       this.exportService.exportToExcel(data, fileName);
     } catch (err: any) {
-      this.error = `Error al exportar: ${err.message || 'Error desconocido'}`;
+      console.error(`Error al exportar a Excel: ${err.message || 'Error desconocido'}`);
     }
   }
 
@@ -599,14 +635,14 @@ export class AdminReportViewComponent implements OnInit {
     }
 
     if (data.length === 0) {
-      this.error = 'No hay datos para exportar.';
+      console.warn('No hay datos para exportar a PDF.');
       return;
     }
 
     try {
       this.exportService.exportToPDF(data, fileName, columns);
     } catch (err: any) {
-      this.error = `Error al exportar a PDF: ${err.message || 'Error desconocido'}`;
+      console.error(`Error al exportar a PDF: ${err.message || 'Error desconocido'}`);
     }
   }
 
@@ -743,21 +779,61 @@ export class AdminReportViewComponent implements OnInit {
         break;
     }
 
+    // Si no hay datos, mostrar mensaje en consola y salir
+    if (data.length === 0) {
+      console.warn('No hay datos para exportar a CSV.');
+      return;
+    }
+
     // Añadir timestamp para evitar sobrescritura
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     filename = `${filename}_${timestamp}.csv`;
 
-    this.exportService.exportToCSV(data, filename);
+    try {
+      this.exportService.exportToCSV(data, filename);
+    } catch (err: any) {
+      console.error(`Error al exportar a CSV: ${err.message || 'Error desconocido'}`);
+    }
   }
 
   // Método para manejar el ordenamiento en las tablas
   onSortChange(sort: Sort): void {
     // Si no hay una dirección activa o la columna es inválida, no hacemos nada
     if (!sort.active || sort.direction === '') {
-      return;
+      this.sortActive = '';
+      this.sortDirection = '';
+    } else {
+      this.sortActive = sort.active;
+      this.sortDirection = sort.direction;
     }
 
     // Aplicamos el ordenamiento en la tabla y luego recargamos los datos
     this.loadCurrentReport();
+  }
+
+  // Método para validar que la fecha de fin no sea anterior a la fecha de inicio
+  private validateDates(): void {
+    const startDate = this.filterForm.get('startDate')?.value;
+    const endDate = this.filterForm.get('endDate')?.value;
+
+    if (startDate && endDate) {
+      const startDateObj = new Date(startDate);
+      const endDateObj = new Date(endDate);
+
+      if (endDateObj < startDateObj) {
+        this.filterForm.get('endDate')?.setErrors({ 'dateError': 'La fecha de fin no puede ser anterior a la de inicio' });
+      } else {
+        // Limpiar solo este error específico, manteniendo otros errores si existen
+        const currentErrors = this.filterForm.get('endDate')?.errors;
+        if (currentErrors) {
+          delete currentErrors['dateError'];
+          if (Object.keys(currentErrors).length === 0) {
+            this.filterForm.get('endDate')?.setErrors(null);
+          } else {
+            this.filterForm.get('endDate')?.setErrors(currentErrors);
+          }
+        }
+      }
+    }
   }
 }

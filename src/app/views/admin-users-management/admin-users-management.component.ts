@@ -109,14 +109,25 @@ export class AdminUsersManagementComponent implements OnInit {
 
     this.adminDashboardService.getClientUsers().subscribe({
       next: (users: AdminUser[]) => {
-        this.allClientUsers = users;
+        this.allClientUsers = users || [];
         this.filteredClientUsers = [...this.allClientUsers];
         this.loadingUsers.clients = false;
+        
+        if (this.allClientUsers.length === 0) {
+          this.snackBar.open('No se encontraron clientes en el sistema', 'Cerrar', {
+            duration: 5000
+          });
+        }
       },
       error: (error: any) => {
         console.error('Error al cargar los clientes:', error);
         this.loadingUsers.clients = false;
-        this.errorUsers.clients = 'Error al cargar los clientes. Por favor, intenta más tarde.';
+        this.errorUsers.clients = `Error al cargar los clientes: ${error.status} ${error.statusText}`;
+        
+        this.snackBar.open('Error al cargar los clientes. Revisa la consola para más detalles', 'Cerrar', {
+          duration: 5000,
+          panelClass: ['error-snackbar']
+        });
       }
     });
   }
@@ -127,14 +138,25 @@ export class AdminUsersManagementComponent implements OnInit {
 
     this.adminDashboardService.getProviderUsers().subscribe({
       next: (users: AdminUser[]) => {
-        this.allProviderUsers = users;
+        this.allProviderUsers = users || [];
         this.filteredProviderUsers = [...this.allProviderUsers];
         this.loadingUsers.providers = false;
+        
+        if (this.allProviderUsers.length === 0) {
+          this.snackBar.open('No se encontraron proveedores en el sistema', 'Cerrar', {
+            duration: 5000
+          });
+        }
       },
       error: (error: any) => {
         console.error('Error al cargar los proveedores:', error);
         this.loadingUsers.providers = false;
-        this.errorUsers.providers = 'Error al cargar los proveedores. Por favor, intenta más tarde.';
+        this.errorUsers.providers = `Error al cargar los proveedores: ${error.status} ${error.statusText}`;
+        
+        this.snackBar.open('Error al cargar los proveedores. Revisa la consola para más detalles', 'Cerrar', {
+          duration: 5000,
+          panelClass: ['error-snackbar']
+        });
       }
     });
   }
@@ -147,14 +169,26 @@ export class AdminUsersManagementComponent implements OnInit {
     this.spaceService.getAllSpacesForAdmin().subscribe({
       next: (spaces: AdminSpace[]) => {
         console.log('Espacios cargados con éxito:', spaces);
-        this.allSpaces = spaces;
+        this.allSpaces = spaces || [];
         this.filteredSpaces = [...this.allSpaces];
         this.loadingSpaces = false;
+        
+        if (this.allSpaces.length === 0) {
+          this.snackBar.open('No se encontraron espacios en el sistema', 'Cerrar', {
+            duration: 5000
+          });
+        }
       },
       error: (error: any) => {
         console.error('Error al cargar los espacios:', error);
+        console.error('Detalles del error:', JSON.stringify(error));
         this.loadingSpaces = false;
-        this.errorSpaces = 'Error al cargar los espacios. Por favor, intenta más tarde.';
+        this.errorSpaces = `Error al cargar los espacios: ${error.status} ${error.statusText}`;
+        
+        this.snackBar.open('Error al cargar los espacios. Revisa la consola para más detalles', 'Cerrar', {
+          duration: 5000,
+          panelClass: ['error-snackbar']
+        });
       }
     });
   }
@@ -253,8 +287,30 @@ export class AdminUsersManagementComponent implements OnInit {
       return 'N/A';
     }
     
+    let date: Date;
     try {
-      const date = typeof timestamp === 'number' ? new Date(timestamp) : new Date(timestamp);
+      if (typeof timestamp === 'number') {
+        // Si es un timestamp numérico
+        date = new Date(timestamp);
+      } else if (typeof timestamp === 'string') {
+        // Si es un string en formato ISO o similar
+        if (timestamp.match(/^\d+$/)) {
+          // Si es un string que parece un número, convertirlo a número primero
+          date = new Date(parseInt(timestamp, 10));
+        } else {
+          // Intentar parsear como fecha ISO
+          date = new Date(timestamp);
+        }
+      } else {
+        return 'Formato inválido';
+      }
+      
+      // Verificar si la fecha es válida
+      if (isNaN(date.getTime())) {
+        return 'Fecha inválida';
+      }
+      
+      // Formatear fecha para mostrar
       return date.toLocaleString('es-ES', {
         day: '2-digit',
         month: '2-digit',
@@ -318,5 +374,30 @@ export class AdminUsersManagementComponent implements OnInit {
     if (this.selectedTab === 1) return 'PROVEEDOR';
     
     return 'Desconocido';
+  }
+
+  /**
+   * Muestra detalles completos de un usuario en una notificación
+   */
+  showUserDetails(user: AdminUser): void {
+    // Crear una representación legible de las fechas
+    const lastLogin = user.lastLoginAt ? this.formatDateTime(user.lastLoginAt) : 'Nunca';
+    const registration = user.registrationDate ? this.formatDateTime(user.registrationDate) : 'Desconocida';
+    
+    // Mostrar información en una notificación
+    const message = `
+      ID: ${user.id}
+      Nombre: ${user.name}
+      Email: ${user.email}
+      Rol: ${this.getUserRoleName(user)}
+      Estado: ${user.enabled ? 'Activo' : 'Inactivo'}
+      Último login: ${lastLogin}
+      Fecha registro: ${registration}
+    `;
+    
+    this.snackBar.open(message, 'Cerrar', {
+      duration: 10000,
+      verticalPosition: 'top'
+    });
   }
 } 

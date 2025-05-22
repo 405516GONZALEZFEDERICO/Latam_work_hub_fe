@@ -42,6 +42,11 @@ export interface AdminUser {
   enabled: boolean;
   lastLoginAt?: string | number;
   registrationDate?: string | number;
+  totalSpaces?: number | null;
+  activeContracts?: number | null;
+  totalRevenue?: number | null;
+  totalBookings?: number | null;
+  totalSpending?: number | null;
 }
 
 export interface AmenityAdmin {

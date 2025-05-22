@@ -63,13 +63,17 @@
               <!-- Último Login Column -->
               <ng-container matColumnDef="lastLoginAt">
                 <th mat-header-cell *matHeaderCellDef> Último ingreso </th>
-                <td mat-cell *matCellDef="let user"> {{ user?.lastLoginAt ? formatDateTime(user.lastLoginAt) : 'Nunca' }} </td>
+                <td mat-cell *matCellDef="let user">
+                  {{ user?.lastLoginAt ? formatDateTime(user.lastLoginAt) : 'Nunca' }}
+                </td>
               </ng-container>
 
               <!-- Fecha Registro Column -->
               <ng-container matColumnDef="registrationDate">
                 <th mat-header-cell *matHeaderCellDef> Fecha de registro </th>
-                <td mat-cell *matCellDef="let user"> {{ user?.registrationDate ? formatDateTime(user.registrationDate) : 'Desconocida' }} </td>
+                <td mat-cell *matCellDef="let user">
+                  {{ user?.registrationDate ? formatDateTime(user.registrationDate) : 'Desconocida' }}
+                </td>
               </ng-container>
 
               <!-- Estado Column -->
@@ -91,6 +95,9 @@
                     (click)="toggleUserStatus(user)" 
                     [matTooltip]="user.enabled ? 'Desactivar Usuario' : 'Activar Usuario'">
                     <mat-icon>{{ user.enabled ? 'block' : 'check_circle' }}</mat-icon>
+                  </button>
+                  <button mat-icon-button color="accent" (click)="showUserDetails(user)" matTooltip="Ver detalles">
+                    <mat-icon>info</mat-icon>
                   </button>
                 </td>
               </ng-container>
@@ -168,16 +175,20 @@
                 <td mat-cell *matCellDef="let user"> {{ getUserRoleName(user) }} </td>
               </ng-container>
 
-              <!-- Último Login Column -->
+              <!-- Último Login Column para proveedores -->
               <ng-container matColumnDef="lastLoginAt">
                 <th mat-header-cell *matHeaderCellDef> Último ingreso </th>
-                <td mat-cell *matCellDef="let user"> {{ user?.lastLoginAt ? formatDateTime(user.lastLoginAt) : 'Nunca' }} </td>
+                <td mat-cell *matCellDef="let user">
+                  {{ user?.lastLoginAt ? formatDateTime(user.lastLoginAt) : 'Nunca' }}
+                </td>
               </ng-container>
 
-              <!-- Fecha Registro Column -->
+              <!-- Fecha Registro Column para proveedores -->
               <ng-container matColumnDef="registrationDate">
                 <th mat-header-cell *matHeaderCellDef> Fecha de registro </th>
-                <td mat-cell *matCellDef="let user"> {{ user?.registrationDate ? formatDateTime(user.registrationDate) : 'Desconocida' }} </td>
+                <td mat-cell *matCellDef="let user">
+                  {{ user?.registrationDate ? formatDateTime(user.registrationDate) : 'Desconocida' }}
+                </td>
               </ng-container>
 
               <!-- Estado Column -->
@@ -199,6 +210,9 @@
                     (click)="toggleUserStatus(user)" 
                     [matTooltip]="user.enabled ? 'Desactivar Usuario' : 'Activar Usuario'">
                     <mat-icon>{{ user.enabled ? 'block' : 'check_circle' }}</mat-icon>
+                  </button>
+                  <button mat-icon-button color="accent" (click)="showUserDetails(user)" matTooltip="Ver detalles">
+                    <mat-icon>info</mat-icon>
                   </button>
                 </td>
               </ng-container>
