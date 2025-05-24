@@ -8,6 +8,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormsModule } from '@angular/forms';
 
 // Importar ngx-charts para gráficos
@@ -19,7 +20,8 @@ import {
   KpiCardsDto,
   MonthlyRevenueDto,
   ReservationsBySpaceTypeDto,
-  PeakHoursDto
+  PeakHoursDto,
+  TopSpacesDto
 } from '../../services/dashboard/admin-dashboard.service';
 
 @Component({
@@ -35,6 +37,7 @@ import {
     MatGridListModule,
     MatSelectModule,
     MatFormFieldModule,
+    MatTooltipModule,
     FormsModule,
     NgxChartsModule
   ],
@@ -63,12 +66,31 @@ export class AdminDashboardViewComponent implements OnInit, AfterViewInit {
   // Datos de horas pico
   peakHoursData: any[] = [];
   
+  // Datos del top 5 de espacios
+  topSpacesData: any[] = [];
+  
+  // Datos de contratos por tipo de espacio
+  contractsBySpaceTypeData: any[] = [];
+  
+  // Control de navegación para gráficos drill-down
+  showSpaceTypeDetails = false;
+  showContractTypeDetails = false;
+  selectedSpaceType = '';
+  selectedContractType = '';
+  
+  // Nuevo sistema de navegación para vistas expandidas
+  currentView: 'overview' | 'monthlyRevenue' | 'spaceTypes' | 'peakHours' | 'contractTypes' | 'topSpaces' = 'overview';
+  expandedChartData: any = null;
+  expandedChartTitle = '';
+  
   // Estados de carga
   loading = {
     kpi: false,
     monthlyRevenue: false,
     spaceType: false,
-    peakHours: false
+    peakHours: false,
+    topSpaces: false,
+    contractsBySpaceType: false
   };
   
   // Estados de error
@@ -76,7 +98,9 @@ export class AdminDashboardViewComponent implements OnInit, AfterViewInit {
     kpi: null as string | null,
     monthlyRevenue: null as string | null,
     spaceType: null as string | null,
-    peakHours: null as string | null
+    peakHours: null as string | null,
+    topSpaces: null as string | null,
+    contractsBySpaceType: null as string | null
   };
   
   // Opciones generales para los gráficos
@@ -119,6 +143,8 @@ export class AdminDashboardViewComponent implements OnInit, AfterViewInit {
     this.loadMonthlyRevenue();
     this.loadReservationsBySpaceType();
     this.loadPeakHours();
+    this.loadTop5Spaces();
+    this.loadRentalContractsBySpaceType();
   }
 
   loadKpiData(): void {
@@ -196,6 +222,40 @@ export class AdminDashboardViewComponent implements OnInit, AfterViewInit {
     });
   }
 
+  loadTop5Spaces(): void {
+    this.loading.topSpaces = true;
+    this.dashboardService.getTop5Spaces().subscribe({
+      next: (data) => {
+        this.topSpacesData = data;
+        this.loading.topSpaces = false;
+      },
+      error: (err) => {
+        console.error('Error cargando top 5 espacios:', err);
+        this.error.topSpaces = 'No se pudo cargar el top 5 de espacios.';
+        this.loading.topSpaces = false;
+      }
+    });
+  }
+
+  loadRentalContractsBySpaceType(): void {
+    this.loading.contractsBySpaceType = true;
+    this.dashboardService.getRentalContractsBySpaceType().subscribe({
+      next: (data) => {
+        // Formatear los datos para gráfico de barras
+        this.contractsBySpaceTypeData = data.map(item => ({
+          name: item.spaceTypeName,
+          value: item.reservationCount
+        }));
+        this.loading.contractsBySpaceType = false;
+      },
+      error: (err) => {
+        console.error('Error cargando contratos por tipo de espacio:', err);
+        this.error.contractsBySpaceType = 'No se pudo cargar el gráfico de contratos por tipo.';
+        this.loading.contractsBySpaceType = false;
+      }
+    });
+  }
+
   onMonthsChange(): void {
     this.loadMonthlyRevenue(this.selectedMonths);
   }
@@ -203,5 +263,97 @@ export class AdminDashboardViewComponent implements OnInit, AfterViewInit {
   // Función auxiliar para formatear montos como pesos
   formatCurrency(value: number): string {
     return value ? `$${value.toLocaleString('es-AR')}` : '$0';
+  }
+
+  // Métodos para navegación drill-down originales
+  onSpaceTypeSelect(event: any): void {
+    this.selectedSpaceType = event.name;
+    this.showSpaceTypeDetails = true;
+    // Aquí podrías cargar datos detallados del tipo seleccionado
+    console.log('Tipo de espacio seleccionado:', event.name);
+  }
+
+  onContractTypeSelect(event: any): void {
+    this.selectedContractType = event.name;
+    this.showContractTypeDetails = true;
+    // Aquí podrías cargar datos detallados del tipo seleccionado
+    console.log('Tipo de contrato seleccionado:', event.name);
+  }
+
+  goBackToSpaceTypes(): void {
+    this.showSpaceTypeDetails = false;
+    this.selectedSpaceType = '';
+  }
+
+  goBackToContractTypes(): void {
+    this.showContractTypeDetails = false;
+    this.selectedContractType = '';
+  }
+
+  // Nuevos métodos para navegación de vistas expandidas
+  expandChart(chartType: string): void {
+    switch (chartType) {
+      case 'monthlyRevenue':
+        this.currentView = 'monthlyRevenue';
+        this.expandedChartData = this.monthlyRevenueData;
+        this.expandedChartTitle = 'Ingresos Mensuales - Vista Expandida';
+        break;
+      
+      case 'spaceTypes':
+        this.currentView = 'spaceTypes';
+        this.expandedChartData = this.spaceTypeData.length > 0 ? this.spaceTypeData : this.sampleSpaceTypeData;
+        this.expandedChartTitle = 'Reservas por Tipo de Espacio - Vista Expandida';
+        break;
+      
+      case 'peakHours':
+        this.currentView = 'peakHours';
+        this.expandedChartData = this.peakHoursData;
+        this.expandedChartTitle = 'Horarios de Mayor Demanda - Vista Expandida';
+        break;
+      
+      case 'contractTypes':
+        this.currentView = 'contractTypes';
+        this.expandedChartData = this.contractsBySpaceTypeData;
+        this.expandedChartTitle = 'Contratos por Tipo de Espacio - Vista Expandida';
+        break;
+      
+      case 'topSpaces':
+        this.currentView = 'topSpaces';
+        this.expandedChartData = this.topSpacesData;
+        this.expandedChartTitle = 'Top 5 Espacios - Vista Expandida';
+        break;
+    }
+  }
+
+  goBackToOverview(): void {
+    this.currentView = 'overview';
+    this.expandedChartData = null;
+    this.expandedChartTitle = '';
+    // También resetear drill-down states
+    this.showSpaceTypeDetails = false;
+    this.showContractTypeDetails = false;
+    this.selectedSpaceType = '';
+    this.selectedContractType = '';
+  }
+
+  // Método para detectar clicks en gráficos para expandir
+  onChartClick(event: any, chartType: string): void {
+    // Deshabilitar drill-down en vistas expandidas para evitar confusión
+    // Solo expandir si estamos en vista general
+    if (this.currentView === 'overview') {
+      this.expandChart(chartType);
+    }
+    // Remover el drill-down automático en vistas expandidas
+    // Los usuarios pueden usar botones específicos si necesitan detalles
+  }
+
+  // Método auxiliar para verificar si estamos en vista general
+  isOverviewMode(): boolean {
+    return this.currentView === 'overview';
+  }
+
+  // Método auxiliar para verificar si estamos en una vista expandida específica
+  isExpandedView(viewType: string): boolean {
+    return this.currentView === viewType;
   }
 } 

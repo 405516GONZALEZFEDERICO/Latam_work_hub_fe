@@ -1,6 +1,5 @@
 // Filtros para informe de espacios
 export interface SpaceReportFilters {
-  providerId?: number;
   status?: string;
 }
 
@@ -8,9 +7,6 @@ export interface SpaceReportFilters {
 export interface BookingReportFilters {
   startDate?: string;
   endDate?: string;
-  clientId?: number;
-  providerId?: number;
-  spaceId?: number;
   status?: string;
 }
 
@@ -23,17 +19,14 @@ export interface UserReportFilters {
 
 // Filtros para informe de contratos
 export interface ContractReportFilters {
-  startDate?: string;
-  endDate?: string;
-  tenantId?: number;   // clientId en frontend
-  ownerId?: number;    // providerId en frontend
+  contractStartDate?: string;
+  contractEndDate?: string;
   status?: string;
 }
 
 // Filtros para informe de facturas
 export interface InvoiceReportFilters {
   startDate?: string;
-  clientId?: number;
   status?: string;
 }
 

@@ -342,12 +342,12 @@ export class CompanyFormComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           // Mostrar mensaje de éxito mejorado
-          this.snackBar.open('¡Información de la empresa guardada exitosamente!', 'Cerrar', {
-            duration: 4000,
-            horizontalPosition: 'center',
-            verticalPosition: 'top',
-            panelClass: ['success-snackbar', 'custom-notification']
-          });
+          // this.snackBar.open('¡Información de la empresa guardada exitosamente!', 'Cerrar', {
+          //   duration: 4000,
+          //   horizontalPosition: 'center',
+          //   verticalPosition: 'top',
+          //   panelClass: ['success-snackbar', 'custom-notification']
+          // });
           
           this.formSubmitted.emit(response);
         },

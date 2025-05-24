@@ -2,13 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environment/environment';
-import { 
-  SpaceReportRow, 
-  BookingReportRow, 
-  UserReportRow, 
-  ContractReportRow, 
-  InvoiceReportRow, 
-  ExpiringContractAlert, 
+import {
+  SpaceReportRow,
+  BookingReportRow,
+  UserReportRow,
+  ContractReportRow,
+  InvoiceReportRow,
+  ExpiringContractAlert,
   OverdueInvoiceAlert,
   SpaceReportFilters,
   BookingReportFilters,
@@ -41,39 +41,83 @@ export class ReportService {
 
   constructor(private http: HttpClient) { }
 
-  private buildParams<T>(filters?: T, page = 0, size = 10, sortField?: string, sortDirection?: string): HttpParams {
-    let params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
-    
-    // Añadir parámetros de ordenamiento si están disponibles
-    if (sortField && sortDirection) {
-      params = params.set('sort', `${sortField},${sortDirection}`);
-    }
-    
-    if (!filters) return params;
-    
+// private buildParams<T>(filters?: T, page = 0, size = 10): HttpParams {
+//   let params = new HttpParams()
+//     .set('page', page.toString())
+//     .set('size', size.toString());
+
+//   if (filters && filters['status']) {
+//     params = params.set('status', filters['status']);
+//   }
+
+//   return params;
+// }
+
+private buildParams<T>(
+  filters?: T, 
+  page = 0, 
+  size = 10, 
+  sortField?: string, 
+  sortDirection?: string
+): HttpParams {
+  let params = new HttpParams()
+    .set('page', page.toString())
+    .set('size', size.toString());
+
+  // Agregar ordenamiento si existe
+  if (sortField && sortDirection) {
+    params = params.set('sort', `${sortField},${sortDirection}`);
+  }
+
+  // Agregar filtros si existen
+  if (filters) {
     Object.keys(filters).forEach(key => {
       const value = (filters as any)[key];
       if (value !== undefined && value !== null && value !== '') {
-        params = params.set(key, value.toString());
+        params = params.append(key, value.toString());
       }
     });
-    
-    return params;
   }
 
-  // Endpoints de informes
-  
-  getSpacesReport(filters?: SpaceReportFilters, page = 0, size = 10, sortField?: string, sortDirection?: string): Observable<PageResponse<SpaceReportRow>> {
-    const params = this.buildParams<SpaceReportFilters>(filters, page, size, sortField, sortDirection);
-    return this.http.get<PageResponse<SpaceReportRow>>(`${this.apiUrl}/spaces`, { params });
-  }
+  return params;
+}
+  // Reports endpoints
+  // GET /reports-admin/spaces - Get spaces report with optional status filter and pagination
 
-  getBookingsReport(filters?: BookingReportFilters, page = 0, size = 10, sortField?: string, sortDirection?: string): Observable<PageResponse<BookingReportRow>> {
-    const params = this.buildParams<BookingReportFilters>(filters, page, size, sortField, sortDirection);
-    return this.http.get<PageResponse<BookingReportRow>>(`${this.apiUrl}/bookings`, { params });
-  }
+  getSpacesReport(
+  filters?: SpaceReportFilters, 
+  page = 0, 
+  size = 10,
+  sortField?: string,
+  sortDirection?: string
+): Observable<PageResponse<SpaceReportRow>> {
+  const params = this.buildParams<SpaceReportFilters>(
+    filters, 
+    page, 
+    size, 
+    sortField, 
+    sortDirection
+  );
+
+  return this.http.get<PageResponse<SpaceReportRow>>(`${this.apiUrl}/spaces`, { params });
+}
+
+getBookingsReport(
+  filters?: BookingReportFilters, 
+  page = 0, 
+  size = 10, 
+  sortField?: string, 
+  sortDirection?: string
+): Observable<PageResponse<BookingReportRow>> {
+  const params = this.buildParams<BookingReportFilters>(
+    filters, 
+    page, 
+    size, 
+    sortField, 
+    sortDirection
+  );
+  return this.http.get<PageResponse<BookingReportRow>>(`${this.apiUrl}/bookings`, { params });
+}
 
   getUsersReport(filters?: UserReportFilters, page = 0, size = 10, sortField?: string, sortDirection?: string): Observable<PageResponse<UserReportRow>> {
     const params = this.buildParams<UserReportFilters>(filters, page, size, sortField, sortDirection);

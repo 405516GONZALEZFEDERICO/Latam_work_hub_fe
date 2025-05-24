@@ -25,34 +25,34 @@ export interface PagedResponse<T> {
 export class SearchSpaceService {
   private apiUrl = `${environment.apiUrl}/spaces`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getSpaces(filters?: FilterState, page: number = 0, size: number = 10): Observable<PagedResponse<SearchSpace>> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
-    
+
     if (filters) {
       if (filters.pricePerHour !== null) {
         params = params.set('pricePerHour', filters.pricePerHour.toString());
       }
-      
+
       if (filters.pricePerDay !== null) {
         params = params.set('pricePerDay', filters.pricePerDay.toString());
       }
-      
+
       if (filters.pricePerMonth !== null) {
         params = params.set('pricePerMonth', filters.pricePerMonth.toString());
       }
-      
+
       if (filters.area !== null) {
         params = params.set('area', filters.area.toString());
       }
-      
+
       if (filters.capacity !== null) {
         params = params.set('capacity', filters.capacity.toString());
       }
-      
+
       if (filters.spaceTypeId !== null) {
         // Asegurar que spaceTypeId sea un número válido
         const typeId = Number(filters.spaceTypeId);
@@ -63,15 +63,15 @@ export class SearchSpaceService {
           console.error('spaceTypeId no es un número válido:', filters.spaceTypeId);
         }
       }
-      
+
       if (filters.cityId !== null) {
         params = params.set('cityId', filters.cityId.toString());
       }
-      
+
       if (filters.countryId !== null) {
         params = params.set('countryId', filters.countryId.toString());
       }
-      
+
       if (filters.amenityIds !== null && filters.amenityIds.length > 0) {
         // Para manejar lista de amenidades
         filters.amenityIds.forEach(id => {
@@ -79,12 +79,12 @@ export class SearchSpaceService {
         });
       }
     }
-    
+
     return this.http.get<PagedResponse<any>>(`${this.apiUrl}/search`, { params }).pipe(
       map(response => {
         // Mapear los contenidos de la página y mantener la información de paginación
         const mappedContent = response.content.map(space => this.mapSpaceResponseToSearchSpace(space));
-        
+
         return {
           ...response,
           content: mappedContent
@@ -106,29 +106,29 @@ export class SearchSpaceService {
       .set('uid', uid)
       .set('page', page.toString())
       .set('size', size.toString());
-    
+
     // Añadir los mismos filtros que en getSpaces
     if (filters) {
       if (filters.pricePerHour !== null) {
         params = params.set('pricePerHour', filters.pricePerHour.toString());
       }
-      
+
       if (filters.pricePerDay !== null) {
         params = params.set('pricePerDay', filters.pricePerDay.toString());
       }
-      
+
       if (filters.pricePerMonth !== null) {
         params = params.set('pricePerMonth', filters.pricePerMonth.toString());
       }
-      
+
       if (filters.area !== null) {
         params = params.set('area', filters.area.toString());
       }
-      
+
       if (filters.capacity !== null) {
         params = params.set('capacity', filters.capacity.toString());
       }
-      
+
       if (filters.spaceTypeId !== null) {
         // Asegurar que spaceTypeId sea un número válido
         const typeId = Number(filters.spaceTypeId);
@@ -139,15 +139,15 @@ export class SearchSpaceService {
           console.error('spaceTypeId no es un número válido en búsqueda de proveedor:', filters.spaceTypeId);
         }
       }
-      
+
       if (filters.cityId !== null) {
         params = params.set('cityId', filters.cityId.toString());
       }
-      
+
       if (filters.countryId !== null) {
         params = params.set('countryId', filters.countryId.toString());
       }
-      
+
       if (filters.amenityIds !== null && filters.amenityIds.length > 0) {
         // Para manejar lista de amenidades
         filters.amenityIds.forEach(id => {
@@ -155,12 +155,12 @@ export class SearchSpaceService {
         });
       }
     }
-    
+
     return this.http.get<PagedResponse<any>>(`${this.apiUrl}/provider/spaces`, { params }).pipe(
       map(response => {
         // Mapear los contenidos de la página y mantener la información de paginación
         const mappedContent = response.content.map(space => this.mapSpaceResponseToSearchSpace(space));
-        
+
         return {
           ...response,
           content: mappedContent
@@ -177,18 +177,19 @@ export class SearchSpaceService {
 
   private mapSpaceResponseToSearchSpace(spaceResponse: any): SearchSpace {
     // Extrae la primera foto para usarla como principal, o usa una por defecto
-    const imageUrl = spaceResponse.photoUrl && spaceResponse.photoUrl.length > 0 
-      ? spaceResponse.photoUrl[0] 
+    const imageUrl = spaceResponse.photoUrl && spaceResponse.photoUrl.length > 0
+      ? spaceResponse.photoUrl[0]
       : 'assets/images/spaces/default.jpg';
 
     // Formatear el objeto address para mostrarlo como texto
-    const address = spaceResponse.address ? 
-      `${spaceResponse.address.streetName} ${spaceResponse.address.streetNumber}, ${spaceResponse.address.postalCode}` : 
+    const address = spaceResponse.address ?
+      `${spaceResponse.address.streetName} ${spaceResponse.address.streetNumber}, ${spaceResponse.address.postalCode}` :
       'Dirección no disponible';
 
     return {
       id: spaceResponse.id.toString(),
       title: spaceResponse.name,
+      name: spaceResponse.name, // Agregado para consistencia
       imageUrl: imageUrl,
       address: address,
       hourlyPrice: spaceResponse.pricePerHour,
@@ -196,7 +197,13 @@ export class SearchSpaceService {
       capacity: spaceResponse.capacity,
       providerType: 'COMPANY', // Por defecto, si no viene en la respuesta
       active: spaceResponse.active !== undefined ? spaceResponse.active : true,
-      available: spaceResponse.available !== undefined ? spaceResponse.available : true
+      available: spaceResponse.available !== undefined ? spaceResponse.available : true,
+      // Campos adicionales que faltaban:
+      pricePerHour: spaceResponse.pricePerHour,
+      pricePerDay: spaceResponse.pricePerDay, // ¡Este campo faltaba!
+      pricePerMonth: spaceResponse.pricePerMonth,
+      description: spaceResponse.description,
+      photoUrl: spaceResponse.photoUrl
     };
   }
 } 

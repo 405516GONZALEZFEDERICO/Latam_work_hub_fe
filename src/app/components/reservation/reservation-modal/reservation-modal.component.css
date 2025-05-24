@@ -1,7 +1,4 @@
-.reservation-modal-container {
-  width: 1200px;
-  height: 100%;
-}
+
 
 .reservation-modal {
   border-radius: 8px;
@@ -31,7 +28,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px 24px;
-  background-color:red;
+  background-color: var(--color-primary);
   color: white;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   width: 100%;

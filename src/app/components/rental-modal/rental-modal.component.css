@@ -1,14 +1,3 @@
-.rental-modal {
-  border-radius: 8px;
-  width: 100%;
-  max-width: 1200px;
-  background: #fff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -17,7 +6,7 @@
   background-color: var(--color-primary);
   color: white;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  width: 100%;
+  width: 1200px;
   z-index: 10;
 }
 
@@ -128,7 +117,7 @@
   width: 100%;
   max-width: 400px;
   height: 48px;
-  background-color: var(--color-primary);
+  background-color: #009ee3 !important;
   color: white;
   border: none;
   border-radius: 4px;
@@ -140,7 +129,7 @@
 }
 
 .payment-options button:hover {
-  background-color: var(--color-primary-dark);
+  background-color: #008ecf !important;
 }
 
 .secure-payment-note {

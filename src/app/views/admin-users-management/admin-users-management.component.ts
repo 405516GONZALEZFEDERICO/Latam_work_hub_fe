@@ -15,11 +15,13 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AdminDashboardService } from '../../services/dashboard/admin-dashboard.service';
 import { AuthService } from '../../services/auth-service/auth.service';
 import { SpaceService } from '../../services/space/space.service';
 import { AdminSpace, AdminUser } from '../../models/admin.model';
+import { UserRole, RoleChangeDto } from '../../models/user';
 import { Router } from '@angular/router';
 
 @Component({
@@ -42,6 +44,7 @@ import { Router } from '@angular/router';
     MatSlideToggleModule,
     MatTooltipModule,
     MatSnackBarModule,
+    MatDialogModule,
     FormsModule,
     ReactiveFormsModule
   ],
@@ -70,8 +73,8 @@ export class AdminUsersManagementComponent implements OnInit {
   errorSpaces: string | null = null;
 
   // Columnas de las tablas
-  userColumns: string[] = ['firebaseUid', 'name', 'email', 'lastLoginAt', 'registrationDate', 'enabled', 'actions'];
-  spaceColumns: string[] = ['id', 'name', 'spaceType', 'address.city', 'capacity', 'pricePerHour', 'active', 'actions'];
+  userColumns: string[] = ['name', 'email', 'lastLoginAt', 'registrationDate', 'enabled', 'actions', 'change-role'];
+  spaceColumns: string[] = [ 'name', 'spaceType', 'address.city', 'capacity', 'pricePerHour', 'active', 'actions'];
 
   // Filtrado
   userFilter: string = '';
@@ -87,7 +90,8 @@ export class AdminUsersManagementComponent implements OnInit {
     private authService: AuthService,
     private snackBar: MatSnackBar,
     private spaceService: SpaceService,
-    private router: Router
+    private router: Router,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -199,11 +203,11 @@ export class AdminUsersManagementComponent implements OnInit {
 
   toggleUserStatus(user: AdminUser): void {
     console.log('Intentando cambiar estado del usuario:', user);
-    console.log('Firebase UID del usuario:', user.firebaseUid);
+    console.log('FirebaseUID del usuario:', user.firebaseUid);
     
     if (!user.firebaseUid) {
-      console.error('Error: El usuario no tiene un UID de Firebase válido', user);
-      this.snackBar.open('Error: El usuario no tiene un identificador válido', 'Cerrar', {
+      console.error('Error: El usuario no tiene un firebaseUid válido', user);
+      this.snackBar.open('Error: El usuario no tiene un UID de Firebase válido', 'Cerrar', {
         duration: 5000
       });
       return;
@@ -380,24 +384,113 @@ export class AdminUsersManagementComponent implements OnInit {
    * Muestra detalles completos de un usuario en una notificación
    */
   showUserDetails(user: AdminUser): void {
-    // Crear una representación legible de las fechas
-    const lastLogin = user.lastLoginAt ? this.formatDateTime(user.lastLoginAt) : 'Nunca';
-    const registration = user.registrationDate ? this.formatDateTime(user.registrationDate) : 'Desconocida';
+    console.log('Mostrando detalles del usuario:', user);
+    // TODO: Implementar modal con detalles completos del usuario
+  }
+
+  openRoleChangeDialog(user: AdminUser): void {
+    // Mapeo de roles del backend a nombres en español
+    const roleDisplayNames = {
+      'ADMIN': 'Administrador',
+      'PROVEEDOR': 'Proveedor', 
+      'CLIENTE': 'Cliente',
+      'DEFAULT': 'Sin asignar'
+    };
+
+    // Mapeo de nombres en español a roles del backend
+    const backendRoleMapping = {
+      'Administrador': 'ADMIN',
+      'Proveedor': 'PROVIDER',
+      'Cliente': 'CLIENT'
+    };
+
+    const currentRoleDisplay = roleDisplayNames[user.role as keyof typeof roleDisplayNames] || 'Desconocido';
     
-    // Mostrar información en una notificación
-    const message = `
-      ID: ${user.id}
-      Nombre: ${user.name}
-      Email: ${user.email}
-      Rol: ${this.getUserRoleName(user)}
-      Estado: ${user.enabled ? 'Activo' : 'Inactivo'}
-      Último login: ${lastLogin}
-      Fecha registro: ${registration}
-    `;
-    
-    this.snackBar.open(message, 'Cerrar', {
-      duration: 10000,
-      verticalPosition: 'top'
+    // Crear opciones excluyendo el rol actual y DEFAULT
+    const availableRoles = Object.keys(backendRoleMapping).filter(role => 
+      backendRoleMapping[role as keyof typeof backendRoleMapping] !== this.mapFrontendToBackendRole(user.role as UserRole)
+    );
+
+    // Mostrar confirmación simple con prompt nativo por ahora
+    const selectedRole = prompt(
+      `Cambiar rol de ${user.name || user.email}\n\nRol actual: ${currentRoleDisplay}\n\nSeleccione nuevo rol:\n1. Administrador\n2. Proveedor\n3. Cliente\n\nIngrese el número (1, 2 o 3):`
+    );
+
+    if (selectedRole) {
+      let newRoleSpanish = '';
+      let newRoleBackend = '';
+
+      switch (selectedRole.trim()) {
+        case '1':
+          newRoleSpanish = 'Administrador';
+          newRoleBackend = 'ADMIN';
+          break;
+        case '2':
+          newRoleSpanish = 'Proveedor'; 
+          newRoleBackend = 'PROVIDER';
+          break;
+        case '3':
+          newRoleSpanish = 'Cliente';
+          newRoleBackend = 'CLIENT';
+          break;
+        default:
+          this.snackBar.open('Selección inválida', 'Cerrar', { duration: 3000 });
+          return;
+      }
+
+      if (confirm(`¿Está seguro de cambiar el rol de ${user.name || user.email} a ${newRoleSpanish}?`)) {
+        this.changeUserRole(user, newRoleBackend as UserRole);
+      }
+    }
+  }
+
+  private mapFrontendToBackendRole(role: UserRole): string {
+    const mapping = {
+      'ADMIN': 'ADMIN',
+      'PROVEEDOR': 'PROVIDER', 
+      'CLIENTE': 'CLIENT',
+      'DEFAULT': 'DEFAULT'
+    };
+    return mapping[role] || role;
+  }
+
+  private changeUserRole(user: AdminUser, newRole: UserRole): void {
+    if (!user.firebaseUid) {
+      this.snackBar.open('Error: Usuario sin UID válido', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    // Mapear el rol al formato del backend
+    const backendRole = this.mapFrontendToBackendRole(newRole);
+
+    this.authService.changeUserRole(user.firebaseUid, backendRole as UserRole).subscribe({
+      next: (response) => {
+        // Actualizar el rol localmente
+        user.role = newRole;
+        
+        // Refrescar las listas filtradas
+        this.applyUserFilter();
+        
+        this.snackBar.open(`Rol cambiado exitosamente a ${this.getRoleDisplayName(newRole)}`, 'Cerrar', { 
+          duration: 3000 
+        });
+      },
+      error: (error) => {
+        console.error('Error al cambiar rol:', error);
+        this.snackBar.open('Error al cambiar el rol del usuario', 'Cerrar', { 
+          duration: 3000 
+        });
+      }
     });
+  }
+
+  private getRoleDisplayName(role: UserRole): string {
+    const displayNames = {
+      'ADMIN': 'Administrador',
+      'PROVEEDOR': 'Proveedor',
+      'CLIENTE': 'Cliente', 
+      'DEFAULT': 'Sin asignar'
+    };
+    return displayNames[role] || role;
   }
 } 

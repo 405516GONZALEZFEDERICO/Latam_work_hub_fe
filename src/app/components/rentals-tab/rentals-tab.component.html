@@ -20,6 +20,7 @@
       <mat-card *ngFor="let rental of rentals" 
                 [class.selected]="selectedRental?.id === rental.id"
                 [class.cancelled]="isCancelledStatus(rental.status)"
+                [class.confirmed]="isConfirmedStatus(rental.status)"
                 (click)="selectRental(rental)"
                 class="rental-card">
         <mat-card-content>

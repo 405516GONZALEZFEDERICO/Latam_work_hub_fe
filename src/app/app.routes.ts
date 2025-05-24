@@ -153,6 +153,12 @@ export const routes: Routes = [
         data: { title: 'Configuración' }
       },
       {
+        path: 'faq',
+        loadComponent: () =>
+          import('./components/faq/faq.component').then(m => m.FaqComponent),
+        data: { title: 'Preguntas Frecuentes' }
+      },
+      {
         path: 'reservas',
         loadComponent: () =>
           import('./components/reservas/reservas.component').then(m => m.ReservasComponent),

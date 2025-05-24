@@ -30,7 +30,8 @@
     <div *ngFor="let space of spaces" class="col-md-6 col-lg-4 mb-4">
       <mat-card class="h-100 shadow-sm" [ngClass]="{'inactive-space': space.active === false}">
         <div class="position-relative">
-          <img [src]="space.imageUrl" class="card-img-top" style="height: 200px; object-fit: cover;" [alt]="space.title">
+          <img [src]="space.imageUrl" class="card-img-top" style="height: 200px; object-fit: cover;"
+            [alt]="space.title">
           <!-- Status Badges -->
           <div class="status-badges">
             <span *ngIf="space.active === false" class="status-badge inactive-badge">
@@ -52,40 +53,37 @@
             <h3 class="card-title mb-0">{{space.title}}</h3>
           </div>
           <p class="card-text text-muted mb-3">{{space.address}}</p>
-          
+
+
           <div class="row mb-3">
-            <div class="col-6">
-              <small class="text-muted d-block">Tipo</small>
-              <span>{{space.providerType === 'COMPANY' ? 'Empresa' : 'Individual'}}</span>
-            </div>
-            <div class="col-6">
-              <small class="text-muted d-block">Capacidad</small>
-              <span>{{space.capacity}} personas</span>
-            </div>
-          </div>
-          
-          <div class="row mb-3">
-            <div class="col-6">
+            <div class="col-4">
               <small class="text-muted d-block">Precio/hora</small>
-              <span>${{space.hourlyPrice}}</span>
+              <span>${{space.hourlyPrice || space.pricePerHour}}</span>
             </div>
-            <div class="col-6">
+            <div class="col-4">
+              <small class="text-muted d-block">Precio/día</small>
+              <span>${{space.pricePerDay}}</span>
+            </div>
+            <div class="col-4">
               <small class="text-muted d-block">Precio/mes</small>
-              <span>${{space.monthlyPrice}}</span>
+              <span>${{space.monthlyPrice || space.pricePerMonth}}</span>
             </div>
           </div>
         </mat-card-content>
         <mat-card-actions>
           <div class="d-flex justify-content-end">
-            <button mat-icon-button color="primary" (click)="navigateToView(space.id)" matTooltip="Ver detalles del espacio">
+            <button mat-icon-button color="primary" (click)="navigateToView(space.id)"
+              matTooltip="Ver detalles del espacio">
               <mat-icon>visibility</mat-icon>
             </button>
-            <button mat-icon-button color="accent" [disabled]="space.available === false" (click)="navigateToEdit(space.id)" 
-                  matTooltip="{{space.available === false ? 'No se puede editar un espacio no disponible' : 'Editar espacio'}}">
+            <button mat-icon-button color="accent" [disabled]="space.available === false"
+              (click)="navigateToEdit(space.id)"
+              matTooltip="{{space.available === false ? 'No se puede editar un espacio no disponible' : 'Editar espacio'}}">
               <mat-icon>edit</mat-icon>
             </button>
-            <button mat-icon-button color="warn" [disabled]="space.available === false" (click)="confirmDeleteSpace(space.id)"
-                  matTooltip="{{space.available === false ? 'No se puede eliminar un espacio no disponible' : 'Eliminar espacio'}}">
+            <button mat-icon-button color="warn" [disabled]="space.available === false"
+              (click)="confirmDeleteSpace(space.id)"
+              matTooltip="{{space.available === false ? 'No se puede eliminar un espacio no disponible' : 'Eliminar espacio'}}">
               <mat-icon>delete</mat-icon>
             </button>
           </div>
@@ -97,13 +95,8 @@
   <!-- Pagination -->
   <div class="row mt-4" *ngIf="!isLoading && totalItems > 0">
     <div class="col-12 d-flex justify-content-center">
-      <mat-paginator
-        [length]="totalItems"
-        [pageSize]="pageSize"
-        [pageSizeOptions]="pageSizeOptions"
-        [pageIndex]="currentPage"
-        (page)="handlePageEvent($event)"
-        aria-label="Seleccionar página">
+      <mat-paginator [length]="totalItems" [pageSize]="pageSize" [pageSizeOptions]="pageSizeOptions"
+        [pageIndex]="currentPage" (page)="handlePageEvent($event)" aria-label="Seleccionar página">
       </mat-paginator>
     </div>
   </div>
@@ -118,4 +111,4 @@
       Añadir Espacio
     </button>
   </div>
-</div> 
+</div>

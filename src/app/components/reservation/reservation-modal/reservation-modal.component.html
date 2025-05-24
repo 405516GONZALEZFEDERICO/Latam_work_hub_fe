@@ -1,4 +1,4 @@
-<div class="reservation-modal">
+<div>
   <div class="modal-header">
     <h2>Reservar Espacio</h2>
     <button mat-icon-button (click)="onCancel()">
@@ -186,7 +186,7 @@
       <button type="button" class="mercadopago-button" (click)="onSubmit()" [disabled]="isLoading">
         <div class="mp-button-content">
           <mat-spinner *ngIf="isLoading" diameter="20"></mat-spinner>
-          <span>{{ isLoading ? 'Procesando...' : 'Pagar' }}</span>
+          <span>{{ isLoading ? 'Procesando...' : 'Continuar al Pago' }}</span>
         </div>
       </button>
       

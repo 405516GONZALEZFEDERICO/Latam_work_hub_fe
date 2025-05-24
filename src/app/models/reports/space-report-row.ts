@@ -1,8 +1,9 @@
 export interface SpaceReportRow {
   spaceId: number;
-  spaceName: string;
-  providerName: string;
+  name: string;
+  owner: string;
   bookingCount: number;
+  rentalCount:number;
   revenueGenerated: number;
   status: string;
 } 

@@ -434,7 +434,7 @@ export class SpaceDetailsComponent implements OnInit {
   rentSpace(): void {
     if (this.space) {
       const dialogRef = this.dialog.open(RentalModalComponent, {
-        width: '600px',
+        width: '1200px',
         maxWidth: '98vw',
         maxHeight: '98vh',
         panelClass: 'rental-dialog-container',

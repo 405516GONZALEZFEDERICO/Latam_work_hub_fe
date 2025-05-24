@@ -360,7 +360,9 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
   isPendingStatus(status: string): boolean {
     return status === 'PENDING' || status === 'PENDIENTE';
   }
-
+  isConfirmedStatus(status: string): boolean {
+    return status === 'CONFIRMED' || status === 'CONFIRMADO';
+  }
   // Método para verificar si un contrato está cancelado
   isCancelledStatus(status: string): boolean {
     return status === 'CANCELLED' || status === 'CANCELADO';
@@ -626,6 +628,7 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
   // Método para traducir los estados del contrato al español
   translateContractStatus(status: string): string {
     const translations: { [key: string]: string } = {
+      'CONFIRMED': 'CONFIRMADO',
       'ACTIVE': 'ACTIVO',
       'PENDING': 'PENDIENTE',
       'EXPIRED': 'EXPIRADO',

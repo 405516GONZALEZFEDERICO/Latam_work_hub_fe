@@ -1,9 +1,8 @@
-import { Component, OnInit, ViewChild, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ChangeDetectorRef, Injectable } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { MatSortModule, Sort } from '@angular/material/sort';
+import { MatPaginatorModule, PageEvent, MatPaginatorIntl } from '@angular/material/paginator';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -39,6 +38,27 @@ import {
   OverdueInvoicesAlertFilters
 } from '../../models/reports';
 
+@Injectable()
+export class SpanishPaginatorIntl extends MatPaginatorIntl {
+  override itemsPerPageLabel = 'Elementos por página:';
+  override nextPageLabel = 'Página siguiente';
+  override previousPageLabel = 'Página anterior';
+  override firstPageLabel = 'Primera página';
+  override lastPageLabel = 'Última página';
+
+  override getRangeLabel = (page: number, pageSize: number, length: number) => {
+    if (length === 0 || pageSize === 0) {
+      return `0 de ${length}`;
+    }
+    length = Math.max(length, 0);
+    const startIndex = page * pageSize;
+    const endIndex = startIndex < length ?
+      Math.min(startIndex + pageSize, length) :
+      startIndex + pageSize;
+    return `${startIndex + 1} - ${endIndex} de ${length}`;
+  };
+}
+
 @Component({
   selector: 'app-admin-report-view',
   standalone: true,
@@ -47,7 +67,6 @@ import {
     MatTabsModule,
     MatTableModule,
     MatPaginatorModule,
-    MatSortModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
@@ -60,6 +79,9 @@ import {
     MatTooltipModule,
     FormsModule,
     ReactiveFormsModule
+  ],
+  providers: [
+    { provide: MatPaginatorIntl, useClass: SpanishPaginatorIntl }
   ],
   templateUrl: './admin-report-view.component.html',
   styleUrls: ['./admin-report-view.component.css']
@@ -90,18 +112,14 @@ export class AdminReportViewComponent implements OnInit {
   // Control de tabs
   selectedTabIndex = 0; // Para el binding bidireccional con mat-tab-group
 
-  // Variables para control del ordenamiento
-  sortActive: string = '';
-  sortDirection: string = '';
-
   // Columnas para las tablas
-  spaceColumns: string[] = ['spaceName', 'providerName', 'bookingCount', 'revenueGenerated', 'status'];
+  spaceColumns: string[] = ['name', 'owner', 'rentalCount', 'bookingCount', 'revenueGenerated', 'status'];
   bookingColumns: string[] = ['spaceName', 'clientName', 'providerName', 'startDate', 'endDate', 'durationHours', 'status', 'amount'];
   userColumns: string[] = ['name', 'email', 'role', 'activeContracts', 'registrationDate', 'lastLoginDate', 'status'];
   contractColumns: string[] = ['spaceName', 'tenantName', 'ownerName', 'startDate', 'endDate', 'amount', 'status'];
   invoiceColumns: string[] = ['clientName', 'issueDate', 'dueDate', 'totalAmount', 'pendingAmount', 'status'];
-  expiringContractColumns: string[] = ['spaceName', 'tenantName', 'expiryDate', 'daysUntilExpiry'];
-  overdueInvoiceColumns: string[] = ['clientName', 'dueDate', 'daysOverdue', 'overdueAmount'];
+  expiringContractColumns: string[] = ['spaceName', 'tenantName', 'ownerName', 'endDate', 'daysUntilExpiry'];
+  overdueInvoiceColumns: string[] = ['clientName', 'dueDate', 'totalAmount', 'pendingAmount', 'daysOverdue'];
 
   // Variables para el control de columnas condicionales
   selectedUserRole: string = '';
@@ -120,7 +138,6 @@ export class AdminReportViewComponent implements OnInit {
 
       // Filtros específicos para cada tipo de informe
       status: [''],
-      clientId: [''],
       providerId: [''],
       spaceId: [''],
       role: [''],
@@ -143,6 +160,9 @@ export class AdminReportViewComponent implements OnInit {
     // Establecer valores predeterminados para los filtros
     this.setDefaultFilterValues();
     
+    // Inicializar columnas de usuario con todas las columnas visibles por defecto
+    this.updateUserColumnsBasedOnRole('');
+    
     this.loadCurrentReport();
   }
 
@@ -150,15 +170,15 @@ export class AdminReportViewComponent implements OnInit {
   showFilter(filterName: string): boolean {
     switch (this.selectedReport) {
       case 'spaces':
-        return ['providerId', 'status'].includes(filterName);
+        return ['status'].includes(filterName);
       case 'bookings':
-        return ['startDate', 'endDate', 'clientId', 'providerId', 'spaceId', 'status'].includes(filterName);
+        return ['startDate', 'endDate', 'status'].includes(filterName);
       case 'users':
         return ['startDate', 'role', 'status'].includes(filterName);
       case 'contracts':
-        return ['startDate', 'endDate', 'clientId', 'providerId', 'status'].includes(filterName);
+        return ['startDate', 'endDate', 'status'].includes(filterName);
       case 'invoices':
-        return ['startDate', 'clientId', 'status'].includes(filterName);
+        return ['startDate', 'status'].includes(filterName);
       case 'expiringContracts':
         return ['daysUntilExpiry'].includes(filterName);
       case 'overdueInvoices':
@@ -188,25 +208,21 @@ export class AdminReportViewComponent implements OnInit {
     switch (this.selectedReport) {
       case 'spaces':
         const spaceFilters: SpaceReportFilters = {
-          providerId: formValue.providerId || undefined,
           status: formValue.status || undefined
         };
         return spaceFilters;
 
       case 'bookings':
         const bookingFilters: BookingReportFilters = {
-          clientId: formValue.clientId || undefined,
-          providerId: formValue.providerId || undefined,
-          spaceId: formValue.spaceId || undefined,
           status: formValue.status || undefined
         };
 
         if (formValue.startDate) {
-          bookingFilters.startDate = this.formatDateForBackend(formValue.startDate, true);
+          bookingFilters.startDate = this.formatDateForBackend(formValue.startDate, false);
         }
 
         if (formValue.endDate) {
-          bookingFilters.endDate = this.formatDateForBackend(formValue.endDate, true);
+          bookingFilters.endDate = this.formatDateForBackend(formValue.endDate, false);
         }
 
         return bookingFilters;
@@ -225,24 +241,21 @@ export class AdminReportViewComponent implements OnInit {
 
       case 'contracts':
         const contractFilters: ContractReportFilters = {
-          tenantId: formValue.clientId || undefined,
-          ownerId: formValue.providerId || undefined,
           status: formValue.status || undefined
         };
 
         if (formValue.startDate) {
-          contractFilters.startDate = this.formatDateForBackend(formValue.startDate, true);
+          contractFilters.contractStartDate = this.formatDateForBackend(formValue.startDate, false);
         }
 
         if (formValue.endDate) {
-          contractFilters.endDate = this.formatDateForBackend(formValue.endDate, true);
+          contractFilters.contractEndDate = this.formatDateForBackend(formValue.endDate, false);
         }
 
         return contractFilters;
 
       case 'invoices':
         const invoiceFilters: InvoiceReportFilters = {
-          clientId: formValue.clientId || undefined,
           status: formValue.status || undefined
         };
 
@@ -309,39 +322,95 @@ export class AdminReportViewComponent implements OnInit {
     }
   }
 
-  // Métodos para cargar cada tipo de reporte
   loadSpacesReport(filters: SpaceReportFilters): void {
-    this.reportService.getSpacesReport(filters, this.pageIndex, this.pageSize, this.sortActive, this.sortDirection)
-      .subscribe(this.handleReportResponse<SpaceReportRow>((data) => this.spaceData = data));
+    this.loading = true;
+    this.reportService.getSpacesReport(
+      filters,
+      this.pageIndex,
+      this.pageSize
+    ).subscribe({
+      next: (response) => {
+        if (response && response.content) {
+          this.spaceData = response.content;
+          this.totalItems = response.totalElements;
+        } else {
+          this.spaceData = [];
+          this.totalItems = 0;
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading spaces report:', error);
+        this.spaceData = [];
+        this.totalItems = 0;
+        this.loading = false;
+        this.error = 'Error al cargar el reporte de espacios';
+      }
+    });
   }
 
   loadBookingsReport(filters: BookingReportFilters): void {
-    this.reportService.getBookingsReport(filters, this.pageIndex, this.pageSize, this.sortActive, this.sortDirection)
-      .subscribe(this.handleReportResponse<BookingReportRow>((data) => this.bookingData = data));
+    this.loading = true;
+    this.error = null;
+
+    this.reportService.getBookingsReport(
+        filters,
+        this.pageIndex,
+        this.pageSize
+    ).subscribe({
+        next: (response: PageResponse<BookingReportRow>) => {
+            if (response && response.content) {
+                this.bookingData = response.content;
+                this.totalItems = response.totalElements;
+            } else {
+                this.bookingData = [];
+                this.totalItems = 0;
+                console.warn('No se encontraron datos de reservas');
+            }
+            this.loading = false;
+        },
+        error: (error) => {
+            console.error('Error loading bookings report:', error);
+            this.bookingData = [];
+            this.totalItems = 0;
+            this.loading = false;
+            this.error = 'Error al cargar el reporte de reservas';
+            
+            if (error.error instanceof ErrorEvent) {
+                console.error('Client error:', error.error.message);
+            } else {
+                console.error(`Backend returned code ${error.status}, body:`, error.error);
+            }
+        },
+        complete: () => {
+            this.loading = false;
+            this.changeDetectorRef.detectChanges();
+        }
+    });
   }
 
   loadUsersReport(filters: UserReportFilters): void {
-    this.reportService.getUsersReport(filters, this.pageIndex, this.pageSize, this.sortActive, this.sortDirection)
+    this.reportService.getUsersReport(filters, this.pageIndex, this.pageSize)
       .subscribe(this.handleReportResponse<UserReportRow>((data) => this.userData = data));
   }
 
   loadContractsReport(filters: ContractReportFilters): void {
-    this.reportService.getContractsReport(filters, this.pageIndex, this.pageSize, this.sortActive, this.sortDirection)
+    this.reportService.getContractsReport(filters, this.pageIndex, this.pageSize)
       .subscribe(this.handleReportResponse<ContractReportRow>((data) => this.contractData = data));
   }
 
   loadInvoicesReport(filters: InvoiceReportFilters): void {
-    this.reportService.getInvoicesReport(filters, this.pageIndex, this.pageSize, this.sortActive, this.sortDirection)
+    this.reportService.getInvoicesReport(filters, this.pageIndex, this.pageSize)
       .subscribe(this.handleReportResponse<InvoiceReportRow>((data) => this.invoiceData = data));
   }
 
   loadExpiringContractsAlerts(filters: ExpiringContractsAlertFilters): void {
-    this.reportService.getExpiringContractsAlerts(filters, this.pageIndex, this.pageSize, this.sortActive, this.sortDirection)
+    this.reportService.getExpiringContractsAlerts(filters, this.pageIndex, this.pageSize)
       .subscribe(this.handleReportResponse<ExpiringContractAlert>((data) => this.expiringContractData = data));
   }
 
   loadOverdueInvoicesAlerts(filters: OverdueInvoicesAlertFilters): void {
-    this.reportService.getOverdueInvoicesAlerts(filters, this.pageIndex, this.pageSize, this.sortActive, this.sortDirection)
+    this.reportService.getOverdueInvoicesAlerts(filters, this.pageIndex, this.pageSize)
       .subscribe(this.handleReportResponse<OverdueInvoiceAlert>((data) => this.overdueInvoiceData = data));
   }
 
@@ -382,70 +451,44 @@ export class AdminReportViewComponent implements OnInit {
     this.loadCurrentReport();
   }
 
-  onReportTabChange(tabIndex: number): void {
-    // Mapeo de índices de tab a tipos de reportes
-    const reportTypes = ['spaces', 'bookings', 'users', 'contracts', 'invoices', 'expiringContracts', 'overdueInvoices'];
+ onReportTabChange(tabIndex: number): void {
+  const reportTypes = ['spaces', 'bookings', 'users', 'contracts', 'invoices', 'expiringContracts', 'overdueInvoices'];
 
-    if (tabIndex >= 0 && tabIndex < reportTypes.length) {
-      // Resetear el formulario antes de cambiar de pestaña para evitar mostrar filtros incorrectos
-      this.filterForm.reset();
+  if (tabIndex >= 0 && tabIndex < reportTypes.length) {
+    // Resetear el formulario
+    this.filterForm.reset();
+    
+    // Actualizar el reporte seleccionado
+    this.selectedReport = reportTypes[tabIndex];
+    
+    // Reset pagination
+    this.pageIndex = 0;
 
-      // Actualizar el reporte seleccionado
-      this.selectedReport = reportTypes[tabIndex];
-
-      // Establecer valores predeterminados según el tipo de informe
-      this.setDefaultFilterValues();
-
-      // Forzar la detección de cambios para actualizar la visibilidad de los campos
-      this.changeDetectorRef.detectChanges();
-
-      // Reset pagination
-      this.pageIndex = 0;
-
-      // Cargar el nuevo informe
-      this.loadCurrentReport();
+    // Si es el tab de usuarios, resetear las columnas
+    if (this.selectedReport === 'users') {
+      this.updateUserColumnsBasedOnRole('');
     }
+
+    // Cargar datos sin filtros
+    this.loadCurrentReport();
   }
+}
 
   // Método para establecer valores predeterminados en los filtros según el tipo de informe
-  private setDefaultFilterValues(): void {
-    // Si el informe actual utiliza el filtro de estado, establecer un valor predeterminado
-    if (this.showFilter('status')) {
-      let defaultStatus = '';
-      
-      switch (this.selectedReport) {
-        case 'users':
-          defaultStatus = 'ACTIVE';
-          break;
-        case 'spaces':
-          defaultStatus = 'DISPONIBLE';
-          break;
-        case 'bookings':
-          defaultStatus = 'CONFIRMED';
-          break;
-        case 'contracts':
-          defaultStatus = 'ACTIVE';
-          break;
-        case 'invoices':
-        case 'overdueInvoices':
-          defaultStatus = 'ISSUED';
-          break;
-      }
-      
-      if (defaultStatus) {
-        this.filterForm.get('status')?.setValue(defaultStatus);
-      }
-    }
-
-    // Si el informe actual utiliza el filtro de rol, establecer un valor predeterminado
-    if (this.showFilter('role') && this.selectedReport === 'users') {
-      this.filterForm.get('role')?.setValue('CLIENTE');
-      this.updateUserColumnsBasedOnRole('CLIENTE');
-    }
-    
-    // Validar fechas después de establecer los valores predeterminados
-    this.validateDates();
+private setDefaultFilterValues(): void {
+  // Solo establecer valores por defecto para campos que realmente lo necesiten
+  // Por ejemplo, campos numéricos que no pueden ser null
+  if (this.showFilter('daysUntilExpiry')) {
+    this.filterForm.get('daysUntilExpiry')?.setValue(30); // Ejemplo de valor por defecto necesario
   }
+  
+  if (this.showFilter('minDaysOverdue')) {
+    this.filterForm.get('minDaysOverdue')?.setValue(1); // Ejemplo de valor por defecto necesario
+  }
+
+  // No establecer valores por defecto para estados, roles u otros filtros
+  // para que se carguen todos los datos
+}
 
   // Método para aplicar filtros y validar antes de enviar
   applyFilters(): void {
@@ -548,7 +591,8 @@ export class AdminReportViewComponent implements OnInit {
         columns = [
           { header: 'ID Espacio', dataKey: 'spaceId' },
           { header: 'Nombre', dataKey: 'spaceName' },
-          { header: 'Proveedor', dataKey: 'providerName' },
+          { header: 'Proveedor', dataKey: 'owner' },
+          {header:'Contratos', dataKey: 'rentalCount'},
           { header: 'Reservas', dataKey: 'bookingCount' },
           { header: 'Ingresos', dataKey: 'revenueGenerated' },
           { header: 'Estado', dataKey: 'status' }
@@ -561,7 +605,7 @@ export class AdminReportViewComponent implements OnInit {
           { header: 'ID Reserva', dataKey: 'bookingId' },
           { header: 'Espacio', dataKey: 'spaceName' },
           { header: 'Cliente', dataKey: 'clientName' },
-          { header: 'Proveedor', dataKey: 'providerName' },
+          { header: 'Proveedor', dataKey: 'owner' },
           { header: 'Fecha Inicio', dataKey: 'startDate' },
           { header: 'Fecha Fin', dataKey: 'endDate' },
           { header: 'Duración (h)', dataKey: 'durationHours' },
@@ -573,7 +617,6 @@ export class AdminReportViewComponent implements OnInit {
         data = this.prepareDataForExport(this.userData);
         fileName = 'usuarios';
         columns = [
-          { header: 'ID Usuario', dataKey: 'userId' },
           { header: 'Nombre', dataKey: 'name' },
           { header: 'Email', dataKey: 'email' },
           { header: 'Rol', dataKey: 'role' },
@@ -667,15 +710,15 @@ export class AdminReportViewComponent implements OnInit {
   // Método para agregar columnas específicas según el rol del usuario seleccionado
   updateUserColumnsBasedOnRole(role: string): void {
     this.selectedUserRole = role;
-    // Columnas base que siempre se muestran
-    let columns = ['userId', 'name', 'email', 'role', 'activeContracts', 'registrationDate', 'lastLoginDate', 'status'];
+    // Columnas base que siempre se muestran (sin userId)
+    let columns = ['name', 'email', 'role', 'activeContracts', 'registrationDate', 'lastLoginDate', 'status'];
 
     if (role === 'PROVEEDOR') {
-      // Añadir columnas específicas para proveedores
-      columns.splice(4, 0, 'totalSpaces', 'totalRevenue');
+      // Añadir columnas específicas para proveedores después de 'role'
+      columns.splice(3, 0, 'totalSpaces', 'totalRevenue');
     } else if (role === 'CLIENTE') {
-      // Añadir columnas específicas para clientes
-      columns.splice(4, 0, 'totalBookings', 'totalSpending');
+      // Añadir columnas específicas para clientes después de 'role'
+      columns.splice(3, 0, 'totalBookings', 'totalSpending');
     }
 
     this.userColumns = columns;
@@ -794,21 +837,6 @@ export class AdminReportViewComponent implements OnInit {
     } catch (err: any) {
       console.error(`Error al exportar a CSV: ${err.message || 'Error desconocido'}`);
     }
-  }
-
-  // Método para manejar el ordenamiento en las tablas
-  onSortChange(sort: Sort): void {
-    // Si no hay una dirección activa o la columna es inválida, no hacemos nada
-    if (!sort.active || sort.direction === '') {
-      this.sortActive = '';
-      this.sortDirection = '';
-    } else {
-      this.sortActive = sort.active;
-      this.sortDirection = sort.direction;
-    }
-
-    // Aplicamos el ordenamiento en la tabla y luego recargamos los datos
-    this.loadCurrentReport();
   }
 
   // Método para validar que la fecha de fin no sea anterior a la fecha de inicio

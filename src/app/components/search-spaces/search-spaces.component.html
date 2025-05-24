@@ -4,10 +4,16 @@
   </div>
   
   <div class="search-content">
-    <div class="filter-container">
+
+      
+    <div class="row mb-4">
+      <div class="col-12">
       <app-space-filter (filtersChanged)="handleFiltersChanged($event)"></app-space-filter>
-    </div>
-    
+      </div>
+    </div>  
+
+
+
     <div class="results-container">
       <div *ngIf="isLoading" class="loading-container">
         <mat-spinner diameter="40"></mat-spinner>

@@ -32,6 +32,12 @@ export interface PeakHoursDto {
   reservationCount: number;
 }
 
+export interface TopSpacesDto {
+  spaceName: string;
+  rentalCount: number;
+  reservationCount: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -77,19 +83,33 @@ export class AdminDashboardService {
   }
 
   /**
+   * Obtiene el top 5 de espacios con más reservas y alquileres
+   */
+  getTop5Spaces(): Observable<TopSpacesDto[]> {
+    return this.http.get<TopSpacesDto[]>(`${this.apiUrl}/top-5-spaces`);
+  }
+
+  /**
+   * Obtiene los contratos de alquiler agrupados por tipo de espacio
+   */
+  getRentalContractsBySpaceType(): Observable<ReservationsBySpaceTypeDto[]> {
+    return this.http.get<ReservationsBySpaceTypeDto[]>(`${this.apiUrl}/rental-contracts-by-space-type`);
+  }
+
+  /**
    * Obtiene la lista de usuarios según el rol especificado
    * @param roleName Rol de los usuarios a buscar (CLIENTE, PROVEEDOR, etc.)
    */
   getUsersList(roleName: string): Observable<AdminUser[]> {
-    // Usar la URL correcta para obtener usuarios de la API
-    const url = `${environment.apiUrl}/reports-admin/users`;
+    // Usar el endpoint de reportes que tiene datos completos incluyendo fechas
+    const reportsUrl = `${environment.apiUrl}/reports-admin/users`;
     
-    return this.http.get<any>(url).pipe(
-      map(response => {
+    return this.http.get<any>(reportsUrl).pipe(
+      switchMap(response => {
         // Extraer el array de usuarios desde la propiedad content de la respuesta paginada
         if (!response || !response.content || !Array.isArray(response.content)) {
-          console.error('Respuesta inesperada de la API:', response);
-          return [];
+          console.error('Respuesta inesperada de la API de reportes:', response);
+          return of([]);
         }
         
         const users = response.content;
@@ -97,26 +117,42 @@ export class AdminDashboardService {
         // Si se especificó un rol, filtrar por ese rol
         const filteredUsers = roleName ? users.filter((user: any) => user.role === roleName) : users;
         
-        return filteredUsers.map((user: any) => ({
-          id: user.userId,
-          name: user.name || 'Sin nombre',
-          email: user.email || '',
-          firebaseUid: user.firebaseUid || '',
-          birthDay: user.birthDay || null,
-          documentType: user.documentType || '',
-          documentNumber: user.documentNumber || '',
-          jobTitle: user.jobTitle || '',
-          department: user.department || '',
-          role: user.role || '',
-          enabled: user.status === 'Activo',
-          lastLoginAt: user.lastLoginDate, // Usar los nombres exactos del backend
-          registrationDate: user.registrationDate, // Usar los nombres exactos del backend
-          totalSpaces: user.totalSpaces,
-          activeContracts: user.activeContracts,
-          totalRevenue: user.totalRevenue,
-          totalBookings: user.totalBookings,
-          totalSpending: user.totalSpending
-        }));
+        // Obtener los firebaseUids del endpoint /get-user-list para los usuarios que no lo tengan
+        const usersUrl = `${this.usersUrl}/get-user-list`;
+        const params = new HttpParams().set('roleName', roleName);
+        
+        return this.http.get<any[]>(usersUrl, { params }).pipe(
+          map(disableUserList => {
+            // Crear un mapa de email -> firebaseUid para hacer el cruce
+            const uidMap = new Map<string, string>();
+            disableUserList.forEach(user => {
+              if (user.email && user.firebaseUid) {
+                uidMap.set(user.email, user.firebaseUid);
+              }
+            });
+            
+            return filteredUsers.map((user: any) => ({
+              id: user.userId,
+              name: user.name || 'Sin nombre',
+              email: user.email || '',
+              firebaseUid: user.firebaseUid || uidMap.get(user.email) || '', // Usar el del reporte o buscar en el mapa
+              birthDay: user.birthDay || null,
+              documentType: user.documentType || '',
+              documentNumber: user.documentNumber || '',
+              jobTitle: user.jobTitle || '',
+              department: user.department || '',
+              role: user.role || '',
+              enabled: user.status === 'Activo',
+              lastLoginAt: user.lastLoginDate, // Mantener las fechas del reporte
+              registrationDate: user.registrationDate, // Mantener las fechas del reporte
+              totalSpaces: user.totalSpaces,
+              activeContracts: user.activeContracts,
+              totalRevenue: user.totalRevenue,
+              totalBookings: user.totalBookings,
+              totalSpending: user.totalSpending
+            } as AdminUser));
+          })
+        );
       }),
       catchError(error => {
         console.error('Error al obtener usuarios:', error);
@@ -146,7 +182,7 @@ export class AdminDashboardService {
    */
   toggleUserStatus(userData: AdminUser): Observable<boolean> {
     if (!userData || !userData.firebaseUid) {
-      return throwError(() => new Error('No se proporcionó un UID de usuario válido'));
+      return throwError(() => new Error('No se proporcionó un firebaseUid de usuario válido'));
     }
     
     if (userData.enabled) {
@@ -157,8 +193,8 @@ export class AdminDashboardService {
   }
 
   /**
-   * Activa un usuario
-   * @param userUid ID del usuario
+   * Activa un usuario usando su UID de Firebase
+   * @param userUid UID de Firebase del usuario
    */
   activateUser(userUid: string): Observable<boolean> {
     if (!userUid) {
@@ -172,8 +208,8 @@ export class AdminDashboardService {
   }
 
   /**
-   * Desactiva un usuario
-   * @param userUid ID del usuario
+   * Desactiva un usuario usando su UID de Firebase
+   * @param userUid UID de Firebase del usuario
    */
   deactivateUser(userUid: string): Observable<boolean> {
     if (!userUid) {

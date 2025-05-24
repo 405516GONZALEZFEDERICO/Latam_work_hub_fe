@@ -513,4 +513,21 @@
 
 .sidebar-nav .active .sidebar-nav-icon {
   color: #3f51b5;
+}
+
+/* Sidebar divider and section title */
+.sidebar-divider {
+  height: 1px;
+  background-color: rgba(0, 0, 0, 0.1);
+  margin: 16px 12px 12px;
+}
+
+.sidebar-section-title {
+  padding: 8px 16px 4px;
+  margin: 0 8px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 } 

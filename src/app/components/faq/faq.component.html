@@ -1,0 +1,127 @@
+<div class="faq-container">
+  <div class="faq-header">
+    <div class="header-content">
+      <div class="logo-section">
+        <mat-icon class="help-icon">help_center</mat-icon>
+        <div class="title-section">
+          <h1>Preguntas Frecuentes</h1>
+          <p class="subtitle">Centro de ayuda y soporte</p>
+        </div>
+      </div>
+      
+      <div class="user-info" *ngIf="userRole">
+        <mat-chip [style.background-color]="getRoleColor(userRole)" [style.color]="'white'">
+          <mat-icon>person</mat-icon>
+          {{ getRoleLabel(userRole) }}
+        </mat-chip>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-content">
+    <div class="intro-section">
+      <mat-card class="welcome-card">
+        <mat-card-content>
+          <div class="welcome-content">
+            <mat-icon class="welcome-icon">lightbulb</mat-icon>
+            <div class="welcome-text">
+              <h3>¡Estamos aquí para ayudarte!</h3>
+              <p>Encuentra respuestas rápidas a las preguntas más comunes. Si no encuentras lo que buscas, no dudes en contactarnos.</p>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <div class="categories-section">
+      <div class="category-card" *ngFor="let category of categories">
+        <mat-card class="category-content">
+          <mat-card-header>
+            <div class="category-header">
+              <mat-icon class="category-icon">
+                {{ getFAQsByCategory(category)[0].icon || 'help' }}
+              </mat-icon>
+              <mat-card-title>{{ category }}</mat-card-title>
+              <span class="questions-count">
+                {{ getFAQsByCategory(category).length }} preguntas
+              </span>
+            </div>
+          </mat-card-header>
+          
+          <mat-card-content>
+            <mat-accordion class="faq-accordion">
+              <mat-expansion-panel 
+                *ngFor="let faq of getFAQsByCategory(category); let i = index"
+                class="faq-panel"
+                [expanded]="false">
+                
+                <mat-expansion-panel-header class="faq-header-panel">
+                  <mat-panel-title class="faq-question">
+                    <mat-icon class="question-icon">{{ faq.icon }}</mat-icon>
+                    <span>{{ faq.question }}</span>
+                  </mat-panel-title>
+                  
+                  <mat-panel-description *ngIf="faq.role !== 'GENERAL'" class="role-badge">
+                    <mat-chip 
+                      [style.background-color]="getRoleColor(faq.role)" 
+                      [style.color]="'white'"
+                      class="mini-chip">
+                      {{ getRoleLabel(faq.role) }}
+                    </mat-chip>
+                  </mat-panel-description>
+                </mat-expansion-panel-header>
+                
+                <div class="faq-answer">
+                  <mat-icon class="answer-icon">reply</mat-icon>
+                  <p>{{ faq.answer }}</p>
+                </div>
+              </mat-expansion-panel>
+            </mat-accordion>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <div class="contact-section">
+      <mat-card class="contact-card">
+        <mat-card-content>
+          <div class="contact-content">
+            <mat-icon class="contact-icon">contact_support</mat-icon>
+            <div class="contact-text">
+              <h3>¿No encontraste lo que buscabas?</h3>
+              <p>Nuestro equipo de soporte está disponible para ayudarte</p>
+              <div class="contact-methods">
+                <div class="contact-method">
+                  <mat-icon>email</mat-icon>
+                  <span>no.reply.latamworkhub&#64;gmail.com</span>
+                </div>
+                <div class="contact-method">
+                  <mat-icon>phone</mat-icon>
+                  <span>+56 2 2123 4567</span>
+                </div>
+                <div class="contact-method">
+                  <mat-icon>chat</mat-icon>
+                  <span>Chat en vivo disponible 24/7</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <div class="navigation-section">
+      <div class="nav-buttons">
+        <button mat-stroked-button color="primary" routerLink="/home/welcome" class="back-button">
+          <mat-icon>arrow_back</mat-icon>
+          Volver al inicio
+        </button>
+        
+        <button mat-raised-button color="primary" routerLink="/terms-and-conditions" class="terms-button">
+          <mat-icon>gavel</mat-icon>
+          Términos y Condiciones
+        </button>
+      </div>
+    </div>
+  </div>
+</div> 

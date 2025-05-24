@@ -1,16 +1,119 @@
 <div class="welcome-container-loggedIn">
+  <!-- Header Section with Role-Specific Info -->
   <div class="main-title-area">
-    <h1 class="page-title">Bienvenido a Latam Work Hub</h1>
-    <p *ngIf="currentUser" class="user-greeting-loggedIn">Hola, {{ currentUser.displayName || currentUser.email }}!</p>
-    <!-- Add other content for logged-in users here if needed -->
+    <div class="user-greeting-section">
+      <h1 class="page-title">{{ getGreeting() }}</h1>
+      <p *ngIf="currentUser" class="user-greeting-loggedIn">{{ currentUser.displayName || currentUser.email }}!</p>
+      
+      <!-- Role Badge -->
+      <div class="role-badge-container" *ngIf="currentUser?.role">
+        <mat-chip-set>
+          <mat-chip [style.background-color]="getRoleColor()" [style.color]="'white'">
+            <mat-icon>{{ getRoleIcon() }}</mat-icon>
+            {{ getUserRoleDisplay() }}
+          </mat-chip>
+        </mat-chip-set>
+      </div>
+      
+      <!-- Role-Specific Welcome Message -->
+      <p class="role-welcome-message">{{ getRoleWelcomeMessage() }}</p>
+    </div>
   </div>
-  
-  <!-- You might want to add sections specific to logged-in users, like dashboards, quick links etc. -->
-  <!-- For example:
-  <div class="user-dashboard-links">
-    <a mat-button routerLink="/profile">Mi Perfil</a>
-    <a mat-button routerLink="/my-reservations">Mis Reservas</a>
-    <a mat-button routerLink="/spaces">Buscar Espacios</a>
+
+  <!-- Quick Actions Section - Role Specific -->
+  <div class="role-specific-features">
+    <div class="section-title">
+      <h3>Acciones Rápidas</h3>
+      <p>Accede rápidamente a las funciones más importantes para tu rol</p>
+    </div>
+    
+    <div class="quick-actions-grid">
+      <div class="feature-card" *ngFor="let action of getQuickActions()">
+        <div class="card-icon">
+          <mat-icon>{{ action.icon }}</mat-icon>
+        </div>
+        <h3>{{ action.title }}</h3>
+        <p>{{ action.description }}</p>
+        <a mat-raised-button [routerLink]="action.route" class="action-btn">
+          Ir a {{ action.title }}
+        </a>
+      </div>
+    </div>
   </div>
-  -->
+
+  <!-- Additional Role-Specific Content -->
+  <div class="additional-content" *ngIf="currentUser?.role">
+    
+    <!-- Admin Specific -->
+    <div *ngIf="currentUser?.role === 'ADMIN'" class="admin-info">
+      <mat-card class="info-card admin-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>admin_panel_settings</mat-icon>
+          <mat-card-title>Panel de Administración</mat-card-title>
+          <mat-card-subtitle>Gestiona la plataforma LATAM Work Hub</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <p>Como administrador, tienes acceso completo a todas las funciones de gestión, incluyendo:</p>
+          <ul>
+            <li>Gestión de usuarios y roles</li>
+            <li>Monitoreo de espacios y reservas</li>
+            <li>Generación de reportes y estadísticas</li>
+            <li>Configuración general del sistema</li>
+          </ul>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Cliente Specific -->
+    <div *ngIf="currentUser?.role === 'CLIENTE'" class="client-info">
+      <mat-card class="info-card client-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>search</mat-icon>
+          <mat-card-title>Encuentra tu Espacio Ideal</mat-card-title>
+          <mat-card-subtitle>Espacios de trabajo para tu empresa</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <p>Descubre espacios de trabajo perfectos para tu equipo:</p>
+          <ul>
+            <li>Oficinas privadas y espacios compartidos</li>
+            <li>Salas de reuniones equipadas</li>
+            <li>Espacios flexibles por horas o días</li>
+            <li>Reservas fáciles y pagos seguros</li>
+          </ul>
+          <div class="action-buttons">
+            <a mat-raised-button color="primary" routerLink="/home/search-spaces">
+              <mat-icon>search</mat-icon>
+              Buscar Espacios
+            </a>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Proveedor Specific -->
+    <div *ngIf="currentUser?.role === 'PROVEEDOR'" class="provider-info">
+      <mat-card class="info-card provider-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>business</mat-icon>
+          <mat-card-title>Gestiona tus Espacios</mat-card-title>
+          <mat-card-subtitle>Promociona y administra tu oferta</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <p>Maximiza el potencial de tus espacios de trabajo:</p>
+          <ul>
+            <li>Publica y gestiona tus espacios</li>
+            <li>Establece precios y disponibilidad</li>
+            <li>Recibe y gestiona reservas</li>
+            <li>Analiza el rendimiento de tus espacios</li>
+          </ul>
+          <div class="action-buttons">
+            <a mat-raised-button color="primary" routerLink="/home/spaces">
+              <mat-icon>business</mat-icon>
+              Ver Mis Espacios
+            </a>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
 </div> 

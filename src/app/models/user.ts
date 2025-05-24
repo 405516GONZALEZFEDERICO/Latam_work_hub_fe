@@ -49,6 +49,12 @@ export interface RolRequestDto {
   nuevoRol: UserRole;
 }
 
+// Role Change DTO for admin operations
+export interface RoleChangeDto {
+  uid: string;
+  roleName: UserRole;
+}
+
 // Route interface for role-based routing
 export interface IRoute {
   requiredRole: string;

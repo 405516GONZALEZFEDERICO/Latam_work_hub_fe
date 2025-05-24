@@ -62,6 +62,7 @@ export class SpacesListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.loadProviderSpaces();
     this.getCurrentUser();
   }
 

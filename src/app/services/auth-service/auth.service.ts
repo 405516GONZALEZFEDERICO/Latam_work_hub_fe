@@ -889,6 +889,34 @@ export class AuthService {
     return this.currentUserData?.role || null;
   }
 
+  // Método para cambiar el rol de un usuario (solo para administradores)
+  changeUserRole(uid: string, roleName: UserRole): Observable<any> {
+    return from(this.getIdToken()).pipe(
+      switchMap(token => {
+        if (!token) {
+          console.error('No se pudo obtener token para cambiar rol');
+          return throwError(() => new Error('No se pudo obtener el token de autenticación'));
+        }
+        
+        const roleChangeDto = { uid, roleName };
+        
+        return this.http.post<any>(`${this.API_BASE_URL}/change-rol`, 
+          roleChangeDto,
+          { 
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+      }),
+      catchError(error => {
+        console.error('Error al cambiar rol:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
   // Añadir el método getCurrentUser() para compatibilidad
   getCurrentUser(): Observable<User | null> {
     return this.currentUser$;

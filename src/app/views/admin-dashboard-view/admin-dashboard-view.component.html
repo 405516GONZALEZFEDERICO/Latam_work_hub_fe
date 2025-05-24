@@ -1,120 +1,314 @@
 <div class="dashboard-container">
   <h1 class="dashboard-title">Dashboard Administrativo</h1>
 
-  <!-- Tarjetas KPI -->
-  <div class="kpi-cards-section">
-    <h2>Indicadores clave</h2>
+  <!-- Vista General (Overview) -->
+  <div *ngIf="isOverviewMode()">
+    <!-- Tarjetas KPI -->
+    <div class="kpi-cards-section">
+      <h2>Indicadores clave</h2>
 
-    <div *ngIf="loading.kpi" class="loading-container">
-      <mat-spinner diameter="40"></mat-spinner>
-      <p>Cargando indicadores...</p>
+      <div *ngIf="loading.kpi" class="loading-container">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Cargando indicadores...</p>
+      </div>
+
+      <div *ngIf="error.kpi" class="error-message">
+        <mat-icon>error</mat-icon>
+        <span>{{ error.kpi }}</span>
+      </div>
+
+      <div *ngIf="!loading.kpi && !error.kpi && kpiData" class="kpi-cards-container">
+        <!-- Clientes activos -->
+        <mat-card class="kpi-card">
+          <mat-card-content>
+            <div class="kpi-icon">
+              <mat-icon>person</mat-icon>
+            </div>
+            <div class="kpi-content">
+              <h3>Clientes Activos</h3>
+              <p class="kpi-value">{{ kpiData.activeClients }}</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Proveedores activos -->
+        <mat-card class="kpi-card">
+          <mat-card-content>
+            <div class="kpi-icon">
+              <mat-icon>business</mat-icon>
+            </div>
+            <div class="kpi-content">
+              <h3>Proveedores Activos</h3>
+              <p class="kpi-value">{{ kpiData.activeProviders }}</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Espacios publicados -->
+        <mat-card class="kpi-card">
+          <mat-card-content>
+            <div class="kpi-icon">
+              <mat-icon>meeting_room</mat-icon>
+            </div>
+            <div class="kpi-content">
+              <h3>Espacios Publicados</h3>
+              <p class="kpi-value">{{ kpiData.publishedSpaces }}</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Reservas en el mes -->
+        <mat-card class="kpi-card">
+          <mat-card-content>
+            <div class="kpi-icon">
+              <mat-icon>event_available</mat-icon>
+            </div>
+            <div class="kpi-content">
+              <h3>Reservas este mes</h3>
+              <p class="kpi-value">{{ kpiData.reservationsThisMonth }}</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Ingresos últimos 30 días -->
+        <mat-card class="kpi-card">
+          <mat-card-content>
+            <div class="kpi-icon">
+              <mat-icon>attach_money</mat-icon>
+            </div>
+            <div class="kpi-content">
+              <h3>Ingresos (30 días)</h3>
+              <p class="kpi-value">{{ formatCurrency(kpiData.totalRevenueLast30Days) }}</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Contratos activos -->
+        <mat-card class="kpi-card">
+          <mat-card-content>
+            <div class="kpi-icon">
+              <mat-icon>description</mat-icon>
+            </div>
+            <div class="kpi-content">
+              <h3>Contratos Activos</h3>
+              <p class="kpi-value">{{ kpiData.activeContracts }}</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Contratos próximos a vencer -->
+        <mat-card class="kpi-card">
+          <mat-card-content>
+            <div class="kpi-icon">
+              <mat-icon>watch_later</mat-icon>
+            </div>
+            <div class="kpi-content">
+              <h3>Contratos a vencer</h3>
+              <p class="kpi-value">{{ kpiData.contractsExpiringSoon }}</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
     </div>
 
-    <div *ngIf="error.kpi" class="error-message">
-      <mat-icon>error</mat-icon>
-      <span>{{ error.kpi }}</span>
-    </div>
+    <!-- Grid para gráficos en vista general -->
+    <div class="charts-grid">
+      <!-- Gráfico de ingresos mensuales -->
+      <div class="chart-container interactive-chart" (click)="expandChart('monthlyRevenue')">
+        <div class="chart-header">
+          <h2>Ingresos Mensuales</h2>
+          <div class="chart-actions">
+            <mat-form-field appearance="outline">
+              <mat-label>Meses</mat-label>
+              <mat-select [(ngModel)]="selectedMonths" (selectionChange)="onMonthsChange()" (click)="$event.stopPropagation()">
+                <mat-option *ngFor="let option of monthsOptions" [value]="option">
+                  {{ option }} meses
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-icon class="expand-icon" matTooltip="Click para expandir">fullscreen</mat-icon>
+          </div>
+        </div>
 
-    <div *ngIf="!loading.kpi && !error.kpi && kpiData" class="kpi-cards-container">
-      <!-- Clientes activos -->
-      <mat-card class="kpi-card">
-        <mat-card-content>
-          <div class="kpi-icon">
-            <mat-icon>person</mat-icon>
-          </div>
-          <div class="kpi-content">
-            <h3>Clientes Activos</h3>
-            <p class="kpi-value">{{ kpiData.activeClients }}</p>
-          </div>
-        </mat-card-content>
-      </mat-card>
+        <div *ngIf="loading.monthlyRevenue" class="loading-container">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p>Cargando datos...</p>
+        </div>
 
-      <!-- Proveedores activos -->
-      <mat-card class="kpi-card">
-        <mat-card-content>
-          <div class="kpi-icon">
-            <mat-icon>business</mat-icon>
-          </div>
-          <div class="kpi-content">
-            <h3>Proveedores Activos</h3>
-            <p class="kpi-value">{{ kpiData.activeProviders }}</p>
-          </div>
-        </mat-card-content>
-      </mat-card>
+        <div *ngIf="error.monthlyRevenue" class="error-message">
+          <mat-icon>error</mat-icon>
+          <span>{{ error.monthlyRevenue }}</span>
+        </div>
 
-      <!-- Espacios publicados -->
-      <mat-card class="kpi-card">
-        <mat-card-content>
-          <div class="kpi-icon">
-            <mat-icon>meeting_room</mat-icon>
-          </div>
-          <div class="kpi-content">
-            <h3>Espacios Publicados</h3>
-            <p class="kpi-value">{{ kpiData.publishedSpaces }}</p>
-          </div>
-        </mat-card-content>
-      </mat-card>
+        <div *ngIf="!loading.monthlyRevenue && !error.monthlyRevenue && monthlyRevenueData.length > 0" class="chart">
+          <ngx-charts-line-chart
+            [results]="monthlyRevenueData"
+            [xAxis]="showXAxis"
+            [yAxis]="showYAxis"
+            [legend]="showLegend"
+            [showXAxisLabel]="showXAxisLabel"
+            [showYAxisLabel]="showYAxisLabel"
+            [xAxisLabel]="xAxisLabel"
+            [yAxisLabel]="yAxisLabel"
+            [scheme]="colorScheme">
+          </ngx-charts-line-chart>
+        </div>
+      </div>
 
-      <!-- Reservas en el mes -->
-      <mat-card class="kpi-card">
-        <mat-card-content>
-          <div class="kpi-icon">
-            <mat-icon>event_available</mat-icon>
-          </div>
-          <div class="kpi-content">
-            <h3>Reservas este mes</h3>
-            <p class="kpi-value">{{ kpiData.reservationsThisMonth }}</p>
-          </div>
-        </mat-card-content>
-      </mat-card>
+      <!-- Gráfico de reservas por tipo de espacio -->
+      <div class="chart-container interactive-chart" (click)="expandChart('spaceTypes')">
+        <div class="chart-header">
+          <h2>Reservas por Tipo de Espacio</h2>
+          <mat-icon class="expand-icon" matTooltip="Click para expandir">fullscreen</mat-icon>
+        </div>
 
-      <!-- Ingresos últimos 30 días -->
-      <mat-card class="kpi-card">
-        <mat-card-content>
-          <div class="kpi-icon">
-            <mat-icon>attach_money</mat-icon>
-          </div>
-          <div class="kpi-content">
-            <h3>Ingresos (30 días)</h3>
-            <p class="kpi-value">{{ formatCurrency(kpiData.totalRevenueLast30Days) }}</p>
-          </div>
-        </mat-card-content>
-      </mat-card>
+        <div *ngIf="loading.spaceType" class="loading-container">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p>Cargando datos...</p>
+        </div>
 
-      <!-- Contratos activos -->
-      <mat-card class="kpi-card">
-        <mat-card-content>
-          <div class="kpi-icon">
-            <mat-icon>description</mat-icon>
-          </div>
-          <div class="kpi-content">
-            <h3>Contratos Activos</h3>
-            <p class="kpi-value">{{ kpiData.activeContracts }}</p>
-          </div>
-        </mat-card-content>
-      </mat-card>
+        <div *ngIf="error.spaceType" class="error-message">
+          <mat-icon>error</mat-icon>
+          <span>{{ error.spaceType }}</span>
+        </div>
 
-      <!-- Contratos próximos a vencer -->
-      <mat-card class="kpi-card">
-        <mat-card-content>
-          <div class="kpi-icon">
-            <mat-icon>watch_later</mat-icon>
+        <div *ngIf="!loading.spaceType && !error.spaceType" class="chart">
+          <ngx-charts-bar-vertical
+            [results]="spaceTypeData.length > 0 ? spaceTypeData : sampleSpaceTypeData"
+            [xAxis]="showXAxis"
+            [yAxis]="showYAxis"
+            [legend]="false"
+            [showXAxisLabel]="showXAxisLabel"
+            [showYAxisLabel]="showYAxisLabel"
+            [xAxisLabel]="'Tipo de Espacio'"
+            [yAxisLabel]="'Cantidad de Reservas'"
+            [scheme]="colorScheme"
+            [showDataLabel]="true"
+            [roundDomains]="true"
+            [roundEdges]="true"
+            [animations]="true">
+          </ngx-charts-bar-vertical>
+        </div>
+      </div>
+
+      <!-- Histograma de horas pico -->
+      <div class="chart-container interactive-chart" (click)="expandChart('peakHours')">
+        <div class="chart-header">
+          <h2>Horarios de Mayor Demanda</h2>
+          <mat-icon class="expand-icon" matTooltip="Click para expandir">fullscreen</mat-icon>
+        </div>
+
+        <div *ngIf="loading.peakHours" class="loading-container">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p>Cargando datos...</p>
+        </div>
+
+        <div *ngIf="error.peakHours" class="error-message">
+          <mat-icon>error</mat-icon>
+          <span>{{ error.peakHours }}</span>
+        </div>
+
+        <div *ngIf="!loading.peakHours && !error.peakHours && peakHoursData.length > 0" class="chart">
+          <ngx-charts-bar-vertical
+            [results]="peakHoursData"
+            [xAxis]="showXAxis"
+            [yAxis]="showYAxis"
+            [legend]="showLegend"
+            [showXAxisLabel]="showXAxisLabel"
+            [showYAxisLabel]="showYAxisLabel"
+            [xAxisLabel]="'Horario'"
+            [yAxisLabel]="'Cantidad de Reservas'"
+            [scheme]="colorScheme">
+          </ngx-charts-bar-vertical>
+        </div>
+      </div>
+
+      <!-- Gráfico de contratos por tipo de espacio -->
+      <div class="chart-container interactive-chart" (click)="expandChart('contractTypes')">
+        <div class="chart-header">
+          <h2>Contratos por Tipo de Espacio</h2>
+          <mat-icon class="expand-icon" matTooltip="Click para expandir">fullscreen</mat-icon>
+        </div>
+
+        <div *ngIf="loading.contractsBySpaceType" class="loading-container">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p>Cargando datos...</p>
+        </div>
+
+        <div *ngIf="error.contractsBySpaceType" class="error-message">
+          <mat-icon>error</mat-icon>
+          <span>{{ error.contractsBySpaceType }}</span>
+        </div>
+
+        <div *ngIf="!loading.contractsBySpaceType && !error.contractsBySpaceType" class="chart">
+          <ngx-charts-bar-vertical
+            [results]="contractsBySpaceTypeData"
+            [xAxis]="showXAxis"
+            [yAxis]="showYAxis"
+            [legend]="false"
+            [showXAxisLabel]="showXAxisLabel"
+            [showYAxisLabel]="showYAxisLabel"
+            [xAxisLabel]="'Tipo de Espacio'"
+            [yAxisLabel]="'Cantidad de Contratos'"
+            [scheme]="colorScheme"
+            [showDataLabel]="true"
+            [roundDomains]="true"
+            [roundEdges]="true"
+            [animations]="true">
+          </ngx-charts-bar-vertical>
+        </div>
+      </div>
+
+      <!-- Top 5 Espacios -->
+      <div class="chart-container top-spaces-container interactive-chart" (click)="expandChart('topSpaces')">
+        <div class="chart-header">
+          <h2>Top 5 Espacios - Reservas y Alquileres</h2>
+          <mat-icon class="expand-icon" matTooltip="Click para expandir">fullscreen</mat-icon>
+        </div>
+
+        <div *ngIf="loading.topSpaces" class="loading-container">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p>Cargando datos...</p>
+        </div>
+
+        <div *ngIf="error.topSpaces" class="error-message">
+          <mat-icon>error</mat-icon>
+          <span>{{ error.topSpaces }}</span>
+        </div>
+
+        <div *ngIf="!loading.topSpaces && !error.topSpaces && topSpacesData.length > 0" class="top-spaces-list">
+          <div *ngFor="let space of topSpacesData; let i = index" class="space-card" [class.top-rank]="i < 3">
+            <div class="rank-badge">{{ i + 1 }}</div>
+            <div class="space-info">
+              <h3>{{ space.spaceName }}</h3>
+              <div class="space-stats">
+                <div class="stat">
+                  <mat-icon>event</mat-icon>
+                  <span>{{ space.reservationCount }} reservas</span>
+                </div>
+                <div class="stat">
+                  <mat-icon>home</mat-icon>
+                  <span>{{ space.rentalCount }} alquileres</span>
+                </div>
+              </div>
+            </div>
+            <div class="total-activity">
+              {{ space.reservationCount + space.rentalCount }}
+            </div>
           </div>
-          <div class="kpi-content">
-            <h3>Contratos a vencer</h3>
-            <p class="kpi-value">{{ kpiData.contractsExpiringSoon }}</p>
-          </div>
-        </mat-card-content>
-      </mat-card>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Grid para gráficos -->
-  <div class="charts-grid">
-    <!-- Gráfico de ingresos mensuales -->
-    <div class="chart-container">
-      <div class="chart-header">
-        <h2>Ingresos Mensuales</h2>
+  <!-- Vista Expandida: Ingresos Mensuales -->
+  <div *ngIf="isExpandedView('monthlyRevenue')" class="expanded-view">
+    <div class="expanded-header">
+      <button mat-icon-button (click)="goBackToOverview()" class="back-button" matTooltip="Volver al dashboard">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <h1>{{ expandedChartTitle }}</h1>
+      <div class="expanded-actions">
         <mat-form-field appearance="outline">
           <mat-label>Meses</mat-label>
           <mat-select [(ngModel)]="selectedMonths" (selectionChange)="onMonthsChange()">
@@ -124,91 +318,152 @@
           </mat-select>
         </mat-form-field>
       </div>
+    </div>
+    
+    <div class="expanded-chart-container">
+      <ngx-charts-line-chart
+        [results]="expandedChartData"
+        [xAxis]="showXAxis"
+        [yAxis]="showYAxis"
+        [legend]="showLegend"
+        [showXAxisLabel]="showXAxisLabel"
+        [showYAxisLabel]="showYAxisLabel"
+        [xAxisLabel]="xAxisLabel"
+        [yAxisLabel]="yAxisLabel"
+        [scheme]="colorScheme"
+        [animations]="true">
+      </ngx-charts-line-chart>
+    </div>
+  </div>
 
-      <div *ngIf="loading.monthlyRevenue" class="loading-container">
-        <mat-spinner diameter="40"></mat-spinner>
-        <p>Cargando datos...</p>
-      </div>
+  <!-- Vista Expandida: Reservas por Tipo de Espacio -->
+  <div *ngIf="isExpandedView('spaceTypes')" class="expanded-view">
+    <div class="expanded-header">
+      <button mat-icon-button (click)="goBackToOverview()" class="back-button" matTooltip="Volver al dashboard">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <h1>{{ expandedChartTitle }}</h1>
+    </div>
+    
+    <div class="expanded-chart-container">
+      <ngx-charts-bar-vertical
+        [results]="expandedChartData"
+        [xAxis]="showXAxis"
+        [yAxis]="showYAxis"
+        [legend]="false"
+        [showXAxisLabel]="showXAxisLabel"
+        [showYAxisLabel]="showYAxisLabel"
+        [xAxisLabel]="'Tipo de Espacio'"
+        [yAxisLabel]="'Cantidad de Reservas'"
+        [scheme]="colorScheme"
+        [showDataLabel]="true"
+        [roundDomains]="true"
+        [roundEdges]="true"
+        [animations]="true">
+      </ngx-charts-bar-vertical>
+    </div>
+  </div>
 
-      <div *ngIf="error.monthlyRevenue" class="error-message">
-        <mat-icon>error</mat-icon>
-        <span>{{ error.monthlyRevenue }}</span>
-      </div>
+  <!-- Vista Expandida: Horarios de Mayor Demanda -->
+  <div *ngIf="isExpandedView('peakHours')" class="expanded-view">
+    <div class="expanded-header">
+      <button mat-icon-button (click)="goBackToOverview()" class="back-button" matTooltip="Volver al dashboard">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <h1>{{ expandedChartTitle }}</h1>
+    </div>
+    
+    <div class="expanded-chart-container">
+      <ngx-charts-bar-vertical
+        [results]="expandedChartData"
+        [xAxis]="showXAxis"
+        [yAxis]="showYAxis"
+        [legend]="showLegend"
+        [showXAxisLabel]="showXAxisLabel"
+        [showYAxisLabel]="showYAxisLabel"
+        [xAxisLabel]="'Horario'"
+        [yAxisLabel]="'Cantidad de Reservas'"
+        [scheme]="colorScheme"
+        [animations]="true">
+      </ngx-charts-bar-vertical>
+    </div>
+  </div>
 
-      <div *ngIf="!loading.monthlyRevenue && !error.monthlyRevenue && monthlyRevenueData.length > 0" class="chart">
-        <ngx-charts-line-chart
-          [results]="monthlyRevenueData"
-          [xAxis]="showXAxis"
-          [yAxis]="showYAxis"
-          [legend]="showLegend"
-          [showXAxisLabel]="showXAxisLabel"
-          [showYAxisLabel]="showYAxisLabel"
-          [xAxisLabel]="xAxisLabel"
-          [yAxisLabel]="yAxisLabel"
-          [scheme]="colorScheme">
-        </ngx-charts-line-chart>
-      </div>
+  <!-- Vista Expandida: Contratos por Tipo de Espacio -->
+  <div *ngIf="isExpandedView('contractTypes')" class="expanded-view">
+    <div class="expanded-header">
+      <button mat-icon-button (click)="goBackToOverview()" class="back-button" matTooltip="Volver al dashboard">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <h1>{{ expandedChartTitle }}</h1>
+    </div>
+    
+    <div class="expanded-chart-container">
+      <ngx-charts-bar-vertical
+        [results]="expandedChartData"
+        [xAxis]="showXAxis"
+        [yAxis]="showYAxis"
+        [legend]="false"
+        [showXAxisLabel]="showXAxisLabel"
+        [showYAxisLabel]="showYAxisLabel"
+        [xAxisLabel]="'Tipo de Espacio'"
+        [yAxisLabel]="'Cantidad de Contratos'"
+        [scheme]="colorScheme"
+        [showDataLabel]="true"
+        [roundDomains]="true"
+        [roundEdges]="true"
+        [animations]="true">
+      </ngx-charts-bar-vertical>
+    </div>
+  </div>
+
+  <!-- Vista Expandida: Top 5 Espacios -->
+  <div *ngIf="isExpandedView('topSpaces')" class="expanded-view">
+    <div class="expanded-header">
+      <button mat-icon-button (click)="goBackToOverview()" class="back-button" matTooltip="Volver al dashboard">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <h1>{{ expandedChartTitle }}</h1>
     </div>
 
-    <!-- Gráfico de reservas por tipo de espacio -->
-    <div class="chart-container">
-      <h2>Reservas por Tipo de Espacio</h2>
-
-      <div *ngIf="loading.spaceType" class="loading-container">
-        <mat-spinner diameter="40"></mat-spinner>
-        <p>Cargando datos...</p>
+    <!-- Leyenda de colores -->
+    <div class="color-legend">
+      <div class="legend-item">
+        <div class="legend-color podium"></div>
+        <span>🏆 Podio (Top 3)</span>
       </div>
-
-      <div *ngIf="error.spaceType" class="error-message">
-        <mat-icon>error</mat-icon>
-        <span>{{ error.spaceType }}</span>
-      </div>
-
-      <div *ngIf="!loading.spaceType && !error.spaceType" class="chart">
-        <ngx-charts-bar-vertical
-          [results]="spaceTypeData.length > 0 ? spaceTypeData : sampleSpaceTypeData"
-          [xAxis]="showXAxis"
-          [yAxis]="showYAxis"
-          [legend]="false"
-          [showXAxisLabel]="showXAxisLabel"
-          [showYAxisLabel]="showYAxisLabel"
-          [xAxisLabel]="'Tipo de Espacio'"
-          [yAxisLabel]="'Cantidad de Reservas'"
-          [scheme]="colorScheme"
-          [showDataLabel]="true"
-          [roundDomains]="true"
-          [roundEdges]="true"
-          [animations]="true">
-        </ngx-charts-bar-vertical>
+      <div class="legend-item">
+        <div class="legend-color regular"></div>
+        <span>⭐ Destacados (4-5)</span>
       </div>
     </div>
-
-    <!-- Histograma de horas pico -->
-    <div class="chart-container">
-      <h2>Horarios de Mayor Demanda</h2>
-
-      <div *ngIf="loading.peakHours" class="loading-container">
-        <mat-spinner diameter="40"></mat-spinner>
-        <p>Cargando datos...</p>
-      </div>
-
-      <div *ngIf="error.peakHours" class="error-message">
-        <mat-icon>error</mat-icon>
-        <span>{{ error.peakHours }}</span>
-      </div>
-
-      <div *ngIf="!loading.peakHours && !error.peakHours && peakHoursData.length > 0" class="chart">
-        <ngx-charts-bar-vertical
-          [results]="peakHoursData"
-          [xAxis]="showXAxis"
-          [yAxis]="showYAxis"
-          [legend]="showLegend"
-          [showXAxisLabel]="showXAxisLabel"
-          [showYAxisLabel]="showYAxisLabel"
-          [xAxisLabel]="'Horario'"
-          [yAxisLabel]="'Cantidad de Reservas'"
-          [scheme]="colorScheme">
-        </ngx-charts-bar-vertical>
+    
+    <div class="expanded-chart-container top-spaces-expanded">
+      <div *ngFor="let space of expandedChartData; let i = index" class="space-card-expanded" [class.top-rank]="i < 3">
+        <div class="rank-badge-large">{{ i + 1 }}</div>
+        <div class="space-info-expanded">
+          <h2>{{ space.spaceName }}</h2>
+          <div class="space-stats-expanded">
+            <div class="stat-expanded">
+              <mat-icon>event</mat-icon>
+              <div class="stat-content">
+                <span class="stat-label">Reservas</span>
+                <span class="stat-value">{{ space.reservationCount }}</span>
+              </div>
+            </div>
+            <div class="stat-expanded">
+              <mat-icon>home</mat-icon>
+              <div class="stat-content">
+                <span class="stat-label">Alquileres</span>
+                <span class="stat-value">{{ space.rentalCount }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="total-activity-expanded">
+          <span class="total-label">Total de actividad</span>
+          <span class="total-value">{{ space.reservationCount + space.rentalCount }}</span>
+        </div>
       </div>
     </div>
   </div>

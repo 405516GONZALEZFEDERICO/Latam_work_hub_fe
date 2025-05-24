@@ -48,9 +48,10 @@
               
               <!-- Estados de espacio -->
               <mat-optgroup label="Estados de Espacio" *ngIf="selectedReport === 'spaces'">
-                <mat-option value="DISPONIBLE">Disponible</mat-option>
-                <mat-option value="OCUPADO">Ocupado</mat-option>
-                <mat-option value="INACTIVO">Inactivo</mat-option>
+                <mat-option value="Disponible">Disponible</mat-option>
+                <mat-option value="Ocupado">Ocupado</mat-option>
+                <mat-option value="Inactivo">Inactivo</mat-option>
+                <mat-option value="Activo">Activo</mat-option>
               </mat-optgroup>
               
               <!-- Estados de reserva -->
@@ -83,21 +84,17 @@
               </mat-optgroup>
             </mat-select>
           </mat-form-field>
+<!-- getSpacesReport -->
 
-          <mat-form-field appearance="outline" *ngIf="showFilter('clientId')">
-            <mat-label>ID Cliente</mat-label>
-            <input matInput type="number" formControlName="clientId">
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" *ngIf="showFilter('providerId')">
+          <!-- <mat-form-field appearance="outline" *ngIf="showFilter('providerId')">
             <mat-label>ID Proveedor</mat-label>
             <input matInput type="number" formControlName="providerId">
-          </mat-form-field>
+          </mat-form-field> -->
           
-          <mat-form-field appearance="outline" *ngIf="showFilter('spaceId')">
+          <!-- <mat-form-field appearance="outline" *ngIf="showFilter('spaceId')">
             <mat-label>ID Espacio</mat-label>
             <input matInput type="number" formControlName="spaceId">
-          </mat-form-field>
+          </mat-form-field> -->
 
           <mat-form-field appearance="outline" *ngIf="showFilter('role')">
             <mat-label>Rol</mat-label>
@@ -148,34 +145,33 @@
       </div>
       
       <div class="table-container mat-elevation-z1">
-        <table mat-table [dataSource]="spaceData" matSort (matSortChange)="onSortChange($event)">
-          <ng-container matColumnDef="spaceId">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
-            <td mat-cell *matCellDef="let item">{{item.spaceId}}</td>
+        <table mat-table [dataSource]="spaceData">
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Nombre</th>
+            <td mat-cell *matCellDef="let item">{{item.name}}</td>
           </ng-container>
           
-          <ng-container matColumnDef="spaceName">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Nombre</th>
-            <td mat-cell *matCellDef="let item">{{item.spaceName}}</td>
-          </ng-container>
-          
-          <ng-container matColumnDef="providerName">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Proveedor</th>
-            <td mat-cell *matCellDef="let item">{{item.providerName}}</td>
+          <ng-container matColumnDef="owner">
+            <th mat-header-cell *matHeaderCellDef>Proveedor</th>
+            <td mat-cell *matCellDef="let item">{{item.owner}}</td>
           </ng-container>
           
           <ng-container matColumnDef="bookingCount">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Reservas</th>
+            <th mat-header-cell *matHeaderCellDef>Reservas</th>
             <td mat-cell *matCellDef="let item">{{item.bookingCount}}</td>
           </ng-container>
           
+          <ng-container matColumnDef="rentalCount">
+            <th mat-header-cell *matHeaderCellDef>Contratos</th>
+            <td mat-cell *matCellDef="let item">{{item.rentalCount}}</td>
+          </ng-container>
           <ng-container matColumnDef="revenueGenerated">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Ingresos</th>
+            <th mat-header-cell *matHeaderCellDef>Ingresos</th>
             <td mat-cell *matCellDef="let item">{{formatCurrency(item.revenueGenerated)}}</td>
           </ng-container>
           
           <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Estado</th>
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
             <td mat-cell *matCellDef="let item">{{translateStatus(item.status)}}</td>
           </ng-container>
           
@@ -213,49 +209,44 @@
       </div>
       
       <div class="table-container mat-elevation-z1">
-        <table mat-table [dataSource]="bookingData" matSort (matSortChange)="onSortChange($event)">
-          <ng-container matColumnDef="bookingId">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
-            <td mat-cell *matCellDef="let item">{{item.bookingId}}</td>
-          </ng-container>
-          
+        <table mat-table [dataSource]="bookingData">
           <ng-container matColumnDef="spaceName">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Espacio</th>
+            <th mat-header-cell *matHeaderCellDef>Espacio</th>
             <td mat-cell *matCellDef="let item">{{item.spaceName}}</td>
           </ng-container>
           
           <ng-container matColumnDef="clientName">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Cliente</th>
+            <th mat-header-cell *matHeaderCellDef>Cliente</th>
             <td mat-cell *matCellDef="let item">{{item.clientName}}</td>
           </ng-container>
           
           <ng-container matColumnDef="providerName">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Proveedor</th>
+            <th mat-header-cell *matHeaderCellDef>Proveedor</th>
             <td mat-cell *matCellDef="let item">{{item.providerName}}</td>
           </ng-container>
           
           <ng-container matColumnDef="startDate">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha Inicio</th>
+            <th mat-header-cell *matHeaderCellDef>Fecha Inicio</th>
             <td mat-cell *matCellDef="let item">{{formatDate(item.startDate)}}</td>
           </ng-container>
           
           <ng-container matColumnDef="endDate">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha Fin</th>
+            <th mat-header-cell *matHeaderCellDef>Fecha Fin</th>
             <td mat-cell *matCellDef="let item">{{formatDate(item.endDate)}}</td>
           </ng-container>
           
           <ng-container matColumnDef="durationHours">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Duración (h)</th>
+            <th mat-header-cell *matHeaderCellDef>Duración (h)</th>
             <td mat-cell *matCellDef="let item">{{item.durationHours}}</td>
           </ng-container>
           
           <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Estado</th>
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
             <td mat-cell *matCellDef="let item">{{translateStatus(item.status)}}</td>
           </ng-container>
           
           <ng-container matColumnDef="amount">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Monto</th>
+            <th mat-header-cell *matHeaderCellDef>Monto</th>
             <td mat-cell *matCellDef="let item">{{formatCurrency(item.amount)}}</td>
           </ng-container>
           
@@ -264,7 +255,7 @@
           
           <!-- Fila mostrada cuando no hay datos -->
           <tr class="mat-row" *matNoDataRow>
-            <td class="mat-cell" colspan="9">No hay datos disponibles.</td>
+            <td class="mat-cell" colspan="8">No hay datos disponibles.</td>
           </tr>
         </table>
         
@@ -293,64 +284,59 @@
       </div>
       
       <div class="table-container mat-elevation-z1">
-        <table mat-table [dataSource]="userData" matSort (matSortChange)="onSortChange($event)">
-          <ng-container matColumnDef="userId">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
-            <td mat-cell *matCellDef="let item">{{item.userId}}</td>
-          </ng-container>
-          
+        <table mat-table [dataSource]="userData">
           <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Nombre</th>
+            <th mat-header-cell *matHeaderCellDef>Nombre</th>
             <td mat-cell *matCellDef="let item">{{item.name}}</td>
           </ng-container>
           
           <ng-container matColumnDef="email">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Email</th>
+            <th mat-header-cell *matHeaderCellDef>Email</th>
             <td mat-cell *matCellDef="let item">{{item.email}}</td>
           </ng-container>
           
           <ng-container matColumnDef="role">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Rol</th>
+            <th mat-header-cell *matHeaderCellDef>Rol</th>
             <td mat-cell *matCellDef="let item">{{item.role}}</td>
           </ng-container>
           
           <ng-container matColumnDef="totalSpaces" *ngIf="isProviderTab()">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Espacios</th>
+            <th mat-header-cell *matHeaderCellDef>Espacios</th>
             <td mat-cell *matCellDef="let item">{{item.totalSpaces || 0}}</td>
           </ng-container>
           
           <ng-container matColumnDef="activeContracts">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Contratos Activos</th>
+            <th mat-header-cell *matHeaderCellDef>Contratos Activos</th>
             <td mat-cell *matCellDef="let item">{{item.activeContracts || 0}}</td>
           </ng-container>
           
           <ng-container matColumnDef="totalRevenue" *ngIf="isProviderTab()">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Ingresos Totales</th>
+            <th mat-header-cell *matHeaderCellDef>Ingresos Totales</th>
             <td mat-cell *matCellDef="let item">{{formatCurrency(item.totalRevenue || 0)}}</td>
           </ng-container>
           
           <ng-container matColumnDef="totalBookings" *ngIf="isClientTab()">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Reservas Totales</th>
+            <th mat-header-cell *matHeaderCellDef>Reservas Totales</th>
             <td mat-cell *matCellDef="let item">{{item.totalBookings || 0}}</td>
           </ng-container>
           
           <ng-container matColumnDef="totalSpending" *ngIf="isClientTab()">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Gastos Totales</th>
+            <th mat-header-cell *matHeaderCellDef>Gastos Totales</th>
             <td mat-cell *matCellDef="let item">{{formatCurrency(item.totalSpending || 0)}}</td>
           </ng-container>
           
           <ng-container matColumnDef="registrationDate">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha Registro</th>
+            <th mat-header-cell *matHeaderCellDef>Fecha Registro</th>
             <td mat-cell *matCellDef="let item">{{formatDate(item.registrationDate)}}</td>
           </ng-container>
           
           <ng-container matColumnDef="lastLoginDate">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Último Acceso</th>
+            <th mat-header-cell *matHeaderCellDef>Último Acceso</th>
             <td mat-cell *matCellDef="let item">{{formatDate(item.lastLoginDate)}}</td>
           </ng-container>
           
           <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Estado</th>
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
             <td mat-cell *matCellDef="let item">{{translateStatus(item.status)}}</td>
           </ng-container>
           
@@ -358,7 +344,7 @@
           <tr mat-row *matRowDef="let row; columns: userColumns;"></tr>
           
           <tr class="mat-row" *matNoDataRow>
-            <td class="mat-cell" colspan="8">No hay datos disponibles.</td>
+            <td class="mat-cell" [attr.colspan]="userColumns.length">No hay datos disponibles.</td>
           </tr>
         </table>
         
@@ -387,44 +373,39 @@
       </div>
       
       <div class="table-container mat-elevation-z1">
-        <table mat-table [dataSource]="contractData" matSort (matSortChange)="onSortChange($event)">
-          <ng-container matColumnDef="contractId">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
-            <td mat-cell *matCellDef="let item">{{item.contractId}}</td>
-          </ng-container>
-          
+        <table mat-table [dataSource]="contractData">
           <ng-container matColumnDef="spaceName">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Espacio</th>
+            <th mat-header-cell *matHeaderCellDef>Espacio</th>
             <td mat-cell *matCellDef="let item">{{item.spaceName}}</td>
           </ng-container>
           
           <ng-container matColumnDef="tenantName">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Inquilino</th>
+            <th mat-header-cell *matHeaderCellDef>Inquilino</th>
             <td mat-cell *matCellDef="let item">{{item.tenantName}}</td>
           </ng-container>
           
           <ng-container matColumnDef="ownerName">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Propietario</th>
+            <th mat-header-cell *matHeaderCellDef>Propietario</th>
             <td mat-cell *matCellDef="let item">{{item.ownerName}}</td>
           </ng-container>
           
           <ng-container matColumnDef="startDate">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha Inicio</th>
+            <th mat-header-cell *matHeaderCellDef>Fecha Inicio</th>
             <td mat-cell *matCellDef="let item">{{formatDate(item.startDate)}}</td>
           </ng-container>
           
           <ng-container matColumnDef="endDate">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha Fin</th>
+            <th mat-header-cell *matHeaderCellDef>Fecha Fin</th>
             <td mat-cell *matCellDef="let item">{{formatDate(item.endDate)}}</td>
           </ng-container>
           
           <ng-container matColumnDef="amount">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Monto</th>
+            <th mat-header-cell *matHeaderCellDef>Monto</th>
             <td mat-cell *matCellDef="let item">{{formatCurrency(item.amount)}}</td>
           </ng-container>
           
           <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Estado</th>
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
             <td mat-cell *matCellDef="let item">{{translateStatus(item.status)}}</td>
           </ng-container>
           
@@ -432,7 +413,7 @@
           <tr mat-row *matRowDef="let row; columns: contractColumns;"></tr>
           
           <tr class="mat-row" *matNoDataRow>
-            <td class="mat-cell" colspan="8">No hay datos disponibles.</td>
+            <td class="mat-cell" colspan="7">No hay datos disponibles.</td>
           </tr>
         </table>
         
@@ -461,39 +442,34 @@
       </div>
       
       <div class="table-container mat-elevation-z1">
-        <table mat-table [dataSource]="invoiceData" matSort (matSortChange)="onSortChange($event)">
-          <ng-container matColumnDef="invoiceId">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
-            <td mat-cell *matCellDef="let item">{{item.invoiceId}}</td>
-          </ng-container>
-          
+        <table mat-table [dataSource]="invoiceData">
           <ng-container matColumnDef="clientName">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Cliente</th>
+            <th mat-header-cell *matHeaderCellDef>Cliente</th>
             <td mat-cell *matCellDef="let item">{{item.clientName}}</td>
           </ng-container>
           
           <ng-container matColumnDef="issueDate">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha Emisión</th>
+            <th mat-header-cell *matHeaderCellDef>Fecha Emisión</th>
             <td mat-cell *matCellDef="let item">{{formatDate(item.issueDate)}}</td>
           </ng-container>
           
           <ng-container matColumnDef="dueDate">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha Vencimiento</th>
+            <th mat-header-cell *matHeaderCellDef>Fecha Vencimiento</th>
             <td mat-cell *matCellDef="let item">{{formatDate(item.dueDate)}}</td>
           </ng-container>
           
           <ng-container matColumnDef="totalAmount">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Total</th>
+            <th mat-header-cell *matHeaderCellDef>Total</th>
             <td mat-cell *matCellDef="let item">{{formatCurrency(item.totalAmount)}}</td>
           </ng-container>
           
           <ng-container matColumnDef="pendingAmount">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Pendiente</th>
+            <th mat-header-cell *matHeaderCellDef>Pendiente</th>
             <td mat-cell *matCellDef="let item">{{formatCurrency(item.pendingAmount)}}</td>
           </ng-container>
           
           <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Estado</th>
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
             <td mat-cell *matCellDef="let item">{{translateStatus(item.status)}}</td>
           </ng-container>
           
@@ -501,7 +477,7 @@
           <tr mat-row *matRowDef="let row; columns: invoiceColumns;"></tr>
           
           <tr class="mat-row" *matNoDataRow>
-            <td class="mat-cell" colspan="8">No hay datos disponibles.</td>
+            <td class="mat-cell" colspan="6">No hay datos disponibles.</td>
           </tr>
         </table>
         
@@ -530,29 +506,29 @@
       </div>
       
       <div class="table-container mat-elevation-z1">
-        <table mat-table [dataSource]="expiringContractData" matSort (matSortChange)="onSortChange($event)">
-          <ng-container matColumnDef="contractId">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
-            <td mat-cell *matCellDef="let item">{{item.contractId}}</td>
-          </ng-container>
-          
+        <table mat-table [dataSource]="expiringContractData">
           <ng-container matColumnDef="spaceName">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Espacio</th>
+            <th mat-header-cell *matHeaderCellDef>Espacio</th>
             <td mat-cell *matCellDef="let item">{{item.spaceName}}</td>
           </ng-container>
           
           <ng-container matColumnDef="tenantName">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Inquilino</th>
+            <th mat-header-cell *matHeaderCellDef>Inquilino</th>
             <td mat-cell *matCellDef="let item">{{item.tenantName}}</td>
           </ng-container>
           
-          <ng-container matColumnDef="expiryDate">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha Vencimiento</th>
-            <td mat-cell *matCellDef="let item">{{formatDate(item.expiryDate)}}</td>
+          <ng-container matColumnDef="ownerName">
+            <th mat-header-cell *matHeaderCellDef>Propietario</th>
+            <td mat-cell *matCellDef="let item">{{item.ownerName}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="endDate">
+            <th mat-header-cell *matHeaderCellDef>Fecha Vencimiento</th>
+            <td mat-cell *matCellDef="let item">{{formatDate(item.endDate)}}</td>
           </ng-container>
           
           <ng-container matColumnDef="daysUntilExpiry">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Días Restantes</th>
+            <th mat-header-cell *matHeaderCellDef>Días Restantes</th>
             <td mat-cell *matCellDef="let item">{{item.daysUntilExpiry}}</td>
           </ng-container>
           
@@ -589,30 +565,30 @@
       </div>
       
       <div class="table-container mat-elevation-z1">
-        <table mat-table [dataSource]="overdueInvoiceData" matSort (matSortChange)="onSortChange($event)">
-          <ng-container matColumnDef="invoiceId">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
-            <td mat-cell *matCellDef="let item">{{item.invoiceId}}</td>
-          </ng-container>
-          
+        <table mat-table [dataSource]="overdueInvoiceData">
           <ng-container matColumnDef="clientName">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Cliente</th>
+            <th mat-header-cell *matHeaderCellDef>Cliente</th>
             <td mat-cell *matCellDef="let item">{{item.clientName}}</td>
           </ng-container>
           
           <ng-container matColumnDef="dueDate">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha Vencimiento</th>
+            <th mat-header-cell *matHeaderCellDef>Fecha Vencimiento</th>
             <td mat-cell *matCellDef="let item">{{formatDate(item.dueDate)}}</td>
           </ng-container>
           
-          <ng-container matColumnDef="daysOverdue">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Días Vencidos</th>
-            <td mat-cell *matCellDef="let item">{{item.daysOverdue}}</td>
+          <ng-container matColumnDef="totalAmount">
+            <th mat-header-cell *matHeaderCellDef>Total</th>
+            <td mat-cell *matCellDef="let item">{{formatCurrency(item.totalAmount)}}</td>
           </ng-container>
           
-          <ng-container matColumnDef="overdueAmount">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Monto Vencido</th>
-            <td mat-cell *matCellDef="let item">{{formatCurrency(item.overdueAmount)}}</td>
+          <ng-container matColumnDef="pendingAmount">
+            <th mat-header-cell *matHeaderCellDef>Pendiente</th>
+            <td mat-cell *matCellDef="let item">{{formatCurrency(item.pendingAmount)}}</td>
+          </ng-container>
+          
+          <ng-container matColumnDef="daysOverdue">
+            <th mat-header-cell *matHeaderCellDef>Días Vencidos</th>
+            <td mat-cell *matCellDef="let item">{{item.daysOverdue}}</td>
           </ng-container>
           
           <tr mat-header-row *matHeaderRowDef="overdueInvoiceColumns"></tr>
