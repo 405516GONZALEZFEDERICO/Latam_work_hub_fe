@@ -73,7 +73,7 @@ export class AdminUsersManagementComponent implements OnInit {
   errorSpaces: string | null = null;
 
   // Columnas de las tablas
-  userColumns: string[] = ['name', 'email', 'lastLoginAt', 'registrationDate', 'enabled', 'actions', 'change-role'];
+  userColumns: string[] = ['name', 'email', 'role', 'lastLoginAt', 'registrationDate', 'enabled', 'actions'];
   spaceColumns: string[] = [ 'name', 'spaceType', 'address.city', 'capacity', 'pricePerHour', 'active', 'actions'];
 
   // Filtrado
@@ -117,11 +117,7 @@ export class AdminUsersManagementComponent implements OnInit {
         this.filteredClientUsers = [...this.allClientUsers];
         this.loadingUsers.clients = false;
         
-        if (this.allClientUsers.length === 0) {
-          this.snackBar.open('No se encontraron clientes en el sistema', 'Cerrar', {
-            duration: 5000
-          });
-        }
+        // No mostrar mensaje cuando no hay clientes - es un estado normal
       },
       error: (error: any) => {
         console.error('Error al cargar los clientes:', error);
@@ -146,11 +142,7 @@ export class AdminUsersManagementComponent implements OnInit {
         this.filteredProviderUsers = [...this.allProviderUsers];
         this.loadingUsers.providers = false;
         
-        if (this.allProviderUsers.length === 0) {
-          this.snackBar.open('No se encontraron proveedores en el sistema', 'Cerrar', {
-            duration: 5000
-          });
-        }
+        // No mostrar mensaje cuando no hay proveedores - es un estado normal
       },
       error: (error: any) => {
         console.error('Error al cargar los proveedores:', error);
@@ -177,11 +169,7 @@ export class AdminUsersManagementComponent implements OnInit {
         this.filteredSpaces = [...this.allSpaces];
         this.loadingSpaces = false;
         
-        if (this.allSpaces.length === 0) {
-          this.snackBar.open('No se encontraron espacios en el sistema', 'Cerrar', {
-            duration: 5000
-          });
-        }
+        // No mostrar mensaje cuando no hay espacios - es un estado normal
       },
       error: (error: any) => {
         console.error('Error al cargar los espacios:', error);
@@ -202,8 +190,7 @@ export class AdminUsersManagementComponent implements OnInit {
   }
 
   toggleUserStatus(user: AdminUser): void {
-    console.log('Intentando cambiar estado del usuario:', user);
-    console.log('FirebaseUID del usuario:', user.firebaseUid);
+    // Cambiar estado del usuario
     
     if (!user.firebaseUid) {
       console.error('Error: El usuario no tiene un firebaseUid válido', user);
@@ -351,7 +338,7 @@ export class AdminUsersManagementComponent implements OnInit {
   getUserRoleName(user: AdminUser): string {
     if (!user) return 'Desconocido';
     
-    console.log('Obteniendo rol para usuario:', user);
+    // Obtener rol del usuario
     
     // Si no hay rol, devolver el valor por defecto según el contexto
     if (!user.role) {
@@ -384,113 +371,7 @@ export class AdminUsersManagementComponent implements OnInit {
    * Muestra detalles completos de un usuario en una notificación
    */
   showUserDetails(user: AdminUser): void {
-    console.log('Mostrando detalles del usuario:', user);
+    // Mostrar detalles del usuario
     // TODO: Implementar modal con detalles completos del usuario
-  }
-
-  openRoleChangeDialog(user: AdminUser): void {
-    // Mapeo de roles del backend a nombres en español
-    const roleDisplayNames = {
-      'ADMIN': 'Administrador',
-      'PROVEEDOR': 'Proveedor', 
-      'CLIENTE': 'Cliente',
-      'DEFAULT': 'Sin asignar'
-    };
-
-    // Mapeo de nombres en español a roles del backend
-    const backendRoleMapping = {
-      'Administrador': 'ADMIN',
-      'Proveedor': 'PROVIDER',
-      'Cliente': 'CLIENT'
-    };
-
-    const currentRoleDisplay = roleDisplayNames[user.role as keyof typeof roleDisplayNames] || 'Desconocido';
-    
-    // Crear opciones excluyendo el rol actual y DEFAULT
-    const availableRoles = Object.keys(backendRoleMapping).filter(role => 
-      backendRoleMapping[role as keyof typeof backendRoleMapping] !== this.mapFrontendToBackendRole(user.role as UserRole)
-    );
-
-    // Mostrar confirmación simple con prompt nativo por ahora
-    const selectedRole = prompt(
-      `Cambiar rol de ${user.name || user.email}\n\nRol actual: ${currentRoleDisplay}\n\nSeleccione nuevo rol:\n1. Administrador\n2. Proveedor\n3. Cliente\n\nIngrese el número (1, 2 o 3):`
-    );
-
-    if (selectedRole) {
-      let newRoleSpanish = '';
-      let newRoleBackend = '';
-
-      switch (selectedRole.trim()) {
-        case '1':
-          newRoleSpanish = 'Administrador';
-          newRoleBackend = 'ADMIN';
-          break;
-        case '2':
-          newRoleSpanish = 'Proveedor'; 
-          newRoleBackend = 'PROVIDER';
-          break;
-        case '3':
-          newRoleSpanish = 'Cliente';
-          newRoleBackend = 'CLIENT';
-          break;
-        default:
-          this.snackBar.open('Selección inválida', 'Cerrar', { duration: 3000 });
-          return;
-      }
-
-      if (confirm(`¿Está seguro de cambiar el rol de ${user.name || user.email} a ${newRoleSpanish}?`)) {
-        this.changeUserRole(user, newRoleBackend as UserRole);
-      }
-    }
-  }
-
-  private mapFrontendToBackendRole(role: UserRole): string {
-    const mapping = {
-      'ADMIN': 'ADMIN',
-      'PROVEEDOR': 'PROVIDER', 
-      'CLIENTE': 'CLIENT',
-      'DEFAULT': 'DEFAULT'
-    };
-    return mapping[role] || role;
-  }
-
-  private changeUserRole(user: AdminUser, newRole: UserRole): void {
-    if (!user.firebaseUid) {
-      this.snackBar.open('Error: Usuario sin UID válido', 'Cerrar', { duration: 3000 });
-      return;
-    }
-
-    // Mapear el rol al formato del backend
-    const backendRole = this.mapFrontendToBackendRole(newRole);
-
-    this.authService.changeUserRole(user.firebaseUid, backendRole as UserRole).subscribe({
-      next: (response) => {
-        // Actualizar el rol localmente
-        user.role = newRole;
-        
-        // Refrescar las listas filtradas
-        this.applyUserFilter();
-        
-        this.snackBar.open(`Rol cambiado exitosamente a ${this.getRoleDisplayName(newRole)}`, 'Cerrar', { 
-          duration: 3000 
-        });
-      },
-      error: (error) => {
-        console.error('Error al cambiar rol:', error);
-        this.snackBar.open('Error al cambiar el rol del usuario', 'Cerrar', { 
-          duration: 3000 
-        });
-      }
-    });
-  }
-
-  private getRoleDisplayName(role: UserRole): string {
-    const displayNames = {
-      'ADMIN': 'Administrador',
-      'PROVEEDOR': 'Proveedor',
-      'CLIENTE': 'Cliente', 
-      'DEFAULT': 'Sin asignar'
-    };
-    return displayNames[role] || role;
   }
 } 

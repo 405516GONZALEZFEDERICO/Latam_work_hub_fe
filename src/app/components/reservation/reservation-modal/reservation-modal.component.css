@@ -1,10 +1,8 @@
-
-
 .reservation-modal {
   border-radius: 8px;
   width: 100%;
   height: 100%;
-  max-height: 150vh;
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -23,43 +21,82 @@
   z-index: 2000 !important;
 }
 
-.modal-header {
+.reservation-modal-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
   background-color: var(--color-primary);
   color: white;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  width: 100%;
-  z-index: 10;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.reservation-modal-header h2 {
+  margin: 0;
+  flex: 1;
+  text-align: left;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.reservation-close-button {
+  color: white;
+  flex-shrink: 0;
+}
+
+.modal-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 1rem !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  background-color: var(--color-primary) !important;
+  color: white !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1 !important;
 }
 
 .modal-header h2 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 500;
+  margin: 0 !important;
+  flex: 1 !important;
+  text-align: left !important;
+  font-size: 1.25rem !important;
+  font-weight: 500 !important;
+  order: unset !important;
+}
+
+.modal-header .close-button {
+  color: white !important;
+  flex-shrink: 0 !important;
+  order: unset !important;
+  align-self: unset !important;
 }
 
 .modal-content {
   flex: 1;
   overflow-y: auto;
   position: relative;
-  max-height: calc(98vh - 60px);
+  max-height: calc(90vh - 180px);
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .content-layout {
   display: flex;
   flex: 1;
-  min-height: 500px;
+  min-height: 400px;
   width: 100%;
+  overflow: hidden;
 }
 
 .main-column {
   flex: 1;
-  padding: 24px;
+  padding: 20px;
   min-width: 0;
   overflow-y: auto;
   border-right: 1px solid #eee;
@@ -69,7 +106,7 @@
 .price-column {
   width: 350px;
   background-color: #f9f9f9;
-  padding: 24px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -275,20 +312,22 @@ form {
   font-size: 18px;
 }
 
-/* Payment Options (ajustado para nueva posición) */
+/* Payment Options (ajustado para ser completamente visible) */
 .payment-options {
-  padding: 20px;
-  margin-top: 20px;
+  padding: 20px 24px;
+  margin-top: auto;
   background-color: #fff;
   border-top: 1px solid #eee;
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
+  flex-shrink: 0;
+  min-height: 120px;
 }
 
 .payment-options h5 {
-  margin: 0 0 15px 0;
+  margin: 0 0 16px 0;
   font-size: 1.1rem;
   font-weight: 500;
   color: var(--color-primary-dark);
@@ -299,63 +338,72 @@ form {
   width: 100%;
   max-width: 400px;
   height: 48px;
-  background-color: #009ee3; /* Color oficial de Mercado Pago */
+  background: linear-gradient(135deg, #009ee3 0%, #0073e6 100%);
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   font-size: 16px;
   font-weight: 500;
   cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: 12px;
-  transition: background-color 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 115, 230, 0.3);
 }
 
-.mercadopago-button:hover {
-  background-color: #008ecf;
+.mercadopago-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0073e6 0%, #005bb5 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 115, 230, 0.4);
+}
+
+.mercadopago-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .mp-button-content {
   display: flex;
   align-items: center;
-  justify-content: center;
-}
-
-.mp-logo {
-  height: 60px;
-  width: 60px;
-  margin-right: 50px;
+  gap: 8px;
 }
 
 .secure-payment-note {
   display: flex;
   align-items: center;
-  font-size: 12px;
-  color: var(--color-text-light);
-  margin-top: 10px;
+  gap: 6px;
+  font-size: 0.875rem;
+  color: #666;
+  margin: 0;
   text-align: center;
 }
 
 .secure-payment-note mat-icon {
-  font-size: 14px;
-  height: 14px;
-  width: 14px;
-  margin-right: 5px;
-  color: var(--color-success);
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: #4caf50;
 }
 
 /* Media Queries actualizado para nuevo layout */
 @media (max-width: 960px) {
   .reservation-modal {
     width: 95vw;
+    max-height: 95vh;
   }
 
   .content-layout {
     flex-direction: column;
+    overflow-y: auto;
   }
 
   .main-column,
   .price-column {
     width: 100%;
+    overflow: visible;
   }
 
   .price-column {
@@ -364,39 +412,68 @@ form {
   }
 
   .payment-options {
-    padding: 15px;
+    padding: 16px;
+    min-height: 100px;
+  }
+
+  .modal-content {
+    max-height: calc(95vh - 160px);
   }
 }
 
 @media (max-width: 600px) {
-  .action-buttons {
-    flex-direction: column;
-  }
-  
-  .action-buttons button {
-    width: 100%;
-  }
-
   .modal-header {
     padding: 12px 16px;
   }
 
-  .main-column,
-  .price-column {
-    padding: 16px;
-  }
-  
-  .reservation-type-toggle {
-    flex-direction: column;
-    height: auto;
-  }
-  
-  .reservation-type-toggle .mat-button-toggle {
-    height: 60px;
+  .modal-header .close-button {
+    margin-right: 0;
   }
 
+  .modal-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .main-column,
+  .price-column {
+    padding: 12px;
+  }
+  
   .payment-options {
-    padding: 10px;
+    padding: 12px 16px;
+    min-height: 90px;
+  }
+
+  .mercadopago-button {
+    height: 44px;
+    font-size: 14px;
+  }
+
+  .secure-payment-note {
+    font-size: 0.8rem;
+  }
+
+  .modal-content {
+    max-height: calc(95vh - 140px);
+  }
+}
+
+/* Estilos para pantallas muy pequeñas */
+@media (max-width: 480px) {
+  .modal-header {
+    padding: 10px 12px;
+  }
+
+  .modal-header .close-button {
+    margin-right: 8px;
+  }
+
+  .modal-header h2 {
+    font-size: 1rem;
+    padding: 0 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 
@@ -516,4 +593,29 @@ form {
 
 ::ng-deep .error-snackbar .mat-simple-snackbar-action {
   color: white !important;
+}
+
+/* Estilos para la leyenda del modal */
+.modal-leyenda {
+  display: flex;
+  align-items: flex-start;
+  padding: 16px 24px;
+  background-color: #fff3e0;
+  border-left: 4px solid #ff9800;
+  margin: 0;
+}
+
+.modal-leyenda mat-icon {
+  margin-right: 12px;
+  font-size: 20px;
+  color: #ff9800;
+  flex-shrink: 0;
+}
+
+.leyenda-texto {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #e65100;
+  padding-top: 8px;
+  padding-left: 12px;
 }

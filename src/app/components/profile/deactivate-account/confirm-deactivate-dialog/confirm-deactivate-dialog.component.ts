@@ -92,14 +92,17 @@ import { MatIconModule } from '@angular/material/icon';
       width: 100%;
     }
 
-    mat-dialog-actions {
+    .mat-dialog-actions {
       margin: 24px -16px -16px;
       padding: 16px;
       border-top: 1px solid #e1e4e8;
     }
 
-    mat-dialog-actions button {
+    .mat-dialog-actions button {
       margin-left: 8px;
+    }
+    .warning-icon{
+      margin-top: 5px;
     }
   `]
 })

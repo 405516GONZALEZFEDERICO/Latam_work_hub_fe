@@ -1,7 +1,7 @@
 <div>
-  <div class="modal-header">
+  <div class="reservation-modal-header">
     <h2>Reservar Espacio</h2>
-    <button mat-icon-button (click)="onCancel()">
+    <button mat-icon-button (click)="onCancel()" class="reservation-close-button">
       <mat-icon>close</mat-icon>
     </button>
   </div>
@@ -75,7 +75,7 @@
 
               <!-- Rango de fechas para reserva mensual -->
               <div *ngIf="reservationForm.get('reservationType')?.value === 'PER_MONTH'" class="date-range-info">
-                <mat-icon>date_range</mat-icon>
+                <mat-icon>calendar_month</mat-icon>
                 <span>Rango de contrato: {{ getMonthDateRange() }}</span>
               </div>
 

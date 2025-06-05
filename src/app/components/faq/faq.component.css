@@ -585,4 +585,53 @@
   justify-content: center !important;
   vertical-align: middle !important;
   margin-right: 4px !important;
+}
+
+/* Mejoras adicionales para mobile */
+@media (max-width: 480px) {
+  .faq-container {
+    padding: 8px !important;
+  }
+  
+  .header-content {
+    padding: 16px 12px !important;
+  }
+  
+  .title-section h1 {
+    font-size: 1.4rem !important;
+    line-height: 1.2 !important;
+  }
+  
+  .subtitle {
+    font-size: 0.85rem !important;
+  }
+  
+  .welcome-content,
+  .contact-content {
+    padding: 12px !important;
+  }
+  
+  .faq-answer {
+    font-size: 0.85rem !important;
+    line-height: 1.4 !important;
+    padding: 12px 8px !important;
+  }
+  
+  .category-header {
+    padding: 12px 8px !important;
+  }
+  
+  .mat-mdc-card-title {
+    font-size: 0.95rem !important;
+  }
+  
+  .faq-question {
+    padding: 12px 8px !important;
+  }
+  
+  .back-button,
+  .terms-button {
+    font-size: 0.85rem !important;
+    padding: 8px 16px !important;
+  }
 } 

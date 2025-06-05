@@ -12,9 +12,18 @@ export interface KpiCardsDto {
   activeProviders: number;
   publishedSpaces: number;
   reservationsThisMonth: number;
+  
+  // Ingresos diferenciados
+  totalGrossRevenueLast30Days: number;  // Ingresos brutos (sin descontar reembolsos)
+  totalNetRevenueLast30Days: number;    // Ingresos netos (descontando reembolsos)
+  totalRefundsLast30Days: number;       // Total de reembolsos
+  
+  // Para compatibilidad hacia atrás - será igual a totalNetRevenueLast30Days
+  /** @deprecated Use totalNetRevenueLast30Days instead */
   totalRevenueLast30Days: number;
+  
   activeContracts: number;
-  contractsExpiringSoon: number;
+  contractsExpiringSoon: number;        // Contratos próximos a vencer (ej. 30 días)
 }
 
 export interface MonthlyRevenueDto {
@@ -238,7 +247,7 @@ export class AdminDashboardService {
       return throwError(() => new Error('No hay un usuario autenticado'));
     }
     
-    console.log('Desactivando usuario actual con UID:', currentUser.uid);
+          console.log('Desactivando usuario actual');
     return this.deactivateUser(currentUser.uid);
   }
 
@@ -252,7 +261,7 @@ export class AdminDashboardService {
       return throwError(() => new Error('No hay un usuario autenticado'));
     }
     
-    console.log('Activando usuario actual con UID:', currentUser.uid);
+          console.log('Activando usuario actual');
     return this.activateUser(currentUser.uid);
   }
 } 

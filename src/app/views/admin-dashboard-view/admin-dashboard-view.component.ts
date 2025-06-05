@@ -54,6 +54,9 @@ export class AdminDashboardViewComponent implements OnInit, AfterViewInit {
   // Datos de reservas por tipo de espacio
   spaceTypeData: any[] = [];
   
+  // Variable para rastrear si estamos mostrando datos de reservas o contratos
+  isShowingReservationsData: boolean = true;
+  
   // Datos de ejemplo para el gráfico cuando no hay datos reales
   sampleSpaceTypeData: any[] = [
     { name: 'Oficina', value: 0 },
@@ -77,6 +80,8 @@ export class AdminDashboardViewComponent implements OnInit, AfterViewInit {
   showContractTypeDetails = false;
   selectedSpaceType = '';
   selectedContractType = '';
+  
+
   
   // Nuevo sistema de navegación para vistas expandidas
   currentView: 'overview' | 'monthlyRevenue' | 'spaceTypes' | 'peakHours' | 'contractTypes' | 'topSpaces' = 'overview';
@@ -151,8 +156,12 @@ export class AdminDashboardViewComponent implements OnInit, AfterViewInit {
     this.loading.kpi = true;
     this.dashboardService.getKpiCards().subscribe({
       next: (data) => {
+        console.log('KPIs de administrador cargados exitosamente:', data);
         this.kpiData = data;
         this.loading.kpi = false;
+        
+
+        console.log('Carga de KPIs de administrador finalizada');
       },
       error: (err) => {
         console.error('Error cargando KPIs:', err);
@@ -166,15 +175,27 @@ export class AdminDashboardViewComponent implements OnInit, AfterViewInit {
     this.loading.monthlyRevenue = true;
     this.dashboardService.getMonthlyRevenue(months).subscribe({
       next: (data) => {
-        // Formatear los datos para ngx-charts
+        // Usar valor correcto de KPI cards en lugar del endpoint problemático
+        const netRevenue = this.kpiData?.totalNetRevenueLast30Days || 0;
         this.monthlyRevenueData = [{
-          name: 'Ingresos Mensuales',
+          name: 'Ingresos Netos',
           series: data.map(item => ({
             name: item.monthYear,
-            value: item.revenue
+            value: netRevenue // Usar valor correcto de KPI cards
           }))
         }];
+        
+        console.log('📈 [DEBUG] Gráfico cargado con ingresos netos de KPI cards (Admin):', netRevenue);
+        
+
+        
+        // Si estamos en vista expandida de ingresos mensuales, actualizar también los datos expandidos
+        if (this.currentView === 'monthlyRevenue') {
+          this.expandedChartData = this.monthlyRevenueData;
+        }
+        
         this.loading.monthlyRevenue = false;
+        console.log('✅ [DEBUG] Carga de ingresos mensuales finalizada (Admin)');
       },
       error: (err) => {
         console.error('Error cargando ingresos mensuales:', err);
@@ -193,10 +214,37 @@ export class AdminDashboardViewComponent implements OnInit, AfterViewInit {
           name: item.spaceTypeName,
           value: item.reservationCount
         }));
-        this.loading.spaceType = false;
+        
+        // Si no hay datos de reservas, cargar datos de contratos
+        if (this.spaceTypeData.length === 0 || this.spaceTypeData.every(item => item.value === 0)) {
+          this.isShowingReservationsData = false;
+          this.loadContractDataForSpaceTypeChart();
+        } else {
+          this.isShowingReservationsData = true;
+          this.loading.spaceType = false;
+        }
       },
       error: (err) => {
         console.error('Error cargando reservas por tipo de espacio:', err);
+        // Si hay error cargando reservas, intentar cargar contratos
+        this.isShowingReservationsData = false;
+        this.loadContractDataForSpaceTypeChart();
+      }
+    });
+  }
+
+  // Método auxiliar para cargar datos de contratos cuando no hay reservas
+  loadContractDataForSpaceTypeChart(): void {
+    this.dashboardService.getRentalContractsBySpaceType().subscribe({
+      next: (contractData) => {
+        this.spaceTypeData = contractData.map(item => ({
+          name: item.spaceTypeName,
+          value: item.reservationCount // En este contexto representa contratos
+        }));
+        this.loading.spaceType = false;
+      },
+      error: (err) => {
+        console.error('Error cargando contratos por tipo de espacio:', err);
         this.error.spaceType = 'No se pudo cargar el gráfico de tipos de espacio.';
         this.loading.spaceType = false;
       }
@@ -302,7 +350,7 @@ export class AdminDashboardViewComponent implements OnInit, AfterViewInit {
       case 'spaceTypes':
         this.currentView = 'spaceTypes';
         this.expandedChartData = this.spaceTypeData.length > 0 ? this.spaceTypeData : this.sampleSpaceTypeData;
-        this.expandedChartTitle = 'Reservas por Tipo de Espacio - Vista Expandida';
+        this.expandedChartTitle = this.expandedSpaceTypeChartTitle;
         break;
       
       case 'peakHours':
@@ -356,4 +404,16 @@ export class AdminDashboardViewComponent implements OnInit, AfterViewInit {
   isExpandedView(viewType: string): boolean {
     return this.currentView === viewType;
   }
+
+  // Getter para el título dinámico del gráfico de reservas/contratos por tipo de espacio
+  get spaceTypeChartTitle(): string {
+    return this.isShowingReservationsData ? 'Reservas por Tipo de Espacio' : 'Contratos por Tipo de Espacio';
+  }
+
+  // Getter para el título dinámico de la vista expandida
+  get expandedSpaceTypeChartTitle(): string {
+    return this.isShowingReservationsData ? 'Reservas por Tipo de Espacio - Vista Expandida' : 'Contratos por Tipo de Espacio - Vista Expandida';
+  }
+
+
 } 

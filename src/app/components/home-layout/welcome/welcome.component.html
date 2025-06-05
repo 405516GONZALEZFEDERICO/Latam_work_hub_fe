@@ -27,8 +27,8 @@
       <p>Accede rápidamente a las funciones más importantes para tu rol</p>
     </div>
     
-    <div class="quick-actions-grid">
-      <div class="feature-card" *ngFor="let action of getQuickActions()">
+    <div class="quick-actions-grid" [class.loading]="!currentUser">
+      <div class="feature-card" *ngFor="let action of getQuickActions(); trackBy: trackByAction">
         <div class="card-icon">
           <mat-icon>{{ action.icon }}</mat-icon>
         </div>

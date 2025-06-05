@@ -83,6 +83,7 @@ export class BookingsTabComponent implements OnInit, OnDestroy {
   
   // UI state properties
   loading = false;
+  payingBooking = false;
 
   // Filter options
   statusFilter = new FormControl('');
@@ -144,7 +145,7 @@ export class BookingsTabComponent implements OnInit, OnDestroy {
     
     this.authService.getCurrentUser().subscribe({
       next: (user) => {
-        console.log('BookingsTabComponent: Usuario obtenido', user);
+        // Usuario obtenido
         if (!user) {
           this.loading = false;
           console.error('BookingsTabComponent: Usuario no encontrado');
@@ -155,6 +156,16 @@ export class BookingsTabComponent implements OnInit, OnDestroy {
         this.bookingService.getUserBookings(user.uid, status, page, size).subscribe({
           next: (response) => {
             console.log('BookingsTabComponent: Reservas cargadas', response);
+            
+            // Ordenar por fecha de inicio de forma descendente (más recientes primero)
+            if (response.content && response.content.length > 0) {
+              response.content.sort((a, b) => {
+                const dateA = new Date(a.startDate);
+                const dateB = new Date(b.startDate);
+                return dateB.getTime() - dateA.getTime(); // Descendente
+              });
+            }
+            
             this.bookings = response.content;
             this.totalBookings = response.totalElements;
             this.currentPage = response.number;
@@ -204,30 +215,48 @@ export class BookingsTabComponent implements OnInit, OnDestroy {
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
         this.loading = true;
-        // Aquí iría la lógica para cancelar la reserva
-        // Ejemplo: this.bookingService.cancelBooking(booking.id)...
-        this.bookingService.refundBooking(booking.id)
-          .pipe(
-            finalize(() => this.loading = false)
-          )
-          .subscribe({
-            next: () => {
-              this.snackBar.open('Reserva cancelada con éxito', 'Cerrar', {
-                duration: 3000
-              });
-              // Recargar reservas después de cancelar
-              this.loadBookings(this.currentPage, this.pageSize);
-            },  
-            error: (error) => {
-              console.error('Error al cancelar la reserva:', error);
-              this.snackBar.open('Error al cancelar la reserva', 'Cerrar', {
-                duration: 3000
-              });
-            }
-          });
-  
+        
+        // Mostrar mensaje inicial con delay
+        this.snackBar.open('Preparando cancelación...', '', {
+          duration: 1500,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom'
+        });
+        
+        // Delay de 1500ms antes de procesar la cancelación
+        setTimeout(() => {
+          this.processCancellation(booking);
+        }, 1500);
       }
     });
+  }
+
+  private processCancellation(booking: BookingResponseDto): void {
+    this.snackBar.open('Cancelando reserva...', '', {
+      duration: 1500,
+      horizontalPosition: 'center',
+      verticalPosition: 'bottom'
+    });
+
+    this.bookingService.refundBooking(booking.id)
+      .pipe(
+        finalize(() => this.loading = false)
+      )
+      .subscribe({
+        next: () => {
+          this.snackBar.open('Reserva cancelada con éxito', 'Cerrar', {
+            duration: 3000
+          });
+          // Recargar reservas después de cancelar
+          this.loadBookings(this.currentPage, this.pageSize);
+        },  
+        error: (error) => {
+          console.error('Error al cancelar la reserva:', error);
+          this.snackBar.open('Error al cancelar la reserva', 'Cerrar', {
+            duration: 3000
+          });
+        }
+      });
   }
 
   isConfirmedStatus(status: string): boolean {
@@ -389,10 +418,10 @@ export class BookingsTabComponent implements OnInit, OnDestroy {
   payBooking(booking: BookingResponseDto): void {
     if (!this.isPendingStatus(booking.status)) return;
     
-    this.loading = true;
+    this.payingBooking = true;
     this.bookingService.generateBookingPaymentLink(booking.id).subscribe({
       next: (paymentUrl) => {
-        this.loading = false;
+        this.payingBooking = false;
         if (paymentUrl && paymentUrl.trim() !== '') {
           // Abrir URL de pago en una nueva ventana/pestaña
           window.open(paymentUrl, '_blank', 'noopener,noreferrer');
@@ -403,7 +432,7 @@ export class BookingsTabComponent implements OnInit, OnDestroy {
         }
       },
       error: (error) => {
-        this.loading = false;
+        this.payingBooking = false;
         console.error('Error al generar enlace de pago:', error);
         this.snackBar.open('Error al generar el enlace de pago', 'Cerrar', {
           duration: 3000

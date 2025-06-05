@@ -286,6 +286,22 @@ export class CompleteProfileComponent implements OnInit, OnDestroy {
     this.profileService.getProfileData()
       .pipe(
         takeUntil(this.destroy$),
+        catchError(error => {
+          // Manejar errores 404 (no encontrado) de manera silenciosa
+          if (error.status === 404) {
+            console.log('No se encontraron datos del perfil para el usuario');
+            return EMPTY;
+          }
+          
+          // Solo mostrar error para problemas reales del servidor (500, 401, etc.)
+          console.error('Error del servidor al cargar datos del perfil:', error);
+          this.snackBar.open('Error al cargar datos del perfil', 'Cerrar', {
+            duration: 5000,
+            panelClass: ['snackbar-error']
+          });
+          
+          return EMPTY;
+        }),
         finalize(() => {
           this.profileDataLoaded = true;
         })
@@ -294,13 +310,6 @@ export class CompleteProfileComponent implements OnInit, OnDestroy {
         next: (data) => {
           this.userData = data;
           this.personalDataLoaded = true;
-        },
-        error: (error) => {
-          console.error('Error al cargar datos del perfil:', error);
-          this.snackBar.open('Error al cargar datos del perfil', 'Cerrar', {
-            duration: 5000,
-            panelClass: ['snackbar-error']
-          });
         }
       });
   }
@@ -505,7 +514,9 @@ export class CompleteProfileComponent implements OnInit, OnDestroy {
       .pipe(
         takeUntil(this.destroy$),
         catchError((error) => {
-          console.error('Error al cargar la dirección del usuario:', error);
+          // No mostrar ningún snackBar cuando no se encuentran datos de dirección
+          // Manejar todos los errores de manera silenciosa
+          console.log('No se encontraron datos de dirección para el usuario');
           this.isLoadingAddress = false;
           this.addressData = null;
           return EMPTY;

@@ -38,5 +38,4 @@ export interface ExpiringContractsAlertFilters {
 // Filtros para alertas de facturas vencidas
 export interface OverdueInvoicesAlertFilters {
   minDaysOverdue?: number;
-  status?: string;
 } 

@@ -796,24 +796,33 @@ export class SpaceFormComponent implements OnInit, OnDestroy {
       this.isSubmitting = true;
       
       // Mostrar mensaje informativo
-      this.snackBar.open('Preparando para guardar... Puedes seguir haciendo cambios', 'Cancelar', {
-        duration: 3000,
+      this.snackBar.open('Preparando para guardar...', 'Cancelar', {
+        duration: 1500,
         panelClass: ['info-snackbar']
       }).onAction().subscribe(() => {
         // Si el usuario hace clic en "Cancelar", detener el envío
         this.cancelSubmission();
       });
       
-      // Establecer un temporizador de 2 segundos antes de enviar el formulario
+      // Establecer un temporizador de 1.5 segundos antes de enviar el formulario
       this.submitTimer = setTimeout(() => {
         this.proceedWithSubmission();
-      }, 2000);
+      }, 1500);
       
       return;
     }
     
-    // Si no hay cambios, proceder directamente
-    this.proceedWithSubmission();
+    // Si no hay cambios, agregar delay también
+    this.isSubmitting = true;
+    
+    this.snackBar.open('Preparando para guardar...', '', {
+      duration: 1500,
+      panelClass: ['info-snackbar']
+    });
+    
+    setTimeout(() => {
+      this.proceedWithSubmission();
+    }, 1500);
   }
   
   cancelSubmission(): void {

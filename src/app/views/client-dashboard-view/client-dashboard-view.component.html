@@ -1,0 +1,256 @@
+<div class="dashboard-container">
+  <h1 class="dashboard-title">Mi Dashboard</h1>
+
+  <!-- Vista General (Overview) -->
+  <div *ngIf="isOverviewMode()">
+    <!-- Tarjetas KPI -->
+    <div class="kpi-cards-section">
+      <h2>Mis indicadores</h2>
+
+      <div *ngIf="loading.kpi" class="loading-container">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Cargando indicadores...</p>
+        <small>Por favor espere mientras obtenemos sus datos</small>
+      </div>
+
+      <div *ngIf="error.kpi" class="error-message">
+        <mat-icon>error</mat-icon>
+        <div class="error-content">
+          <span>{{ error.kpi }}</span>
+          <button mat-button color="primary" (click)="loadDashboardData()">
+            <mat-icon>refresh</mat-icon>
+            Reintentar
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="!loading.kpi && !error.kpi" class="kpi-cards-container">
+        <!-- Total de reservas -->
+        <mat-card class="kpi-card">
+          <mat-card-content>
+            <div class="kpi-icon">
+              <mat-icon>event_available</mat-icon>
+            </div>
+            <div class="kpi-content">
+              <h3>Total de Reservas</h3>
+              <p class="kpi-value">{{ (kpiData?.totalBookings ?? 0) }}</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Gastos netos -->
+        <mat-card class="kpi-card">
+          <mat-card-content>
+            <div class="kpi-icon">
+              <mat-icon>attach_money</mat-icon>
+            </div>
+            <div class="kpi-content">
+              <h3>Gastos Netos (30 días)</h3>
+              <p class="kpi-value">{{ formatCurrency(kpiData?.totalNetSpentLast30Days) }}</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Gastos brutos -->
+        <mat-card class="kpi-card">
+          <mat-card-content>
+            <div class="kpi-icon">
+              <mat-icon>monetization_on</mat-icon>
+            </div>
+            <div class="kpi-content">
+              <h3>Gastos Brutos (30 días)</h3>
+              <p class="kpi-value">{{ formatCurrency(kpiData?.totalGrossSpentLast30Days) }}</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Reembolsos recibidos -->
+        <mat-card class="kpi-card">
+          <mat-card-content>
+            <div class="kpi-icon">
+              <mat-icon>money_off</mat-icon>
+            </div>
+            <div class="kpi-content">
+              <h3>Reembolsos Recibidos (30 días)</h3>
+              <p class="kpi-value">{{ formatCurrency(kpiData?.totalRefundsLast30Days) }}</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Contratos activos -->
+        <mat-card class="kpi-card">
+          <mat-card-content>
+            <div class="kpi-icon">
+              <mat-icon>assignment</mat-icon>
+            </div>
+            <div class="kpi-content">
+              <h3>Alquileres Activos</h3>
+              <p class="kpi-value">{{ (kpiData?.activeContracts ?? 0) }}</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Próximas reservas -->
+        <mat-card class="kpi-card">
+          <mat-card-content>
+            <div class="kpi-icon">
+              <mat-icon>schedule</mat-icon>
+            </div>
+            <div class="kpi-content">
+              <h3>Reservas Activas</h3>
+              <p class="kpi-value">{{ (kpiData?.upcomingBookings ?? 0) }}</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Reservas completadas -->
+        <mat-card class="kpi-card">
+          <mat-card-content>
+            <div class="kpi-icon">
+              <mat-icon>check_circle</mat-icon>
+            </div>
+            <div class="kpi-content">
+              <h3>Reservas Completadas</h3>
+              <p class="kpi-value">{{ (kpiData?.completedBookings ?? 0) }}</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Grid para gráficos en vista general -->
+    <div class="charts-grid">
+      <!-- Gráfico de gastos mensuales -->
+      <div class="chart-container interactive-chart" (click)="expandChart('monthlySpending')">
+        <div class="chart-header">
+          <h2>Gastos Mensuales</h2>
+          <div class="chart-actions">
+            <mat-form-field appearance="outline">
+              <mat-label>Meses</mat-label>
+              <mat-select [(value)]="selectedMonths" (selectionChange)="onMonthsChange()">
+                <mat-option *ngFor="let option of monthsOptions" [value]="option">
+                  {{ option }} meses
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            <button mat-icon-button matTooltip="Expandir gráfico" class="expand-button">
+              <mat-icon class="expand-icon">fullscreen</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="loading.monthlySpending" class="loading-container">
+          <mat-spinner diameter="30"></mat-spinner>
+          <p>Cargando gastos...</p>
+        </div>
+
+        <div *ngIf="error.monthlySpending" class="error-message">
+          <mat-icon>error</mat-icon>
+          <span>{{ error.monthlySpending }}</span>
+        </div>
+
+        <div *ngIf="!loading.monthlySpending && !error.monthlySpending" class="chart">
+          <ngx-charts-line-chart
+            [results]="lineChartData"
+            [xAxis]="showXAxis"
+            [yAxis]="showYAxis"
+            [legend]="false"
+            [showXAxisLabel]="showXAxisLabel"
+            [showYAxisLabel]="showYAxisLabel"
+            [xAxisLabel]="xAxisLabel"
+            [yAxisLabel]="yAxisLabel"
+            [scheme]="colorScheme"
+            [animations]="true">
+          </ngx-charts-line-chart>
+        </div>
+      </div>
+
+      <!-- Gráfico de reservas por tipo de espacio -->
+      <div class="chart-container interactive-chart" (click)="expandChart('bookingsByType')">
+        <div class="chart-header">
+          <h2>Reservas por Tipo de Espacio</h2>
+          <button mat-icon-button matTooltip="Expandir gráfico" class="expand-button">
+            <mat-icon class="expand-icon">fullscreen</mat-icon>
+          </button>
+        </div>
+
+        <div *ngIf="loading.bookingsByType" class="loading-container">
+          <mat-spinner diameter="30"></mat-spinner>
+          <p>Cargando reservas...</p>
+        </div>
+
+        <div *ngIf="error.bookingsByType" class="error-message">
+          <mat-icon>error</mat-icon>
+          <span>{{ error.bookingsByType }}</span>
+        </div>
+
+        <div *ngIf="!loading.bookingsByType && !error.bookingsByType" class="chart">
+          <ngx-charts-pie-chart
+            [results]="bookingsByTypeData.length > 0 ? bookingsByTypeData : sampleBookingsByTypeData"
+            [legend]="showLegend"
+            [labels]="true"
+            [doughnut]="false"
+            [scheme]="colorScheme"
+            [animations]="true">
+          </ngx-charts-pie-chart>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vista Expandida: Gastos Mensuales -->
+  <div *ngIf="isExpandedView('monthlySpending')" class="expanded-view">
+    <div class="expanded-header">
+      <button mat-icon-button (click)="goBackToOverview()" class="back-button" matTooltip="Volver al dashboard">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <h1>{{ expandedChartTitle }}</h1>
+      <div class="chart-actions">
+        <mat-form-field appearance="outline">
+          <mat-label>Meses</mat-label>
+          <mat-select [(value)]="selectedMonths" (selectionChange)="onMonthsChange()">
+            <mat-option *ngFor="let option of monthsOptions" [value]="option">
+              {{ option }} meses
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+    
+    <div class="expanded-chart-container">
+      <ngx-charts-line-chart
+        [results]="lineChartData"
+        [xAxis]="showXAxis"
+        [yAxis]="showYAxis"
+        [legend]="showLegend"
+        [showXAxisLabel]="showXAxisLabel"
+        [showYAxisLabel]="showYAxisLabel"
+        [xAxisLabel]="'Mes'"
+        [yAxisLabel]="'Gastos'"
+        [scheme]="colorScheme"
+        [animations]="true">
+      </ngx-charts-line-chart>
+    </div>
+  </div>
+
+  <!-- Vista Expandida: Reservas por Tipo de Espacio -->
+  <div *ngIf="isExpandedView('bookingsByType')" class="expanded-view">
+    <div class="expanded-header">
+      <button mat-icon-button (click)="goBackToOverview()" class="back-button" matTooltip="Volver al dashboard">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <h1>{{ expandedChartTitle }}</h1>
+    </div>
+    
+    <div class="expanded-chart-container">
+      <ngx-charts-pie-chart
+        [results]="expandedChartData"
+        [legend]="showLegend"
+        [labels]="true"
+        [doughnut]="false"
+        [scheme]="colorScheme"
+        [animations]="true">
+      </ngx-charts-pie-chart>
+    </div>
+  </div>
+</div> 

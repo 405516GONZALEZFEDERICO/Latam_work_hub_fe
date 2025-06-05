@@ -1,16 +1,18 @@
-import { Component, OnInit, HostListener, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { CommonModule } from '@angular/common';
-import { Router, RouterOutlet, RouterLink, NavigationEnd } from '@angular/router';
+import { RouterOutlet, Router, RouterModule } from '@angular/router';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatListModule } from '@angular/material/list';
-import { UserRole } from '../../models/user';
+import { Observable, Subject } from 'rxjs';
+import { map, shareReplay, takeUntil } from 'rxjs/operators';
 import { AuthService } from '../../services/auth-service/auth.service';
 import { ProfileService } from '../../services/profile/profile.service';
-import { ProfileData } from '../../models/profile';
-import { trigger, state, style, animate, transition } from '@angular/animations';
+import { User, UserRole } from '../../models/user';
 import { NavbarComponent } from '../../components/home-layout/navbar/navbar.component';
-import { inject } from '@angular/core';
 
 @Component({
   selector: 'app-home-layout',
@@ -18,152 +20,161 @@ import { inject } from '@angular/core';
   imports: [
     CommonModule,
     RouterOutlet,
+    RouterModule,
+    MatSidenavModule,
+    MatToolbarModule,
     MatIconModule,
     MatButtonModule,
     MatListModule,
-    NavbarComponent,
-    RouterLink
+    NavbarComponent
   ],
   templateUrl: './home-layout.component.html',
-  styleUrls: ['./home-layout.component.css'],
-  animations: [
-    trigger('confettiAnimation', [
-      state('hidden', style({
-        opacity: 0,
-        transform: 'translateY(-100%)'
-      })),
-      state('visible', style({
-        opacity: 1,
-        transform: 'translateY(0)'
-      })),
-      transition('hidden => visible', animate('500ms ease-in')),
-      transition('visible => hidden', animate('500ms ease-out'))
-    ]),
-    trigger('completionBadge', [
-      state('hidden', style({
-        opacity: 0,
-        transform: 'scale(0.5)'
-      })),
-      state('visible', style({
-        opacity: 1,
-        transform: 'scale(1)'
-      })),
-      transition('hidden => visible', [
-        animate('300ms ease-out', style({ opacity: 1, transform: 'scale(1.2)' })),
-        animate('150ms ease-in', style({ transform: 'scale(1)' }))
-      ]),
-      transition('visible => hidden', animate('300ms ease-in'))
-    ])
-  ]
+  styleUrl: './home-layout.component.css'
 })
 export class HomeLayoutComponent implements OnInit, OnDestroy {
-  // Injecting services using inject()
+  private destroy$ = new Subject<void>();
+  private breakpointObserver = inject(BreakpointObserver);
   private authService = inject(AuthService);
   private profileService = inject(ProfileService);
   private router = inject(Router);
 
   isSidebarOpen = false;
-  userData: ProfileData = {} as ProfileData;
+  currentUser: User | null = null;
+  userPhotoUrl: string | null = null;
+  
+  // Additional property to store profile data
+  private userProfileData: any = null;
 
-  // Animation states
-  showConfetti = false;
-  showCompletionBadge = false;
-  confettiState = 'hidden';
-  badgeState = 'hidden';
-  timerHideConfetti: any;
-  timerHideBadge: any;
-  confettiItems = Array(50).fill(0).map((_, i) => i);
-
-  // Current page title
-  currentPageTitle: string = 'Bienvenido';
-
-
-  ngOnInit(): void {
-    this.loadUserProfile();
+  // userData property for template compatibility
+  get userData() {
+    // Try to get the display name from various sources
+    let displayName = 'Usuario';
     
-    // On large screens, sidebar starts open
-    this.isSidebarOpen = window.innerWidth >= 992;
-    
-    
-    // Subscribe to navigation events
-    this.router.events.subscribe(event => {
-      if (event instanceof NavigationEnd) {
-      }
-    });
-    
-    // Button to manually change to PROVEEDOR role (testing only)
-    // @ts-ignore
-    window.setProviderRole = () => {
-      this.userData.role = 'PROVEEDOR';
-    };
-  }
-
-  // Window resize detector
-  @HostListener('window:resize', ['$event'])
-  onResize(event: any): void {
-    // On mobile, close sidebar automatically
-    if (window.innerWidth < 768 && this.isSidebarOpen) {
-      this.isSidebarOpen = false;
+    if (this.currentUser) {
+      // Try displayName from Firebase user first
+      displayName = this.currentUser.displayName ||
+                   // Try profile data if we have it
+                   this.userProfileData?.firstName ||
+                   this.userProfileData?.fullName ||
+                   (this.userProfileData?.firstName && this.userProfileData?.lastName 
+                     ? `${this.userProfileData.firstName} ${this.userProfileData.lastName}` 
+                     : null) ||
+                   // Use email prefix as fallback
+                   this.currentUser.email?.split('@')[0] ||
+                   'Usuario';
     }
+    
+    // Photo priority: custom uploaded photo > Google photo > empty
+    let photoUrl = '';
+    if (this.userPhotoUrl) {
+      // User has uploaded a custom photo or backend returned a photo
+      photoUrl = this.userPhotoUrl;
+    } else if (this.currentUser?.photoURL) {
+      // Fall back to Google photo
+      photoUrl = this.currentUser.photoURL;
+    }
+    
+    const userData = {
+      displayName: displayName,
+      email: this.currentUser?.email || '',
+      role: this.currentUser?.role || '',
+      photoUrl: photoUrl
+    };
+    
+    return userData;
   }
 
-  toggleSidebar(): void {
+  isHandset$: Observable<boolean> = this.breakpointObserver.observe(Breakpoints.Handset)
+    .pipe(
+      map(result => result.matches),
+      shareReplay()
+    );
+
+  ngOnInit() {
+    this.loadUserProfile();
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  toggleSidebar() {
     this.isSidebarOpen = !this.isSidebarOpen;
   }
 
-  loadUserProfile(): void {
-    // Try to get profile data from service
-    this.profileService.getProfileData().subscribe({
-      next: (profile: ProfileData) => {
-        this.userData = profile;
-      },
-      error: (error: any) => {
-        console.error('Error al cargar el perfil:', error);
-        // Use default temporary data if there's an error
-        this.userData = {
-          displayName: 'Usuario de Prueba',
-          email: 'usuario@example.com',
-          role: 'PROVEEDOR' as UserRole
-        } as ProfileData;
-        
-        // Try to get user role from auth service
-        this.authService.currentUser$.subscribe(user => {
-          if (user) {
-            this.userData.role = user.role;
+  private loadUserProfile() {
+    this.authService.currentUser$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(user => {
+        this.currentUser = user;
+        if (user) {
+          this.loadUserPhoto();
+        }
+      });
+  }
+
+  private loadUserPhoto() {
+    if (this.currentUser?.uid) {
+      this.profileService.getProfileData()
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (profileData) => {
+            if (profileData) {
+              // Store profile data for name extraction
+              this.userProfileData = profileData;
+              
+              // Use the photoUrl from backend if available, otherwise fallback to Google photo
+              if (profileData.photoUrl && profileData.photoUrl.trim() !== '') {
+                this.userPhotoUrl = profileData.photoUrl;
+              } else {
+                // Clear userPhotoUrl to allow Google photo fallback
+                this.userPhotoUrl = null;
+              }
+            }
+          },
+          error: (error) => {
+            // On error, ensure we don't block Google photo fallback
+            this.userPhotoUrl = null;
           }
         });
-      }
-    });
+    }
   }
 
-  logout(): void {
-    this.authService.logout().then(() => {
-      this.router.navigate(['/login']);
-    }).catch(error => {
-      console.error('Error al cerrar sesión:', error);
-      // Redirect anyway
-      this.router.navigate(['/login']);
-    });
+  getUserRole(): UserRole | null {
+    return this.currentUser?.role || null;
   }
 
-  getRoleDisplayName(): string {
-    const roleMap: Record<string, string> = {
-      'CLIENTE': 'Cliente',
-      'PROVEEDOR': 'Proveedor',
-      'ADMIN': 'Administrador',
-      'DEFAULT': 'Usuario'
-    };
-    
-    return roleMap[this.userData.role] || 'Usuario';
+  isClientRole(): boolean {
+    return this.getUserRole() === 'CLIENTE';
   }
-  
-  ngOnDestroy(): void {
-    // Clean up timers when destroying component
-    if (this.timerHideConfetti) {
-      clearTimeout(this.timerHideConfetti);
+
+  isProviderRole(): boolean {
+    return this.getUserRole() === 'PROVEEDOR';
+  }
+
+  isAdminRole(): boolean {
+    return this.getUserRole() === 'ADMIN';
+  }
+
+  async logout() {
+    try {
+      await this.authService.logout();
+      this.router.navigate(['/login']);
+    } catch (error) {
+      this.router.navigate(['/login']);
     }
-    if (this.timerHideBadge) {
-      clearTimeout(this.timerHideBadge);
-    }
+  }
+
+  navigateToProfile() {
+    this.router.navigate(['/profile']);
+  }
+
+  navigateToSettings() {
+    this.router.navigate(['/settings']);
+  }
+
+  navigateToHelp() {
+    this.router.navigate(['/help']);
   }
 }

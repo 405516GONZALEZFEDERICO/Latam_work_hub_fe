@@ -339,23 +339,57 @@ export class ReservationModalComponent implements OnInit {
   getAmenityIcon(amenityName: string): string {
     const iconMap: { [key: string]: string } = {
       'WiFi': 'wifi',
+      'WiFi de alta velocidad': 'wifi',
+      'Internet': 'wifi',
+      'Internet de alta velocidad': 'wifi',
       'Aire acondicionado': 'ac_unit',
+      'Climatización': 'ac_unit',
+      'Calefacción': 'heating',
+      'Proyector': 'videocam',
+      'Pantalla': 'tv',
+      'Televisor': 'tv',
+      'TV': 'tv',
+      'Sonido': 'volume_up',
+      'Audio': 'volume_up',
       'Estacionamiento': 'local_parking',
-      'Café': 'coffee',
-      'Impresora': 'print',
-      'Sala de reuniones': 'meeting_room',
+      'Parking': 'local_parking',
+      'Café': 'local_cafe',
+      'Cafetería': 'local_cafe',
       'Cocina': 'kitchen',
+      'Refrigerador': 'kitchen',
+      'Microondas': 'microwave',
       'Seguridad': 'security',
       'Acceso 24/7': 'access_time',
       'Lockers': 'lock',
-      'Proyector': 'videocam',
-      'Baños privados': 'wc',
-      'Cafetería': 'local_cafe',
       'Limpieza': 'cleaning_services',
-      'Internet de alta velocidad': 'network_wifi'
+      'Papelería': 'description',
+      'Impresora': 'print',
+      'Escritorio': 'desk',
+      'Sillas': 'chair',
+      'Mesa': 'table_restaurant',
+      'Pizarra': 'dashboard',
+      'Whiteboard': 'dashboard',
+      'Sala de reuniones': 'meeting_room',
+      'Baños privados': 'wc',
+      'WC': 'wc',
+      'Baño': 'wc'
     };
-
-    return iconMap[amenityName] || 'check_circle';
+    
+    // Buscar coincidencia exacta primero
+    if (iconMap[amenityName]) {
+      return iconMap[amenityName];
+    }
+    
+    // Buscar coincidencia parcial (case insensitive)
+    const lowerAmenityName = amenityName.toLowerCase();
+    for (const [key, icon] of Object.entries(iconMap)) {
+      if (lowerAmenityName.includes(key.toLowerCase()) || key.toLowerCase().includes(lowerAmenityName)) {
+        return icon;
+      }
+    }
+    
+    // Icono por defecto
+    return 'add_circle';
   }
 
   // Calcular el precio total basado en la selección actual
@@ -459,7 +493,7 @@ export class ReservationModalComponent implements OnInit {
     
     if (this.reservationForm.invalid) {
       // Mostrar mensaje de error y marcar controles como tocados para mostrar errores
-      this.snackBar.open('Por favor, completa todos los campos correctamente', 'Cerrar', {
+      this.snackBar.open('Por favor, completa todos los campos correctamente', '', {
         duration: 3000,
         panelClass: ['error-snackbar']
       });
@@ -479,8 +513,22 @@ export class ReservationModalComponent implements OnInit {
       return;
     }
 
+    // Agregar delay con spinner para evitar múltiples clicks
     this.isLoading = true;
+    
+    this.snackBar.open('Preparando reserva...', '', {
+      duration: 1500,
+      horizontalPosition: 'center',
+      verticalPosition: 'bottom'
+    });
 
+    // Delay de 1500ms antes de procesar
+    setTimeout(() => {
+      this.processReservation();
+    }, 1500);
+  }
+
+  private processReservation(): void {
     const formValues = this.reservationForm.value;
     const startDate = formValues.startDate;
     const reservationType = formValues.reservationType;
@@ -568,12 +616,10 @@ export class ReservationModalComponent implements OnInit {
           const mpUrl = urlMatch[0];
           
           // Show a success message
-          this.snackBar.open('Reserva procesada. Redirigiendo a Mercado Pago...', 'Abrir', {
-            duration: 10000,
+          this.snackBar.open('Reserva procesada. Redirigiendo a Mercado Pago...', '', {
+            duration: 3000,
             horizontalPosition: 'center',
             verticalPosition: 'bottom'
-          }).onAction().subscribe(() => {
-            this.openMercadoPagoUrl(mpUrl);
           });
           
           // Try to open the URL automatically
@@ -589,12 +635,10 @@ export class ReservationModalComponent implements OnInit {
           if (typeof response === 'string' && response.trim().startsWith('http')) {
             const mpUrl = response.trim();
             
-            this.snackBar.open('Reserva procesada. Redirigiendo a Mercado Pago...', 'Abrir', {
-              duration: 10000,
+            this.snackBar.open('Reserva procesada. Redirigiendo a Mercado Pago...', '', {
+              duration: 3000,
               horizontalPosition: 'center',
               verticalPosition: 'bottom'
-            }).onAction().subscribe(() => {
-              this.openMercadoPagoUrl(mpUrl);
             });
             
             // Try to open the URL automatically
@@ -604,7 +648,7 @@ export class ReservationModalComponent implements OnInit {
             
             this.dialogRef.close(true);
           } else {
-            this.snackBar.open('Reserva creada con éxito', 'Cerrar', {
+            this.snackBar.open('Reserva creada con éxito', '', {
               duration: 3000,
               horizontalPosition: 'center',
               verticalPosition: 'bottom'
@@ -613,44 +657,60 @@ export class ReservationModalComponent implements OnInit {
           }
         }
       },
-      error: (error: unknown) => {
+      error: (error: any) => {
         this.isLoading = false;
-        console.error('Error al crear la reserva', error);
         
-        // Extract error message
+        // Extract only the backend error message
         let errorMessage = 'Error al crear la reserva';
-        let errorResponse = '';
         
-        if (error instanceof Error) {
-          errorMessage = error.message;
-          errorResponse = error.message;
-        } else if (typeof error === 'object' && error !== null) {
-          try {
-            errorResponse = JSON.stringify(error);
-          } catch (e) {
-            errorResponse = String(error);
+        try {
+          // Intentar extraer el mensaje de diferentes ubicaciones
+          if (error?.error && typeof error.error === 'string') {
+            // Parse the JSON string
+            const parsedError = JSON.parse(error.error);
+            if (parsedError?.message) {
+              errorMessage = parsedError.message;
+              console.log('Usando parsedError.message:', errorMessage);
+            } else if (parsedError?.error) {
+              errorMessage = parsedError.error;
+              console.log('Usando parsedError.error:', errorMessage);
+            }
+          } else if (error?.error?.message && typeof error.error.message === 'string') {
+            errorMessage = error.error.message;
+            console.log('Usando error.error.message:', errorMessage);
+          } else if (error?.message && typeof error.message === 'string') {
+            errorMessage = error.message;
+            console.log('Usando error.message:', errorMessage);
+          } else if (typeof error === 'string') {
+            errorMessage = error;
+            console.log('Usando error directo:', errorMessage);
           }
-        } else if (typeof error === 'string') {
-          errorResponse = error;
+        } catch (parseError) {
+          console.warn('Error parsing JSON:', parseError);
+          // Fallback to original logic if JSON parsing fails
+          if (error?.message && typeof error.message === 'string') {
+            errorMessage = error.message;
+          }
         }
         
+        console.log('MENSAJE FINAL A MOSTRAR:', errorMessage);
         
         // Check if error response contains a URL to Mercado Pago
+        const errorResponse = JSON.stringify(error);
         const mpUrlRegex = /(https?:\/\/[^\s"]+mercadopago[^\s"]+)/;
-        const urlMatch = typeof errorResponse === 'string' ? errorResponse.match(mpUrlRegex) : null;
+        const urlMatch = errorResponse.match(mpUrlRegex);
         
         if (urlMatch && urlMatch[0]) {
           const mpUrl = urlMatch[0];
           
-          this.snackBar.open('Reserva procesada. Haga clic para ir a Mercado Pago', 'Ir a Pagar', {
-            duration: 15000,
+          this.snackBar.open('Reserva procesada. Redirigiendo a Mercado Pago...', '', {
+            duration: 3000,
             horizontalPosition: 'center',
             verticalPosition: 'bottom'
-          }).onAction().subscribe(() => {
-            this.openMercadoPagoUrl(mpUrl);
           });
           
-          // Try to open the URL automatically
+          this.openMercadoPagoUrl(mpUrl);
+          
           setTimeout(() => {
             this.openMercadoPagoUrl(mpUrl);
           }, 500);
@@ -659,10 +719,12 @@ export class ReservationModalComponent implements OnInit {
           return;
         }
         
+        // Show only the clean error message
         this.snackBar.open(errorMessage, 'Cerrar', {
           duration: 5000,
           horizontalPosition: 'center',
-          verticalPosition: 'bottom'
+          verticalPosition: 'bottom',
+          panelClass: ['error-snackbar']
         });
       }
     });
@@ -674,8 +736,8 @@ export class ReservationModalComponent implements OnInit {
     // Verificar que la URL es válida
     if (!url || !url.startsWith('http')) {
       console.error('URL de Mercado Pago inválida:', url);
-      this.snackBar.open('Error al obtener la URL de pago. Intente nuevamente.', 'Cerrar', {
-        duration: 5000,
+      this.snackBar.open('Error al obtener la URL de pago. Intente nuevamente.', '', {
+        duration: 3000,
         horizontalPosition: 'center',
         verticalPosition: 'bottom'
       });
@@ -694,16 +756,14 @@ export class ReservationModalComponent implements OnInit {
     // Mostrar un mensaje y abrir Mercado Pago
     this.snackBar.open(
       'Redireccionando a Mercado Pago para realizar el pago...', 
-      'Continuar', 
+      '', 
       {
-        duration: 5000,
+        duration: 3000,
         horizontalPosition: 'center',
         verticalPosition: 'bottom',
         panelClass: ['payment-snackbar']
       }
-    ).onAction().subscribe(() => {
-      this.openPaymentWindow(url);
-    });
+    );
     
     // Abrir automáticamente la ventana de pago
     setTimeout(() => {
@@ -719,17 +779,15 @@ export class ReservationModalComponent implements OnInit {
     } catch (e) {
       console.error('Error al abrir la URL de pago:', e);
       this.snackBar.open(
-        'No se pudo abrir la página de pago. Haz clic aquí para intentar nuevamente', 
-        'Intentar de nuevo', 
+        'No se pudo abrir la página de pago. Intente nuevamente.', 
+        '', 
         {
-          duration: 10000,
+          duration: 3000,
           horizontalPosition: 'center',
           verticalPosition: 'bottom',
           panelClass: ['error-snackbar']
         }
-      ).onAction().subscribe(() => {
-        window.open(url, '_blank');
-      });
+      );
     }
   }
 
@@ -831,7 +889,7 @@ export class ReservationModalComponent implements OnInit {
         startTimeControl.setValue(currentHour, { emitEvent: false }); // Avoid retriggering valueChanges immediately
         
         // SnackBar notification
-        this.snackBar.open(`Hora de inicio ajustada a las ${currentHour}:00 por ser anterior.`, 'Cerrar', { duration: 3500 });
+        this.snackBar.open(`Hora de inicio ajustada a las ${currentHour}:00 por ser anterior.`, '', { duration: 3000 });
 
         // Adjust endTime if it's now invalid
         const selectedEndHour = endTimeControl.value as number;

@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, EventEmitter, OnInit, Output, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, OnInit, Output, ViewChild, OnDestroy, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -7,9 +7,11 @@ import { MatInputModule } from '@angular/material/input';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatSliderModule } from '@angular/material/slider';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSelect } from '@angular/material/select';
+import { Router, NavigationEnd } from '@angular/router';
+import { Subject, takeUntil, filter } from 'rxjs';
 import { FilterState } from '../../../models/search-space.model';
 import { Country } from '../../../models/country.model';
 import { City } from '../../../models/city.model';
@@ -19,6 +21,7 @@ import { MaterialSelectComponent, OptionItem } from '../../shared/material-selec
 import { AddressService } from '../../../services/address/address.service';
 import { AmenityService } from '../../../services/amenity/amenity.service';
 import { SpaceTypeService } from '../../../services/space-type/space-type.service';
+import { FilterStateService } from '../../../services/filter-state/filter-state.service';
 
 @Component({
   selector: 'app-space-filter',
@@ -32,7 +35,6 @@ import { SpaceTypeService } from '../../../services/space-type/space-type.servic
     MatCardModule,
     MatIconModule,
     MatButtonModule,
-    MatSliderModule,
     MatCheckboxModule,
     MaterialSelectComponent,
     MatTooltipModule
@@ -40,9 +42,16 @@ import { SpaceTypeService } from '../../../services/space-type/space-type.servic
   templateUrl: './space-filter.component.html',
   styleUrls: ['./space-filter.component.css']
 })
-export class SpaceFilterComponent implements OnInit {
+export class SpaceFilterComponent implements OnInit, OnDestroy {
   @Output() filtersChanged = new EventEmitter<FilterState>();
   @ViewChild(MaterialSelectComponent) selectButton?: MaterialSelectComponent;
+  @ViewChild('countrySelect') countrySelect?: MatSelect;
+  @ViewChild('citySelect') citySelect?: MatSelect;
+  @ViewChild('spaceTypeSelect') spaceTypeSelect?: MatSelect;
+  
+  // Subject para manejar la limpieza de suscripciones
+  private destroy$ = new Subject<void>();
+  private currentRoute: string = '';
   
   // Control de expansión de filtros
   isExpanded = true;
@@ -72,13 +81,105 @@ export class SpaceFilterComponent implements OnInit {
   constructor(
     private addressService: AddressService,
     private amenityService: AmenityService,
-    private spaceTypeService: SpaceTypeService
+    private spaceTypeService: SpaceTypeService,
+    private router: Router,
+    private cdr: ChangeDetectorRef,
+    private filterStateService: FilterStateService
   ) { }
 
   ngOnInit(): void {
     this.loadCountries();
     this.loadAmenities();
     this.loadSpaceTypes();
+    
+    // Guardar la ruta actual
+    this.currentRoute = this.router.url;
+    
+    // Cargar los filtros apropiados para la ruta actual
+    this.loadFiltersForCurrentRoute();
+    
+    // Suscribirse a los cambios de navegación para resetear filtros automáticamente
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd),
+      takeUntil(this.destroy$)
+    ).subscribe((event: NavigationEnd) => {
+      this.handleRouteChange(event.url);
+    });
+  }
+
+  ngOnDestroy(): void {
+    // Guardar los filtros actuales antes de destruir el componente
+    this.saveCurrentFilters();
+    
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  /**
+   * Carga los filtros apropiados para la ruta actual
+   */
+  private loadFiltersForCurrentRoute(): void {
+    const savedFilters = this.filterStateService.getFiltersForRoute(this.currentRoute);
+    this.filters = {...savedFilters};
+    
+    // Actualizar las opciones de amenidades si hay filtros guardados
+    if (this.filters.amenityIds && this.amenityOptions.length > 0) {
+      this.updateAmenityOptionsFromFilters();
+    }
+    
+    // Cargar ciudades si hay un país seleccionado
+    if (this.filters.countryId) {
+      this.loadCities(this.filters.countryId);
+    }
+    
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Guarda los filtros actuales en el servicio
+   */
+  private saveCurrentFilters(): void {
+    this.filterStateService.setFiltersForRoute(this.currentRoute, this.filters);
+  }
+
+  /**
+   * Actualiza las opciones de amenidades basándose en los filtros guardados
+   */
+  private updateAmenityOptionsFromFilters(): void {
+    if (this.amenityOptions && this.amenityOptions.length > 0 && this.filters.amenityIds) {
+      this.amenityOptions = this.amenityOptions.map(option => ({
+        ...option,
+        selected: this.filters.amenityIds!.includes(option.value)
+      }));
+      
+      // Actualizar el componente MaterialSelect si existe
+      if (this.selectButton) {
+        this.selectButton.selectedValues = this.filters.amenityIds;
+      }
+    }
+  }
+
+  /**
+   * Maneja los cambios de ruta y resetea los filtros cuando se navega entre
+   * vistas de proveedor (mis espacios) y cliente (buscar espacios)
+   */
+  private handleRouteChange(newRoute: string): void {
+    // Guardar los filtros de la ruta anterior
+    this.saveCurrentFilters();
+    
+    const isProviderRoute = newRoute.includes('/home/spaces');
+    const isClientRoute = newRoute.includes('/home/search-spaces');
+    const wasProviderRoute = this.currentRoute.includes('/home/spaces');
+    const wasClientRoute = this.currentRoute.includes('/home/search-spaces');
+    
+    // Actualizar la ruta actual
+    this.currentRoute = newRoute;
+    
+    // Cargar filtros apropiados para la nueva ruta
+    if ((isProviderRoute && wasClientRoute) || (isClientRoute && wasProviderRoute)) {
+      console.log('Cambiando entre vistas de proveedor y cliente, cargando filtros apropiados...');
+      this.loadFiltersForCurrentRoute();
+    }
   }
 
   // Carga de datos
@@ -165,24 +266,29 @@ export class SpaceFilterComponent implements OnInit {
     }
   }
 
-  updateCapacity(event: any): void {
-    this.filters.capacity = event;
+  updateCapacity(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.filters.capacity = Number(target.value);
   }
 
-  updateHourlyPrice(event: any): void {
-    this.filters.pricePerHour = event;
+  updateHourlyPrice(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.filters.pricePerHour = Number(target.value);
   }
 
-  updateMonthlyPrice(event: any): void {
-    this.filters.pricePerMonth = event;
+  updateMonthlyPrice(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.filters.pricePerMonth = Number(target.value);
   }
   
-  updateDailyPrice(event: any): void {
-    this.filters.pricePerDay = event;
+  updateDailyPrice(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.filters.pricePerDay = Number(target.value);
   }
   
-  updateArea(event: any): void {
-    this.filters.area = event;
+  updateArea(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.filters.area = Number(target.value);
   }
 
   // Método para manejar la selección de amenidades desde el componente MaterialSelect
@@ -209,17 +315,30 @@ export class SpaceFilterComponent implements OnInit {
       'objeto correspondiente:', this.spaceTypes.find(t => t.id === this.filters.spaceTypeId)
     );
     
-    this.filtersChanged.emit({...this.filters});
+    // Guardar los filtros en el servicio
+    this.filterStateService.setFiltersForRoute(this.currentRoute, this.filters);
+    
+    // Crear una copia de los filtros para enviar, convirtiendo 0 a null para el backend
+    const filtersToEmit = {
+      ...this.filters,
+      pricePerHour: this.filters.pricePerHour === 0 ? null : this.filters.pricePerHour,
+      pricePerDay: this.filters.pricePerDay === 0 ? null : this.filters.pricePerDay,
+      pricePerMonth: this.filters.pricePerMonth === 0 ? null : this.filters.pricePerMonth,
+      area: this.filters.area === 0 ? null : this.filters.area,
+      capacity: this.filters.capacity === 0 ? null : this.filters.capacity
+    };
+    
+    this.filtersChanged.emit(filtersToEmit);
   }
 
   resetFilters() {
     // Restablecer todos los filtros a sus valores predeterminados
     this.filters = {
-      pricePerHour: null,
-      pricePerDay: null,
-      pricePerMonth: null,
-      area: null,
-      capacity: null,
+      pricePerHour: 0,
+      pricePerDay: 0,
+      pricePerMonth: 0,
+      area: 0,
+      capacity: 0,
       spaceTypeId: null,
       cityId: null,
       countryId: null,
@@ -236,12 +355,41 @@ export class SpaceFilterComponent implements OnInit {
     }
 
     // Vaciar las ciudades al resetear
-    if (this.filters.countryId) {
-      this.cities = [];
+    this.cities = [];
+    
+    // Resetear el componente MaterialSelect si existe
+    if (this.selectButton) {
+      this.selectButton.selectedValues = [];
     }
     
-    // Emitir los filtros restablecidos
-    this.filtersChanged.emit({...this.filters});
+    // Reset de los selects
+    if (this.countrySelect) {
+      this.countrySelect.value = null;
+    }
+    if (this.citySelect) {
+      this.citySelect.value = null;
+    }
+    if (this.spaceTypeSelect) {
+      this.spaceTypeSelect.value = null;
+    }
+    
+    // Forzar detección de cambios
+    this.cdr.detectChanges();
+    
+    // Actualizar el servicio con los filtros reseteados
+    this.filterStateService.setFiltersForRoute(this.currentRoute, this.filters);
+    
+    // Emitir los filtros restablecidos (convertir 0 a null para el backend)
+    const filtersToEmit = {
+      ...this.filters,
+      pricePerHour: null,
+      pricePerDay: null,
+      pricePerMonth: null,
+      area: null,
+      capacity: null
+    };
+    
+    this.filtersChanged.emit(filtersToEmit);
   }
 
   onFilterScroll(): void {

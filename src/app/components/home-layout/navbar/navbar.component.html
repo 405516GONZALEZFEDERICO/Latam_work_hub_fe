@@ -2,21 +2,64 @@
   <div class="container-fluid px-0">
     <div class="d-flex justify-content-between align-items-center w-100">
       <div class="d-flex align-items-center">
-        <button mat-icon-button class="menu-button" (click)="toggleSidebarEvent()">
-          <mat-icon class="menu-icon">{{ isSidebarOpen ? 'close' : 'menu' }}</mat-icon>
+        <button mat-icon-button class="hamburger-menu-button" (click)="toggleSidebarEvent()">
+          <mat-icon class="hamburger-menu-icon">{{ isSidebarOpen ? 'close' : 'menu' }}</mat-icon>
         </button>
         <h1 class="mb-0 app-title">Latam WorkHub</h1>
       </div>
       
       <div class="d-flex align-items-center">
-        <div class="user-mini-profile" (click)="openUserMenu()">
+        <div class="user-mini-profile" [matMenuTriggerFor]="userMenu">
           <div *ngIf="!photoUrl" class="avatar-small" [ngClass]="getRoleClass()">
             {{ userInitial }}
           </div>
           <div *ngIf="photoUrl" class="avatar-small">
             <img [src]="photoUrl" alt="Profile Photo" class="profile-photo">
           </div>
+          <mat-icon class="dropdown-arrow">keyboard_arrow_down</mat-icon>
         </div>
+        
+        <!-- User Menu -->
+        <mat-menu #userMenu="matMenu" class="user-dropdown-menu">
+          <div class="user-menu-header">
+            <div class="user-menu-avatar">
+              <div *ngIf="!photoUrl" class="avatar-medium" [ngClass]="getRoleClass()">
+                {{ userInitial }}
+              </div>
+              <div *ngIf="photoUrl" class="avatar-medium">
+                <img [src]="photoUrl" alt="Profile Photo" class="profile-photo">
+              </div>
+            </div>
+            <div class="user-menu-info">
+              <div class="user-menu-name">{{ displayName }}</div>
+              <div class="user-menu-role">{{ userRole }}</div>
+            </div>
+          </div>
+          
+          <mat-divider></mat-divider>
+          
+          <button mat-menu-item (click)="navigateToProfile()">
+            <mat-icon>person</mat-icon>
+            <span>Mi Perfil</span>
+          </button>
+          
+          <button mat-menu-item (click)="navigateToSettings()">
+            <mat-icon>settings</mat-icon>
+            <span>Configuración</span>
+          </button>
+          
+          <button mat-menu-item (click)="navigateToHelp()">
+            <mat-icon>help_center</mat-icon>
+            <span>Ayuda</span>
+          </button>
+          
+          <mat-divider></mat-divider>
+          
+          <button mat-menu-item (click)="logout()" class="logout-item">
+            <mat-icon>logout</mat-icon>
+            <span>Cerrar Sesión</span>
+          </button>
+        </mat-menu>
       </div>
     </div>
   </div>

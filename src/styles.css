@@ -121,15 +121,6 @@ app-provider-type-selection {
   overflow: hidden !important;
 }
 
-/* Styles for custom notifications */
-.custom-notification {
-  font-weight: 500 !important;
-  font-size: 16px !important;
-  line-height: 1.5 !important;
-  padding: 14px !important;
-  border-left: 4px solid #388e3c !important;
-}
-
 /* Override Angular Material's default styles */
 .mat-mdc-snack-bar-container .mdc-snackbar__surface {
   border-radius: 8px !important;
@@ -169,4 +160,26 @@ app-provider-type-selection {
 
 .mb-3 {
   margin-bottom: 16px !important;
+}
+
+/* Estilos globales para pestañas de Material */
+.mat-mdc-tab .mdc-tab__text-label {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+  letter-spacing: 0.02em !important;
+}
+
+.mat-mdc-tab-header-pagination .mat-mdc-tab {
+  font-size: 14px !important;
+}
+
+/* Asegurar consistencia en el tamaño de fuente de las pestañas */
+::ng-deep .mat-mdc-tab-labels .mat-mdc-tab {
+  font-size: 14px !important;
+}
+
+::ng-deep .mat-mdc-tab-labels .mat-mdc-tab .mdc-tab__text-label {
+  font-size: 14px !important;
+  font-weight: 500 !important;
 } 

@@ -153,8 +153,8 @@ export class RegisterComponent {
   }
 
   private showErrorSnackbar(message: string): void {
-    this.snackBar.open(message, 'Cerrar', {
-      duration: 5000,
+    this.snackBar.open(message, '', {
+      duration: 3000,
       panelClass: 'error-snackbar',
       horizontalPosition: 'center',
       verticalPosition: 'bottom'
@@ -162,8 +162,8 @@ export class RegisterComponent {
   }
 
   private showSuccessSnackbar(message: string): void {
-    this.snackBar.open(message, 'Cerrar', {
-      duration: 5000,
+    this.snackBar.open(message, '', {
+      duration: 3000,
       panelClass: 'success-snackbar',
       horizontalPosition: 'center',
       verticalPosition: 'bottom'

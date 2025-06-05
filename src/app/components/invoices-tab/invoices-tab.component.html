@@ -37,7 +37,7 @@
               <span class="invoice-type">{{invoice.type}}</span>
             </div>
             <mat-chip [style.background-color]="getStatusColor(invoice.status)">
-              {{invoice.status}}
+              {{translateInvoiceStatus(invoice.status)}}
             </mat-chip>
           </div>
 

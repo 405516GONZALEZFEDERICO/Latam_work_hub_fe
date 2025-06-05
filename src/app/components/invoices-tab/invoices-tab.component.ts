@@ -193,7 +193,24 @@ export class InvoicesTabComponent implements OnInit, OnDestroy {
 
   payInvoice(invoice: InvoiceHistoryDto): void {
     if (invoice.paymentUrl) {
-      window.location.href = invoice.paymentUrl;
+      // Show a message and open Mercado Pago in a new tab
+      this.snackBar.open('Redirigiendo a Mercado Pago para realizar el pago...', '', {
+        duration: 3000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom'
+      });
+      
+      // Open payment URL in a new tab
+      setTimeout(() => {
+        window.open(invoice.paymentUrl, '_blank');
+      }, 500);
+    } else {
+      this.snackBar.open('URL de pago no disponible', '', {
+        duration: 3000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom',
+        panelClass: ['error-snackbar']
+      });
     }
   }
 
@@ -214,6 +231,20 @@ export class InvoicesTabComponent implements OnInit, OnDestroy {
       default:
         return 'var(--color-primary)';
     }
+  }
+
+  // Método específico para traducir estados de facturas
+  translateInvoiceStatus(status: string): string {
+    const translations: { [key: string]: string } = {
+      'DRAFT': 'Borrador',
+      'ISSUED': 'Emitida',
+      'PAID': 'Pagada',
+      'CANCELLED': 'Cancelada',
+      'PENDING': 'Pendiente',
+      'OVERDUE': 'Vencida'
+    };
+    
+    return translations[status] || status;
   }
 
   getTotalAmount(): number {

@@ -14,7 +14,7 @@
             País
           </label>
           <mat-form-field appearance="outline" class="filter-form-field">
-            <mat-select [(ngModel)]="filters.countryId" name="country" placeholder="Seleccionar país" (selectionChange)="onCountryChange()">
+            <mat-select [(ngModel)]="filters.countryId" name="country" placeholder="Seleccionar país" (selectionChange)="onCountryChange()" #countrySelect>
               <mat-option [value]="null">Todos</mat-option>
               <mat-option *ngFor="let country of countries" [value]="country.id">{{ country.name }}</mat-option>
             </mat-select>
@@ -28,7 +28,7 @@
             Ciudad
           </label>
           <mat-form-field appearance="outline" class="filter-form-field">
-            <mat-select [(ngModel)]="filters.cityId" name="city" placeholder="Seleccionar ciudad">
+            <mat-select [(ngModel)]="filters.cityId" name="city" placeholder="Seleccionar ciudad" #citySelect>
               <mat-option [value]="null">Todas</mat-option>
               <mat-option *ngFor="let city of cities" [value]="city.id">{{ city.name }}</mat-option>
             </mat-select>
@@ -42,7 +42,7 @@
             Tipo de Espacio
           </label>
           <mat-form-field appearance="outline" class="filter-form-field">
-            <mat-select [(ngModel)]="filters.spaceTypeId" name="spaceType" placeholder="Seleccionar tipo" (selectionChange)="onSpaceTypeChange($event)">
+            <mat-select [(ngModel)]="filters.spaceTypeId" name="spaceType" placeholder="Seleccionar tipo" (selectionChange)="onSpaceTypeChange($event)" #spaceTypeSelect>
               <mat-option [value]="null">Todos</mat-option>
               <mat-option *ngFor="let type of spaceTypes" [value]="type.id">{{ type.name }}</mat-option>
             </mat-select>
@@ -57,18 +57,18 @@
             <mat-icon class="filter-label-icon">people</mat-icon>
             Capacidad
           </label>
-          <mat-slider
-            class="filter-slider"
-            [min]="0"
-            [max]="100"
-            [step]="1"
-            [discrete]="true"
-            [displayWith]="formatCapacity"
-            thumbLabel
-            [(ngModel)]="filters.capacity">
-            <input matSliderThumb (valueChange)="updateCapacity($event)" name="capacity">
-          </mat-slider>
-          <div class="slider-value">{{ filters.capacity || 0 }} personas</div>
+          <div class="range-slider-container">
+            <input 
+              type="range" 
+              class="range-slider"
+              [min]="0"
+              [max]="100"
+              [step]="1"
+              [(ngModel)]="filters.capacity"
+              (change)="updateCapacity($event)"
+              name="capacity">
+            <div class="slider-value">{{ filters.capacity || 0 }} personas</div>
+          </div>
         </div>
 
         <!-- Area -->
@@ -77,18 +77,18 @@
             <mat-icon class="filter-label-icon">square_foot</mat-icon>
             Área
           </label>
-          <mat-slider
-            class="filter-slider"
-            [min]="0"
-            [max]="500"
-            [step]="5"
-            [discrete]="true"
-            [displayWith]="formatArea"
-            thumbLabel
-            [(ngModel)]="filters.area">
-            <input matSliderThumb (valueChange)="updateArea($event)" name="area">
-          </mat-slider>
-          <div class="slider-value">{{ filters.area || 0 }} m²</div>
+          <div class="range-slider-container">
+            <input 
+              type="range" 
+              class="range-slider"
+              [min]="0"
+              [max]="500"
+              [step]="5"
+              [(ngModel)]="filters.area"
+              (change)="updateArea($event)"
+              name="area">
+            <div class="slider-value">{{ filters.area || 0 }} m²</div>
+          </div>
         </div>
       </div>
 
@@ -99,18 +99,18 @@
             <mat-icon class="filter-label-icon">attach_money</mat-icon>
             Precio por Hora
           </label>
-          <mat-slider
-            class="filter-slider"
-            [min]="0"
-            [max]="1000"
-            [step]="10"
-            [discrete]="true"
-            [displayWith]="formatPrice"
-            thumbLabel
-            [(ngModel)]="filters.pricePerHour">
-            <input matSliderThumb (valueChange)="updateHourlyPrice($event)" name="pricePerHour">
-          </mat-slider>
-          <div class="slider-value">${{ filters.pricePerHour || 0 }}/hora</div>
+          <div class="range-slider-container">
+            <input 
+              type="range" 
+              class="range-slider"
+              [min]="0"
+              [max]="1000"
+              [step]="10"
+              [(ngModel)]="filters.pricePerHour"
+              (change)="updateHourlyPrice($event)"
+              name="pricePerHour">
+            <div class="slider-value">${{ filters.pricePerHour || 0 }}/hora</div>
+          </div>
         </div>
         
         <!-- Daily Price -->
@@ -119,18 +119,18 @@
             <mat-icon class="filter-label-icon">attach_money</mat-icon>
             Precio por Día
           </label>
-          <mat-slider
-            class="filter-slider"
-            [min]="0"
-            [max]="5000"
-            [step]="50"
-            [discrete]="true"
-            [displayWith]="formatPrice"
-            thumbLabel
-            [(ngModel)]="filters.pricePerDay">
-            <input matSliderThumb (valueChange)="updateDailyPrice($event)" name="pricePerDay">
-          </mat-slider>
-          <div class="slider-value">${{ filters.pricePerDay || 0 }}/día</div>
+          <div class="range-slider-container">
+            <input 
+              type="range" 
+              class="range-slider"
+              [min]="0"
+              [max]="5000"
+              [step]="50"
+              [(ngModel)]="filters.pricePerDay"
+              (change)="updateDailyPrice($event)"
+              name="pricePerDay">
+            <div class="slider-value">${{ filters.pricePerDay || 0 }}/día</div>
+          </div>
         </div>
 
         <!-- Monthly Price -->
@@ -139,18 +139,18 @@
             <mat-icon class="filter-label-icon">attach_money</mat-icon>
             Precio por Mes
           </label>
-          <mat-slider
-            class="filter-slider"
-            [min]="0"
-            [max]="50000"
-            [step]="500"
-            [discrete]="true"
-            [displayWith]="formatPrice"
-            thumbLabel
-            [(ngModel)]="filters.pricePerMonth">
-            <input matSliderThumb (valueChange)="updateMonthlyPrice($event)" name="pricePerMonth">
-          </mat-slider>
-          <div class="slider-value">${{ filters.pricePerMonth || 0 }}/mes</div>
+          <div class="range-slider-container">
+            <input 
+              type="range" 
+              class="range-slider"
+              [min]="0"
+              [max]="50000"
+              [step]="500"
+              [(ngModel)]="filters.pricePerMonth"
+              (change)="updateMonthlyPrice($event)"
+              name="pricePerMonth">
+            <div class="slider-value">${{ filters.pricePerMonth || 0 }}/mes</div>
+          </div>
         </div>
       </div>
 

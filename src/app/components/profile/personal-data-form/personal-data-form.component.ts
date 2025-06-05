@@ -22,6 +22,8 @@ import { Address } from '../../../models/address.model';
 import { AddressStepperComponent } from '../address-stepper/address-stepper.component';
 import { AddressService } from '../../../services/address/address.service';
 
+import { environment } from '../../../../environment/environment';
+
 // Registrar los datos de localización español
 registerLocaleData(localeEs);
 
@@ -44,7 +46,7 @@ export class CustomDateAdapter extends NativeDateAdapter {
         return new Date(year, month, day, 12, 0, 0);
       }
       
-      // Verificar si es formato DDMMYYYY (sin separadores)
+      // Verificar si es formato DDMMYYYY (sin separadores) - como 03091997
       const noSeparatorRegex = /^(\d{2})(\d{2})(\d{4})$/;
       const noSeparatorMatch = noSeparatorRegex.exec(value);
       
@@ -52,6 +54,21 @@ export class CustomDateAdapter extends NativeDateAdapter {
         const day = parseInt(noSeparatorMatch[1], 10);
         const month = parseInt(noSeparatorMatch[2], 10) - 1; // Los meses en JS empiezan en 0
         const year = parseInt(noSeparatorMatch[3], 10);
+        
+        return new Date(year, month, day, 12, 0, 0);
+      }
+      
+      // Verificar si es formato parcial y autocompletar (ej: 030997 -> 03/09/1997)
+      const partialRegex = /^(\d{2})(\d{2})(\d{2})$/;
+      const partialMatch = partialRegex.exec(value);
+      
+      if (partialMatch) {
+        const day = parseInt(partialMatch[1], 10);
+        const month = parseInt(partialMatch[2], 10) - 1;
+        let year = parseInt(partialMatch[3], 10);
+        
+        // Autocompletar año: si es menor a 50, asumir 20xx, sino 19xx
+        year = year < 50 ? 2000 + year : 1900 + year;
         
         return new Date(year, month, day, 12, 0, 0);
       }
@@ -515,6 +532,38 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
     // Cargar datos personales usando el servicio
     this.profileService.getPersonalData(this.currentUserId).pipe(
       takeUntil(this.destroy$),
+      catchError(error => {
+        // Manejar errores 404 (no encontrado) de manera silenciosa
+        if (error.status === 404) {
+          console.log('No se encontraron datos personales para el usuario');
+          // Llenar solo el email desde el usuario actual
+          const currentUser = this.authService.getCurrentUserSync();
+          if (currentUser?.email) {
+            this.personalDataForm.patchValue({
+              email: currentUser.email
+            });
+          }
+          return EMPTY;
+        }
+        
+        // Solo mostrar error para problemas reales del servidor (500, 401, etc.)
+        console.error('Error del servidor al cargar datos personales:', error);
+        // Llenar solo el email en caso de error del servidor
+        const currentUser = this.authService.getCurrentUserSync();
+        if (currentUser?.email) {
+          this.personalDataForm.patchValue({
+            email: currentUser.email
+          });
+        }
+        
+        // Mostrar mensaje de error solo para errores del servidor
+        this.snackBar.open('Error al cargar datos personales', '', {
+          duration: 3000,
+          panelClass: ['error-snackbar']
+        });
+        
+        return EMPTY;
+      }),
       finalize(() => {
         // Finalizar carga después de obtener datos o error
         setTimeout(() => {
@@ -554,22 +603,6 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
             email: userEmail
           });
         }
-      },
-      error: (error) => {
-        console.error('Error al cargar datos personales:', error);
-        // Llenar solo el email en caso de error
-        const currentUser = this.authService.getCurrentUserSync();
-        if (currentUser?.email) {
-          this.personalDataForm.patchValue({
-            email: currentUser.email
-          });
-        }
-        
-        // Mostrar mensaje de error
-        this.snackBar.open('Error al cargar datos personales', 'Cerrar', {
-          duration: 5000,
-          panelClass: ['error-snackbar']
-        });
       }
     });
   }
@@ -584,9 +617,9 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
       .pipe(
         takeUntil(this.destroy$),
         catchError(error => {
-          if (error.status !== 404) {
-          } else {
-          }
+          // No mostrar ningún snackBar cuando no se encuentran datos de dirección
+          // Manejar todos los errores de manera silenciosa
+          console.log('No se encontraron datos de dirección para el usuario');
           return EMPTY;
         }),
         finalize(() => {
@@ -628,7 +661,7 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
     // Obtener el ID del usuario actual
     const user = this.authService.getCurrentUserSync();
     if (!user || !user.uid) {
-      this.snackBar.open('No se pudo identificar el usuario actual', 'Cerrar', {
+      this.snackBar.open('No se pudo identificar el usuario actual', '', {
         duration: 3000,
         panelClass: ['snackbar-error']
       });
@@ -652,7 +685,7 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
         catchError(error => {
           this.isLoading = false;
           console.error('Error al subir la imagen:', error);
-          this.snackBar.open('Error al subir la imagen. Inténtelo de nuevo.', 'Cerrar', {
+          this.snackBar.open('Error al subir la imagen. Inténtelo de nuevo.', '', {
             duration: 3000,
             panelClass: ['snackbar-error']
           });
@@ -663,29 +696,29 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
         })
       )
       .subscribe(response => {
-        this.snackBar.open('Foto de perfil actualizada correctamente', 'Cerrar', {
-          duration: 3000
+        console.log('Respuesta de subida de imagen:', response);
+        
+        // Mostrar mensaje de éxito
+        this.snackBar.open('Foto de perfil actualizada correctamente. Recarga la página para ver los cambios.', '', {
+          duration: 5000
         });
-        // Actualizar la URL de la imagen si el servidor devuelve una
-        if (response && response.photoUrl) {
-          const photoUrl = this.ensureCompleteUrl(response.photoUrl);
-          this.profilePicture = photoUrl;
-          
-          // Actualizar el usuario en el AuthService para que se refleje en toda la aplicación
-          if (user) {
-            const updatedUser = { ...user, photoURL: photoUrl };
-            this.authService.updateCurrentUser(updatedUser);
-          }
-        }
+        
+        // Solo actualizar la imagen localmente en el formulario
+        // El sidebar se actualizará cuando se recargue la página
       });
   }
   
   ensureCompleteUrl(url: string): string {
+    if (!url) return '';
+    
+    // If it's already a complete URL, return as is
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url;
     }
- 
-    return `https://example.com/images/${url}`;
+    
+    // Use the correct backend URL from environment for local images
+    const baseUrl = environment.apiUrl.replace('/api', ''); // Remove /api suffix
+    return `${baseUrl}/images/${url}`;
   }
   
   isFieldInvalid(field: string): boolean {
@@ -728,16 +761,16 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
           this.formSubmitted.emit(userData);
           
           // Mostrar mensaje de éxito mejorado
-          this.snackBar.open('¡Información personal guardada con éxito!', 'Cerrar', {
-            duration: 4000,
+          this.snackBar.open('¡Información personal guardada con éxito!', '', {
+            duration: 3000,
             horizontalPosition: 'center',
-            verticalPosition: 'top',
-            panelClass: ['success-snackbar', 'custom-notification']
+            verticalPosition: 'bottom',
+            panelClass: ['success-snackbar']
           });
         },
         error: (error: any) => {
           console.error('Error al actualizar datos personales:', error);
-          this.snackBar.open('Error al guardar la información personal', 'Cerrar', {
+          this.snackBar.open('Error al guardar la información personal', '', {
             duration: 3000,
             panelClass: ['error-snackbar']
           });
@@ -825,6 +858,41 @@ export class PersonalDataFormComponent implements OnInit, OnDestroy, OnChanges {
     
     if (changes['shouldLoadData'] && changes['shouldLoadData'].currentValue === true && this.isActiveTab) {
       this.loadDataIfNeeded();
+    }
+  }
+
+  // Método para formatear automáticamente la fecha mientras se escribe
+  onDateInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    let value = input.value.replace(/\D/g, ''); // Remover todo lo que no sea dígito
+    
+    // Limitar a 8 dígitos máximo
+    if (value.length > 8) {
+      value = value.substring(0, 8);
+    }
+    
+    // Formatear automáticamente con barras
+    if (value.length >= 2) {
+      value = value.substring(0, 2) + '/' + value.substring(2);
+    }
+    if (value.length >= 5) {
+      value = value.substring(0, 5) + '/' + value.substring(5);
+    }
+    
+    // Actualizar el valor del input
+    input.value = value;
+    
+    // Si tenemos 8 dígitos (formato completo), procesar la fecha
+    const digitsOnly = value.replace(/\D/g, '');
+    if (digitsOnly.length === 8) {
+      const day = parseInt(digitsOnly.substring(0, 2), 10);
+      const month = parseInt(digitsOnly.substring(2, 4), 10) - 1;
+      const year = parseInt(digitsOnly.substring(4, 8), 10);
+      
+      const date = new Date(year, month, day, 12, 0, 0);
+      if (!isNaN(date.getTime()) && day >= 1 && day <= 31 && month >= 0 && month <= 11) {
+        this.personalDataForm.get('birthDate')?.setValue(date, { emitEvent: false });
+      }
     }
   }
 }

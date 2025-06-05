@@ -182,7 +182,7 @@ export class AdminReportViewComponent implements OnInit {
       case 'expiringContracts':
         return ['daysUntilExpiry'].includes(filterName);
       case 'overdueInvoices':
-        return ['minDaysOverdue', 'status'].includes(filterName);
+        return ['minDaysOverdue'].includes(filterName);
       default:
         return false;
     }
@@ -272,8 +272,7 @@ export class AdminReportViewComponent implements OnInit {
 
       case 'overdueInvoices':
         return {
-          minDaysOverdue: formValue.minDaysOverdue || undefined,
-          status: formValue.status || undefined
+          minDaysOverdue: formValue.minDaysOverdue || undefined
         } as OverdueInvoicesAlertFilters;
 
       default:

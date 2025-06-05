@@ -85,6 +85,23 @@
   object-fit: cover;
 }
 
+.loading-avatar {
+  background-color: #ffffff;
+  border: 2px solid #e0e0e0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loading-avatar mat-spinner {
+  width: 50px !important;
+  height: 50px !important;
+}
+
+.loading-avatar mat-spinner circle {
+  stroke: #30B0C7 !important;
+}
+
 /* Main Content */
 .main-content {
   flex: 1;

@@ -152,6 +152,7 @@
 .panel-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 1rem;
   border-bottom: 1px solid var(--border-color);
   background-color: var(--surface-color);
@@ -160,27 +161,14 @@
   z-index: 1;
 }
 
-.panel-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-
 .panel-header h3 {
   margin: 0;
-  flex-grow: 1;
-  text-align: center;
+  flex: 1;
+  text-align: left;
 }
 
 .close-button {
-  position: absolute;
-  left: 8px;
-}
-
-@media (min-width: 769px) { /* O el breakpoint que uses para móvil (ajustar si es necesario) */
-  .panel-header .back-button {
-    display: none; /* Ocultar botón Volver en escritorio */
-  }
+  flex-shrink: 0;
 }
 
 /* Resumen del alquiler */
@@ -456,6 +444,13 @@
   box-shadow: 0 4px 8px rgba(0,0,0,0.3) !important;
 }
 
+/* Contenedor del botón de cancelación alineado a la derecha */
+.cancellation-button-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--spacing-md);
+}
+
 /* Loading spinner */
 .loading-spinner {
   position: absolute;
@@ -569,4 +564,173 @@
 
 .action-button.pending:hover {
   background-color: rgba(255, 152, 0, 0.04) !important;
-} 
+}
+
+/* Estilos para snackbars personalizados */
+::ng-deep .success-snackbar {
+  background-color: #4caf50 !important;
+  color: white !important;
+}
+
+::ng-deep .success-snackbar .mat-mdc-snack-bar-label {
+  color: white !important;
+}
+
+::ng-deep .error-snackbar {
+  background-color: #f44336 !important;
+  color: white !important;
+}
+
+::ng-deep .error-snackbar .mat-mdc-snack-bar-label {
+  color: white !important;
+}
+
+::ng-deep .warning-snackbar {
+  background-color: #ff9800 !important;
+  color: white !important;
+}
+
+::ng-deep .warning-snackbar .mat-mdc-snack-bar-label {
+  color: white !important;
+}
+
+/* Estilos para botones con spinner centrado */
+.mat-raised-button[disabled] {
+  opacity: 0.7 !important;
+}
+
+.mat-raised-button mat-spinner {
+  display: block !important;
+  margin: 0 auto !important;
+}
+
+.mat-raised-button .mat-icon {
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+.mat-raised-button:disabled {
+  cursor: not-allowed;
+}
+
+/* Centrar el contenido de los botones cuando hay spinner */
+.mat-raised-button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 36px !important;
+}
+
+.mat-raised-button ng-container {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+/* Alineación específica para botones con contenido dinámico */
+.pay-button,
+.boton-cancelar,
+.mat-raised-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Mensaje para acciones deshabilitadas */
+.action-disabled-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px;
+  background-color: rgba(255, 152, 0, 0.1);
+  border: 1px solid rgba(255, 152, 0, 0.3);
+  border-radius: 4px;
+  color: #e65100;
+  font-size: 14px;
+}
+
+.action-disabled-message mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: #ff9800;
+}
+
+/* Loading container para detalles */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.loading-container p {
+  margin-top: 16px;
+  color: var(--color-text-light);
+  font-size: 14px;
+}
+
+.modal-header .close-button {
+  color: white;
+  flex-shrink: 0;
+  order: 3;
+  align-self: center;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 500;
+  order: 1;
+  text-align: left;
+  flex: 1;
+}
+
+.header-spacer {
+  order: 2;
+  flex: 1;
+}
+
+/* Estilos para el desglose de amenidades */
+.amenities-breakdown {
+  background-color: rgba(var(--color-primary-rgb, 33, 150, 243), 0.05);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+  border-left: 4px solid var(--color-primary);
+}
+
+.amenities-header {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+  border-bottom: 1px solid rgba(var(--color-primary-rgb, 33, 150, 243), 0.2);
+  padding-bottom: var(--spacing-xs);
+  margin-bottom: var(--spacing-xs);
+}
+
+.amenities-detail {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xs) 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-dark);
+}
+
+.amenity-name {
+  color: var(--color-text-light);
+  flex: 1;
+}
+
+.amenity-price {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-success);
+}
+
+.header-spacer {
+  flex-grow: 1;
+}

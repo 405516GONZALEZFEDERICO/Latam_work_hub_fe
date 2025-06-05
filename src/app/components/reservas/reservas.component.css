@@ -127,10 +127,7 @@
 }
 
 /* Estilos para la sección de reservas */
-.reservas-list {
-  margin-top: 20px;
-  padding: var(--spacing-lg);
-}
+
 
 .reserva-card {
   margin-bottom: 15px;

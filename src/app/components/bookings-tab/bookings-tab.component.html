@@ -50,15 +50,17 @@
           </div>
           
           <!-- Botón de pago para reservas pendientes -->
-          <div class="booking-actions" *ngIf="isPendingStatus(booking.status)">
-            <button mat-mini-fab 
-                    color="primary" 
-                    class="action-button"
-                    (click)="$event.stopPropagation(); payBooking(booking)"
-                    title="Pagar reserva">
+          <button mat-button 
+            [class]="'action-button ' + (isPendingStatus(booking.status) ? 'pending' : '')"
+            [disabled]="payingBooking"
+            *ngIf="isPendingStatus(booking.status)"
+            (click)="$event.stopPropagation(); payBooking(booking)">
+            <mat-spinner *ngIf="payingBooking" diameter="20"></mat-spinner>
+            <ng-container *ngIf="!payingBooking">
               <mat-icon>payment</mat-icon>
-            </button>
-          </div>
+              Pagar
+            </ng-container>
+          </button>
         </mat-card-content>
       </mat-card>
 
@@ -82,17 +84,11 @@
 
     <!-- Panel de Detalles (Ocupa toda la pantalla en móvil si hay una seleccionada) -->
     <div class="booking-details-panel" *ngIf="selectedBooking">
-      <div class="panel-header">
-        <!-- Botón Volver (solo en móvil) -->
-        <button mat-icon-button *ngIf="isMobile$ | async" (click)="deselectBooking()" class="back-button">
-          <mat-icon>arrow_back</mat-icon>
-        </button>
+      <div class="booking-panel-header">
         <h3>Detalles de la Reserva #{{selectedBooking.id}}</h3>
-        <div class="panel-actions">
-          <button mat-icon-button (click)="deselectBooking()">
-            <mat-icon>close</mat-icon>
-          </button>
-        </div>
+        <button mat-icon-button (click)="deselectBooking()" class="booking-close-button">
+          <mat-icon>close</mat-icon>
+        </button>
       </div>
 
       <div class="booking-summary">
@@ -148,9 +144,14 @@
             </div>
             <button mat-raised-button 
                     color="primary" 
-                    class="boton-pagar" 
+                    class="boton-pagar"
+                    [disabled]="payingBooking" 
                     (click)="payBooking(selectedBooking)">
-              <mat-icon>payment</mat-icon> Pagar Reserva
+              <mat-spinner *ngIf="payingBooking" diameter="20"></mat-spinner>
+              <ng-container *ngIf="!payingBooking">
+                <mat-icon>payment</mat-icon> 
+                Pagar Reserva
+              </ng-container>
             </button>
           </div>
           

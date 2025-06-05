@@ -70,15 +70,41 @@
           </mat-card-content>
         </mat-card>
 
-        <!-- Ingresos últimos 30 días -->
+        <!-- Ingresos netos últimos 30 días -->
         <mat-card class="kpi-card">
           <mat-card-content>
             <div class="kpi-icon">
               <mat-icon>attach_money</mat-icon>
             </div>
             <div class="kpi-content">
-              <h3>Ingresos (30 días)</h3>
-              <p class="kpi-value">{{ formatCurrency(kpiData.totalRevenueLast30Days) }}</p>
+              <h3>Ingresos Netos (30 días)</h3>
+              <p class="kpi-value">{{ formatCurrency(kpiData.totalNetRevenueLast30Days) }}</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Ingresos brutos últimos 30 días -->
+        <mat-card class="kpi-card">
+          <mat-card-content>
+            <div class="kpi-icon">
+              <mat-icon>monetization_on</mat-icon>
+            </div>
+            <div class="kpi-content">
+              <h3>Ingresos Brutos (30 días)</h3>
+              <p class="kpi-value">{{ formatCurrency(kpiData.totalGrossRevenueLast30Days) }}</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Total de reembolsos -->
+        <mat-card class="kpi-card">
+          <mat-card-content>
+            <div class="kpi-icon">
+              <mat-icon>money_off</mat-icon>
+            </div>
+            <div class="kpi-content">
+              <h3>Reembolsos (30 días)</h3>
+              <p class="kpi-value">{{ formatCurrency(kpiData.totalRefundsLast30Days) }}</p>
             </div>
           </mat-card-content>
         </mat-card>
@@ -140,6 +166,8 @@
           <span>{{ error.monthlyRevenue }}</span>
         </div>
 
+
+
         <div *ngIf="!loading.monthlyRevenue && !error.monthlyRevenue && monthlyRevenueData.length > 0" class="chart">
           <ngx-charts-line-chart
             [results]="monthlyRevenueData"
@@ -158,7 +186,7 @@
       <!-- Gráfico de reservas por tipo de espacio -->
       <div class="chart-container interactive-chart" (click)="expandChart('spaceTypes')">
         <div class="chart-header">
-          <h2>Reservas por Tipo de Espacio</h2>
+          <h2>{{ spaceTypeChartTitle }}</h2>
           <mat-icon class="expand-icon" matTooltip="Click para expandir">fullscreen</mat-icon>
         </div>
 
@@ -181,7 +209,7 @@
             [showXAxisLabel]="showXAxisLabel"
             [showYAxisLabel]="showYAxisLabel"
             [xAxisLabel]="'Tipo de Espacio'"
-            [yAxisLabel]="'Cantidad de Reservas'"
+            [yAxisLabel]="isShowingReservationsData ? 'Cantidad de Reservas' : 'Cantidad de Contratos'"
             [scheme]="colorScheme"
             [showDataLabel]="true"
             [roundDomains]="true"
@@ -354,7 +382,7 @@
         [showXAxisLabel]="showXAxisLabel"
         [showYAxisLabel]="showYAxisLabel"
         [xAxisLabel]="'Tipo de Espacio'"
-        [yAxisLabel]="'Cantidad de Reservas'"
+        [yAxisLabel]="isShowingReservationsData ? 'Cantidad de Reservas' : 'Cantidad de Contratos'"
         [scheme]="colorScheme"
         [showDataLabel]="true"
         [roundDomains]="true"
@@ -407,7 +435,7 @@
         [showXAxisLabel]="showXAxisLabel"
         [showYAxisLabel]="showYAxisLabel"
         [xAxisLabel]="'Tipo de Espacio'"
-        [yAxisLabel]="'Cantidad de Contratos'"
+        [yAxisLabel]="isShowingReservationsData ? 'Cantidad de Reservas' : 'Cantidad de Contratos'"
         [scheme]="colorScheme"
         [showDataLabel]="true"
         [roundDomains]="true"

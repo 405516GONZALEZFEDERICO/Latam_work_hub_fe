@@ -136,8 +136,8 @@ export class LoginComponent implements OnInit {
     });
   }
   private showErrorSnackbar(message: string): void {
-    this.snackBar.open(message, 'Cerrar', {
-      duration: 5000,
+    this.snackBar.open(message, '', {
+      duration: 3000,
       panelClass: 'error-snackbar',
       horizontalPosition: 'center',
       verticalPosition: 'bottom'
@@ -145,8 +145,8 @@ export class LoginComponent implements OnInit {
   }
 
   private showSuccessSnackbar(message: string): void {
-    this.snackBar.open(message, 'Cerrar', {
-      duration: 5000,
+    this.snackBar.open(message, '', {
+      duration: 3000,
       panelClass: 'success-snackbar',
       horizontalPosition: 'center',
       verticalPosition: 'bottom'

@@ -49,41 +49,6 @@
               <span>{{rental.currentInvoiceNumber}} (Vence: {{rental.currentInvoiceDueDate | date:'dd/MM/yyyy'}})</span>
             </div>
           </div>
-
-          <!-- Botón de pago para facturas pendientes -->
-          <button mat-button 
-            [class]="'action-button ' + (isPendingStatus(rental.status) ? 'pending' : '')"
-            *ngIf="hasInvoicePending(rental)"
-            (click)="payCurrentInvoice(rental)">
-            <mat-icon>payment</mat-icon>
-            Pagar
-          </button>
-
-          <!-- Botón de renovación -->
-          <button mat-button 
-            [class]="'action-button ' + (isPendingStatus(rental.status) ? 'pending' : '')"
-            *ngIf="isContractActionable(rental)"
-            (click)="selectRental(rental); activeTab = 1">
-            <mat-icon>autorenew</mat-icon>
-            Renovar
-          </button>
-
-          <!-- Botón de cancelación -->
-          <button mat-button 
-            [class]="'action-button ' + (isPendingStatus(rental.status) ? 'pending' : '')"
-            *ngIf="isContractActionable(rental)"
-            (click)="selectRental(rental); activeTab = 2">
-            <mat-icon>cancel</mat-icon>
-            Cancelar
-          </button>
-
-          <!-- Botón de detalles -->
-          <button mat-button 
-            [class]="'action-button ' + (isPendingStatus(rental.status) ? 'pending' : '')"
-            (click)="selectRental(rental)">
-            <mat-icon>info</mat-icon>
-            Detalles
-          </button>
         </mat-card-content>
       </mat-card>
 
@@ -108,13 +73,18 @@
     <!-- Panel de Detalles (Ocupa toda la pantalla en móvil si hay uno seleccionado) -->
     <div class="rental-details-panel" *ngIf="selectedRental">
       <div class="panel-header">
+        <h3>Detalles del Alquiler #{{selectedRental.id}}</h3>
         <button mat-icon-button (click)="deselectRental()" class="close-button">
           <mat-icon>close</mat-icon>
         </button>
-        <h3>Detalles del Alquiler #{{selectedRental.id}}</h3>
       </div>
 
-      <div class="rental-summary">
+      <div *ngIf="detailsLoading" class="loading-container">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Cargando detalles...</p>
+      </div>
+
+      <div *ngIf="!detailsLoading" class="rental-summary">
         <div class="rental-summary-section contract-info">
           <h4>Información del Contrato</h4>
           <div class="detail-item">
@@ -142,8 +112,13 @@
                 <span class="invoice-number">{{selectedRental.currentInvoiceNumber}}</span>
                 <span class="invoice-due">Vence: {{selectedRental.currentInvoiceDueDate | date:'dd/MM/yyyy'}}</span>
               </div>
-              <button mat-raised-button color="accent" (click)="payCurrentInvoice(selectedRental)" class="pay-button">
-                <mat-icon>payment</mat-icon> Pagar
+              <button mat-raised-button color="accent" (click)="payCurrentInvoice(selectedRental)" class="pay-button"
+                      [disabled]="payingInvoice">
+                <mat-spinner *ngIf="payingInvoice" diameter="20"></mat-spinner>
+                <ng-container *ngIf="!payingInvoice">
+                  <mat-icon>payment</mat-icon> 
+                  Pagar
+                </ng-container>
               </button>
             </div>
           </div>
@@ -154,9 +129,9 @@
         </div>
       </div>
 
-      <mat-divider></mat-divider>
+      <mat-divider *ngIf="!detailsLoading"></mat-divider>
 
-      <mat-tab-group [(selectedIndex)]="activeTab" animationDuration="0ms" (selectedTabChange)="changeTab($event.index)">
+      <mat-tab-group *ngIf="!detailsLoading" [(selectedIndex)]="activeTab" animationDuration="0ms" (selectedTabChange)="changeTab($event.index)">
         <!-- Tab de Facturas -->
         <mat-tab label="Facturas">
           <div class="tab-content">
@@ -167,7 +142,7 @@
                   <div class="invoice-header">
                     <span class="invoice-number">#{{invoice.invoiceNumber}}</span>
                     <mat-chip [style.background-color]="getStatusColor(invoice.status)">
-                      {{translateContractStatus(invoice.status)}}
+                      {{translateInvoiceStatus(invoice.status)}}
                     </mat-chip>
                   </div>
                   
@@ -184,12 +159,29 @@
                       <span class="label">Monto:</span>
                       <span>${{invoice.totalAmount}}</span>
                     </div>
+                    
+                    <!-- Desglose de amenidades -->
+                    <div class="amenities-breakdown" *ngIf="hasAmenities(invoice)">
+                      <div class="detail-item amenities-header">
+                        <span class="label">Servicios Extras:</span>
+                        <span>${{getInvoiceAmenitiesTotal(invoice) | number:'1.0-0'}}</span>
+                      </div>
+                      <div class="amenities-detail" *ngFor="let amenity of invoice.amenities">
+                        <span class="amenity-name">• {{amenity.amenityName}}</span>
+                        <span class="amenity-price">${{amenity.price | number:'1.0-0'}}</span>
+                      </div>
+                    </div>
                   </div>
 
                   <button *ngIf="isPendingStatus(invoice.status)" 
                           mat-raised-button color="primary" 
+                          [disabled]="payingInvoice"
                           (click)="payInvoice(invoice)">
-                    Pagar Factura
+                    <mat-spinner *ngIf="payingInvoice" diameter="20"></mat-spinner>
+                    <ng-container *ngIf="!payingInvoice">
+                      <mat-icon>payment</mat-icon>
+                      Pagar Factura
+                    </ng-container>
                   </button>
                 </mat-card-content>
               </mat-card>
@@ -207,7 +199,7 @@
                   <div class="invoice-header">
                     <span class="invoice-number">#{{invoice.invoiceNumber}}</span>
                     <mat-chip [style.background-color]="getStatusColor(invoice.status)">
-                      {{translateContractStatus(invoice.status)}}
+                      {{translateInvoiceStatus(invoice.status)}}
                     </mat-chip>
                   </div>
                   
@@ -232,12 +224,29 @@
                       <span class="label">Tipo:</span>
                       <span>{{invoice.type}}</span>
                     </div>
+                    
+                    <!-- Desglose de amenidades -->
+                    <div class="amenities-breakdown" *ngIf="hasAmenities(invoice)">
+                      <div class="detail-item amenities-header">
+                        <span class="label">Servicios Extras:</span>
+                        <span>${{getInvoiceAmenitiesTotal(invoice) | number:'1.0-0'}}</span>
+                      </div>
+                      <div class="amenities-detail" *ngFor="let amenity of invoice.amenities">
+                        <span class="amenity-name">• {{amenity.amenityName}}</span>
+                        <span class="amenity-price">${{amenity.price | number:'1.0-0'}}</span>
+                      </div>
+                    </div>
                   </div>
 
                   <button *ngIf="isPendingStatus(invoice.status)" 
                           mat-raised-button color="primary" 
+                          [disabled]="payingInvoice"
                           (click)="payInvoice(invoice)">
-                    Pagar Factura
+                    <mat-spinner *ngIf="payingInvoice" diameter="20"></mat-spinner>
+                    <ng-container *ngIf="!payingInvoice">
+                      <mat-icon>payment</mat-icon>
+                      Pagar Factura
+                    </ng-container>
                   </button>
                 </mat-card-content>
               </mat-card>
@@ -268,10 +277,20 @@
                 </mat-form-field>
 
                 <button mat-raised-button color="primary" 
-                        [disabled]="!isContractActionable(selectedRental)"
+                        [disabled]="!isContractActionable(selectedRental) || renewingContract"
+                        [title]="!isContractActionable(selectedRental) ? getStatusActionMessage(selectedRental.status, selectedRental) : 'Renovar contrato por ' + renewalMonths + ' meses'"
                         (click)="renewRental()">
-                  Renovar Contrato
+                  <mat-spinner *ngIf="renewingContract" diameter="20"></mat-spinner>
+                  <ng-container *ngIf="!renewingContract">
+                    <mat-icon>autorenew</mat-icon>
+                    Renovar Contrato
+                  </ng-container>
                 </button>
+                
+                <div *ngIf="!isContractActionable(selectedRental)" class="action-disabled-message">
+                  <mat-icon>info</mat-icon>
+                  <span>{{getStatusActionMessage(selectedRental.status, selectedRental)}}</span>
+                </div>
               </div>
 
               <mat-divider class="section-divider"></mat-divider>
@@ -279,7 +298,9 @@
               <h4>Renovación Automática</h4>
               <div class="auto-renewal-form">
                 <div class="toggle-row">
-                  <mat-slide-toggle [(ngModel)]="autoRenewal.enabled" color="primary">
+                  <mat-slide-toggle [(ngModel)]="autoRenewal.enabled" 
+                                    [disabled]="!isContractActionable(selectedRental)"
+                                    color="primary">
                     Activar renovación automática
                   </mat-slide-toggle>
                 </div>
@@ -295,10 +316,20 @@
                 </mat-form-field>
 
                 <button mat-raised-button color="primary" 
-                        [disabled]="!isContractActionable(selectedRental)"
+                        [disabled]="!isContractActionable(selectedRental) || savingAutoRenewal"
+                        [title]="!isContractActionable(selectedRental) ? getStatusActionMessage(selectedRental.status, selectedRental) : 'Guardar configuración de renovación automática'"
                         (click)="saveAutoRenewal()">
-                  Guardar Configuración
+                  <mat-spinner *ngIf="savingAutoRenewal" diameter="20"></mat-spinner>
+                  <ng-container *ngIf="!savingAutoRenewal">
+                    <mat-icon>save</mat-icon>
+                    Guardar Configuración
+                  </ng-container>
                 </button>
+                
+                <div *ngIf="!isContractActionable(selectedRental)" class="action-disabled-message">
+                  <mat-icon>info</mat-icon>
+                  <span>{{getStatusActionMessage(selectedRental.status, selectedRental)}}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -327,10 +358,13 @@
                   Cancelar el contrato antes de su fecha de finalización puede incurrir en cargos adicionales según 
                   la política de cancelación. Esta acción no puede deshacerse.
                 </p>
-                <button mat-raised-button color="warn" class="boton-cancelar"
-                        (click)="cancelRental(selectedRental)">
-                  Cancelar Contrato
-                </button>
+                <div class="cancellation-button-container">
+                  <button mat-raised-button color="warn" class="boton-cancelar"
+                          [disabled]="cancellingContract"
+                          (click)="cancelRental(selectedRental)">
+                    {{ cancellingContract ? 'Procesando cancelación...' : 'Cancelar Contrato' }}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -413,10 +447,6 @@
       </mat-tab-group>
     </div>
 
-    <!-- Indicador de Carga -->
-    <div *ngIf="loading" class="loading-container">
-      <mat-spinner diameter="40"></mat-spinner>
-      <p>Cargando alquileres...</p>
-    </div>
+   
   </div>
 </div> 

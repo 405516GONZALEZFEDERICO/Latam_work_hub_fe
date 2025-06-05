@@ -16,12 +16,26 @@
   letter-spacing: -0.5px;
 }
 
-.menu-button {
-  color: #444;
+.hamburger-menu-button {
+  color: #444 !important;
+  width: 48px !important;
+  height: 48px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 50% !important;
 }
 
-.menu-icon {
-  font-size: 24px;
+.hamburger-menu-icon {
+  font-size: 24px !important;
+  width: 24px !important;
+  height: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
 }
 
 .notification-button {
@@ -36,6 +50,16 @@
   cursor: pointer;
   display: flex;
   align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 24px;
+  transition: all 0.2s ease;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.user-mini-profile:hover {
+  background: rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
 }
 
 .avatar-small {
@@ -48,23 +72,351 @@
   font-weight: 500;
   color: white;
   font-size: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.avatar-small.client {
+.avatar-medium {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 500;
+  color: white;
+  font-size: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.avatar-small.client, .avatar-medium.client {
   background-color: #30B0C7;
 }
 
-.avatar-small.provider {
+.avatar-small.provider, .avatar-medium.provider {
   background-color: #30B0C7;
 }
 
-.avatar-small.admin {
+.avatar-small.admin, .avatar-medium.admin {
   background-color: #003366;
+}
+
+.dropdown-arrow {
+  font-size: 18px;
+  color: #666;
+  transition: transform 0.2s ease;
+}
+
+.user-mini-profile:hover .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+/* User Menu Styles */
+::ng-deep .user-dropdown-menu {
+  margin-top: 8px;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  overflow: hidden !important;
+  min-width: 280px !important;
+  max-width: 320px !important;
+}
+
+::ng-deep .user-dropdown-menu .mat-mdc-menu-content {
+  padding: 0 !important;
+}
+
+::ng-deep .user-dropdown-menu .mat-mdc-menu-panel {
+  border-radius: 12px !important;
+}
+
+.user-menu-header {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-bottom: 1px solid #dee2e6;
+  position: relative;
+}
+
+.user-menu-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #1976d2, #42a5f5);
+}
+
+.user-menu-avatar {
+  margin-right: 16px;
+  position: relative;
+}
+
+.user-menu-avatar::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  background: #4caf50;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.user-menu-info {
+  flex: 1;
+}
+
+.user-menu-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 4px;
+  line-height: 1.2;
+}
+
+.user-menu-role {
+  font-size: 12px;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+  padding: 2px 8px;
+  background: rgba(25, 118, 210, 0.1);
+  border-radius: 12px;
+  display: inline-block;
+}
+
+/* Menu Items */
+::ng-deep .user-dropdown-menu .mat-mdc-menu-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 12px 20px !important;
+  min-height: 48px !important;
+  transition: all 0.2s ease !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+::ng-deep .user-dropdown-menu .mat-mdc-menu-item:hover {
+  background-color: #f8f9fa !important;
+}
+
+::ng-deep .user-dropdown-menu .mat-mdc-menu-item mat-icon {
+  color: #6c757d !important;
+  font-size: 20px !important;
+  width: 20px !important;
+  height: 20px !important;
+  margin: 0 !important;
+}
+
+::ng-deep .user-dropdown-menu .mat-mdc-menu-item span {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: #2c3e50 !important;
+  margin: 0 !important;
+}
+
+::ng-deep .user-dropdown-menu .logout-item {
+  color: #dc3545 !important;
+}
+
+::ng-deep .user-dropdown-menu .logout-item mat-icon {
+  color: #dc3545 !important;
+}
+
+::ng-deep .user-dropdown-menu .logout-item span {
+  color: #dc3545 !important;
+}
+
+::ng-deep .user-dropdown-menu .logout-item:hover {
+  background-color: #fff5f5 !important;
+}
+
+::ng-deep .user-dropdown-menu .mat-divider {
+  margin: 8px 0 !important;
+  border-top-color: #dee2e6 !important;
 }
 
 @media (max-width: 576px) {
   .app-title {
     font-size: 1rem;
+  }
+  
+  .hamburger-menu-button {
+    width: 44px !important;
+    height: 44px !important;
+  }
+  
+  .hamburger-menu-icon {
+    font-size: 22px !important;
+    width: 22px !important;
+    height: 22px !important;
+  }
+  
+  .user-mini-profile {
+    padding: 6px 8px;
+    gap: 6px;
+  }
+  
+  .avatar-small {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+  
+  .dropdown-arrow {
+    font-size: 16px;
+  }
+  
+  .user-menu-header {
+    padding: 12px 16px;
+  }
+  
+  .user-menu-name {
+    font-size: 14px;
+  }
+  
+  .user-menu-role {
+    font-size: 11px;
+  }
+  
+  ::ng-deep .user-dropdown-menu .mat-mdc-menu-item {
+    padding: 10px 16px !important;
+    min-height: 44px !important;
+  }
+  
+  ::ng-deep .user-dropdown-menu .mat-mdc-menu-item span {
+    font-size: 13px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-title {
+    font-size: 0.9rem;
+    margin-left: 0.5rem;
+  }
+  
+  .hamburger-menu-button {
+    width: 40px !important;
+    height: 40px !important;
+  }
+  
+  .hamburger-menu-icon {
+    font-size: 20px !important;
+    width: 20px !important;
+    height: 20px !important;
+  }
+  
+  .user-mini-profile {
+    padding: 4px 6px;
+    gap: 4px;
+  }
+  
+  .avatar-small {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+  
+  .dropdown-arrow {
+    font-size: 14px;
+  }
+  
+  ::ng-deep .user-dropdown-menu {
+    min-width: 260px !important;
+    max-width: 280px !important;
+    margin-top: 4px;
+  }
+  
+  .user-menu-header {
+    padding: 16px;
+  }
+  
+  .user-menu-name {
+    font-size: 14px;
+  }
+  
+  .user-menu-role {
+    font-size: 10px;
+    padding: 1px 6px;
+  }
+  
+  .user-menu-avatar::after {
+    width: 10px;
+    height: 10px;
+    bottom: 1px;
+    right: 1px;
+  }
+  
+  ::ng-deep .user-dropdown-menu .mat-mdc-menu-item {
+    padding: 8px 16px !important;
+    min-height: 40px !important;
+  }
+  
+  ::ng-deep .user-dropdown-menu .mat-mdc-menu-item span {
+    font-size: 12px !important;
+  }
+  
+  ::ng-deep .user-dropdown-menu .mat-mdc-menu-item mat-icon {
+    font-size: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .app-title {
+    font-size: 0.8rem;
+    margin-left: 0.3rem;
+  }
+  
+  .hamburger-menu-button {
+    width: 36px !important;
+    height: 36px !important;
+  }
+  
+  .hamburger-menu-icon {
+    font-size: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+  }
+  
+  .user-mini-profile {
+    padding: 3px 5px;
+    gap: 3px;
+  }
+  
+  .avatar-small {
+    width: 26px;
+    height: 26px;
+    font-size: 11px;
+  }
+  
+  .dropdown-arrow {
+    font-size: 12px;
+  }
+  
+  ::ng-deep .user-dropdown-menu {
+    min-width: 240px !important;
+    max-width: 260px !important;
+  }
+  
+  .user-menu-header {
+    padding: 12px;
+  }
+  
+  .user-menu-name {
+    font-size: 13px;
+  }
+  
+  .user-menu-role {
+    font-size: 9px;
+    padding: 1px 4px;
   }
 }
 
@@ -97,4 +449,21 @@
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
+}
+
+.loading-avatar {
+  background-color: #ffffff;
+  border: 2px solid #e0e0e0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loading-avatar mat-spinner {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+.loading-avatar mat-spinner circle {
+  stroke: #30B0C7 !important;
 } 

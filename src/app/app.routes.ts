@@ -36,7 +36,7 @@ export const routes: Routes = [
   {
     path: 'select-role',
     loadComponent: () =>
-      import('./views/view-select-rol/view-select-rol.component').then(m => m.RoleSelectionComponent),
+      import('./views/view-select-rol/view-select-rol.component').then(m => m.ViewSelectRolComponent),
     canActivate: [SecurityWardGuard],
     data: {
       allowedRoles: ['DEFAULT'],
@@ -179,6 +179,26 @@ export const routes: Routes = [
         }
       },
       {
+        path: 'client-dashboard',
+        loadComponent: () =>
+          import('./views/client-dashboard-view/client-dashboard-view.component').then(m => m.ClientDashboardViewComponent),
+        canActivate: [SecurityWardGuard],
+        data: {
+          allowedRoles: ['CLIENTE'],
+          title: 'Mi Dashboard'
+        }
+      },
+      {
+        path: 'provider-dashboard',
+        loadComponent: () =>
+          import('./views/provider-dashboard-view/provider-dashboard-view.component').then(m => m.ProviderDashboardViewComponent),
+        canActivate: [SecurityWardGuard],
+        data: {
+          allowedRoles: ['PROVEEDOR'],
+          title: 'Mi Dashboard de Proveedor'
+        }
+      },
+      {
         path: 'admin-panel',
         loadComponent: () =>
           import('./views/admin-users-management/admin-users-management.component').then(m => m.AdminUsersManagementComponent),
@@ -210,6 +230,26 @@ export const routes: Routes = [
     data: {
       allowedRoles: ['ADMIN'],
       title: 'Dashboard Administrativo'
+    }
+  },
+  {
+    path: 'client-dashboard',
+    loadComponent: () =>
+      import('./views/client-dashboard-view/client-dashboard-view.component').then(m => m.ClientDashboardViewComponent),
+    canActivate: [SecurityWardGuard],
+    data: {
+      allowedRoles: ['CLIENTE'],
+      title: 'Mi Dashboard'
+    }
+  },
+  {
+    path: 'provider-dashboard',
+    loadComponent: () =>
+      import('./views/provider-dashboard-view/provider-dashboard-view.component').then(m => m.ProviderDashboardViewComponent),
+    canActivate: [SecurityWardGuard],
+    data: {
+      allowedRoles: ['PROVEEDOR'],
+      title: 'Mi Dashboard de Proveedor'
     }
   },
   {

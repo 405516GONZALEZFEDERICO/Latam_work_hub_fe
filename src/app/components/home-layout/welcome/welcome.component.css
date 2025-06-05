@@ -113,6 +113,19 @@
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: var(--spacing-xl);
   margin-top: var(--spacing-xxl);
+  /* Evitar layout shift durante la carga */
+  min-height: 300px;
+  opacity: 1;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.quick-actions-grid.loading {
+  opacity: 0.7;
+}
+
+.quick-actions-grid:empty {
+  min-height: 300px;
+  opacity: 0.5;
 }
 
 /* Feature Cards */
@@ -122,10 +135,12 @@
   padding: var(--spacing-xxl);
   box-shadow: var(--box-shadow);
   border: 1px solid rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
   text-align: center;
   position: relative;
   overflow: hidden;
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .feature-card::before {
@@ -383,10 +398,8 @@
   }
 }
 
-/* Animation */
-.feature-card {
-  animation: fadeInUp 0.6s ease-out;
-}
+/* Animation - Removida para evitar parpadeo */
+/* .feature-card animation comentada para evitar parpadeo inicial */
 
 @keyframes fadeInUp {
   from {

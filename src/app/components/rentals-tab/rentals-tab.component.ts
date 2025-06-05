@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { RentalService, RentalContractResponse, InvoiceHistoryDto, InvoiceEntity, AutoRenewalDto, PaginatedResponse, IsAutoRenewalDto } from '../../services/rental/rental.service';
+import { RentalService, RentalContractResponse, InvoiceHistoryDto, InvoiceEntity, AutoRenewalDto, PaginatedResponse, IsAutoRenewalDto, InvoiceAmenityDto } from '../../services/rental/rental.service';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
@@ -88,12 +88,19 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
   
   // UI state properties
   loading = false;
+  detailsLoading = false;
   activeTab = 0;
   renewalMonths = 12;
   autoRenewal = {
     enabled: false,
     months: 12
   };
+
+  // Individual loading states for buttons
+  cancellingContract = false;
+  renewingContract = false;
+  savingAutoRenewal = false;
+  payingInvoice = false;
 
   // Filter options
   statusFilter = new FormControl('');
@@ -154,7 +161,7 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
     
     this.authService.getCurrentUser().subscribe({
       next: (user) => {
-        console.log('RentalsTabComponent: Usuario obtenido', user);
+        // Usuario obtenido
         if (!user) {
           this.loading = false;
           console.error('RentalsTabComponent: Usuario no encontrado');
@@ -165,6 +172,8 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
         this.rentalService.getUserContracts(user.uid, page, size, status).subscribe({
           next: (response) => {
             console.log('RentalsTabComponent: Alquileres cargados', response);
+            
+            // El backend ya ordena por ID descendente con el parámetro sort=id,desc
             this.rentals = response.content;
             this.totalRentals = response.totalElements;
             this.currentPage = response.number;
@@ -199,6 +208,7 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
   selectRental(rental: RentalContractResponse): void {
     this.selectedRental = rental;
     this.activeTab = 0;
+    this.detailsLoading = true;
     this.loadInvoices(rental.id);
     this.loadPendingInvoices(rental.id);
     this.loadCancellationPolicy(rental.id);
@@ -206,19 +216,18 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
   }
 
   loadInvoices(contractId: number): void {
-    this.loading = true;
     this.rentalService.getContractInvoices(contractId).subscribe({
       next: (invoices) => {
         console.log('Historial de facturas recibido:', invoices);
         this.invoices = this.processDates(invoices);
         console.log('Historial de facturas procesado:', this.invoices);
-        this.loading = false;
+        this.checkDetailsLoadingComplete();
       },
       error: (error) => {
-        this.loading = false;
         this.snackBar.open('Error al cargar las facturas', 'Cerrar', {
           duration: 3000
         });
+        this.checkDetailsLoadingComplete();
       }
     });
   }
@@ -229,11 +238,13 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
         console.log('Facturas pendientes recibidas:', invoices);
         this.pendingInvoices = this.processDates(invoices);
         console.log('Facturas pendientes procesadas:', this.pendingInvoices);
+        this.checkDetailsLoadingComplete();
       },
       error: (error) => {
         this.snackBar.open('Error al cargar las facturas pendientes', 'Cerrar', {
           duration: 3000
         });
+        this.checkDetailsLoadingComplete();
       }
     });
   }
@@ -271,12 +282,14 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
       next: (policy) => {
         console.log('Política de cancelación cargada:', policy);
         this.cancellationPolicy = policy;
+        this.checkDetailsLoadingComplete();
       },
       error: (error) => {
         console.error('Error al cargar política de cancelación:', error);
         this.snackBar.open('Error al cargar la política de cancelación', 'Cerrar', {
           duration: 3000
         });
+        this.checkDetailsLoadingComplete();
       }
     });
   }
@@ -305,6 +318,7 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
           this.selectedRental.autoRenew = autoRenewalDto.isAutoRenewal;
           this.selectedRental.renewalMonths = autoRenewalDto.renewalMonths;
         }
+        this.checkDetailsLoadingComplete();
       },
       error: (error) => {
         console.error('Error al cargar configuración de renovación automática:', error);
@@ -312,12 +326,21 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
         this.snackBar.open('Error al cargar la configuración de renovación automática', 'Cerrar', {
           duration: 3000
         });
+        this.checkDetailsLoadingComplete();
       }
     });
   }
 
+  private checkDetailsLoadingComplete(): void {
+    // Verificar si todas las cargas de detalles han terminado
+    // Esto es una simplificación - en un caso real podrías usar un contador o Promise.all
+    setTimeout(() => {
+      this.detailsLoading = false;
+    }, 500);
+  }
+
   cancelRental(rental: RentalContractResponse): void {
-    if (!this.isContractActionable(rental)) return;
+    if (!this.isContractActionable(rental) || this.cancellingContract) return;
     
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       data: {
@@ -328,22 +351,48 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.loading = true;
-        this.rentalService.cancelContract(rental.id).subscribe({
-          next: () => {
-            this.loading = false;
-            this.snackBar.open('Alquiler cancelado exitosamente', 'Cerrar', {
-              duration: 3000
-            });
-            this.loadRentals();
-            this.selectedRental = null;
-          },
-          error: (error) => {
-            this.loading = false;
-            this.snackBar.open('Error al cancelar el alquiler', 'Cerrar', {
-              duration: 3000
-            });
-          }
+        this.cancellingContract = true;
+        
+        // Mostrar mensaje inicial con delay
+        this.snackBar.open('Preparando cancelación...', '', {
+          duration: 1500,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom'
+        });
+        
+        // Delay de 1500ms antes de procesar la cancelación
+        setTimeout(() => {
+          this.processRentalCancellation(rental);
+        }, 1500);
+      }
+    });
+  }
+
+  private processRentalCancellation(rental: RentalContractResponse): void {
+    this.snackBar.open('Cancelando alquiler...', '', {
+      duration: 1500,
+      horizontalPosition: 'center',
+      verticalPosition: 'bottom'
+    });
+
+    this.rentalService.cancelContract(rental.id).subscribe({
+      next: (response) => {
+        this.cancellingContract = false;
+        this.snackBar.open('Alquiler cancelado con éxito', 'Cerrar', {
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom'
+        });
+        this.loadRentals(this.currentPage, this.pageSize);
+        this.deselectRental();
+      },
+      error: (error) => {
+        this.cancellingContract = false;
+        console.error('Error al cancelar el alquiler:', error);
+        this.snackBar.open('Error al cancelar el alquiler. Por favor, inténtalo de nuevo.', 'Cerrar', {
+          duration: 4000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom'
         });
       }
     });
@@ -352,7 +401,6 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
   // Condicional para verificar si un estado es activo, independientemente del idioma
   isActiveStatus(status: string): boolean {
     const isActive = status === 'ACTIVE' || status === 'ACTIVO';
-    console.log(`isActiveStatus: ${status} -> ${isActive}`);
     return isActive;
   }
 
@@ -368,15 +416,43 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
     return status === 'CANCELLED' || status === 'CANCELADO';
   }
 
-  // Método para verificar si un contrato está disponible para acciones (no cancelado, no expirado)
+  // Método para verificar si un contrato está disponible para acciones (no cancelado, no expirado, sin facturas pendientes)
   isContractActionable(rental: RentalContractResponse): boolean {
     if (!rental) {
-      console.log('isContractActionable: rental is null or undefined');
       return false;
     }
-    const isActionable = this.isActiveStatus(rental.status);
-    console.log(`isContractActionable: ${rental.id} -> ${isActionable} (status: ${rental.status})`);
+    
+    // Verificar estado del contrato
+    const hasValidStatus = this.isActiveStatus(rental.status) || this.isPendingStatus(rental.status);
+    
+    // Verificar si tiene facturas pendientes de pago
+    const hasNoPendingInvoices = !this.hasInvoicePending(rental);
+    
+    // Solo permitir acciones si tiene estado válido Y no tiene facturas pendientes
+    const isActionable = hasValidStatus && hasNoPendingInvoices;
+    
     return isActionable;
+  }
+
+  // Método para obtener mensaje explicativo sobre por qué no se puede realizar una acción
+  getStatusActionMessage(status: string, rental?: RentalContractResponse): string {
+    // Si se pasa el rental, verificar primero facturas pendientes
+    if (rental && this.hasInvoicePending(rental)) {
+      return 'Debe pagar las facturas pendientes antes de realizar esta acción';
+    }
+    
+    const statusMessages: { [key: string]: string } = {
+      'CANCELLED': 'El contrato está cancelado',
+      'CANCELADO': 'El contrato está cancelado',
+      'EXPIRED': 'El contrato ha expirado',
+      'EXPIRADO': 'El contrato ha expirado',
+      'CONFIRMED': 'El contrato está confirmado pero aún no activo',
+      'CONFIRMADO': 'El contrato está confirmado pero aún no activo',
+      'PAID': 'El contrato está pagado pero aún no activo',
+      'PAGADO': 'El contrato está pagado pero aún no activo'
+    };
+    
+    return statusMessages[status] || `El estado actual (${this.translateContractStatus(status)}) no permite esta acción`;
   }
 
   // Método para abrir URLs de pago en una nueva ventana
@@ -393,7 +469,7 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
 
   // Método para pagar la factura actual pendiente
   payCurrentInvoice(rental: RentalContractResponse): void {
-    if (!this.hasInvoicePending(rental)) return;
+    if (!this.hasInvoicePending(rental) || this.payingInvoice) return;
     
     // Si ya tenemos las facturas pendientes, usamos la primera directamente
     if (this.pendingInvoices && this.pendingInvoices.length > 0) {
@@ -403,11 +479,11 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
     }
     
     // Si no tenemos las facturas pendientes cargadas, las obtenemos primero
-    this.loading = true;
+    this.payingInvoice = true;
     this.rentalService.getPendingInvoices(rental.id).subscribe({
       next: (invoices) => {
         this.pendingInvoices = invoices;
-        this.loading = false;
+        this.payingInvoice = false;
         
         if (invoices && invoices.length > 0) {
           this.payInvoice(invoices[0]);
@@ -419,7 +495,7 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
         }
       },
       error: (error) => {
-        this.loading = false;
+        this.payingInvoice = false;
         this.snackBar.open('Error al obtener las facturas pendientes', 'Cerrar', {
           duration: 3000
         });
@@ -433,73 +509,120 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
   }
 
   payInvoice(invoice: InvoiceHistoryDto | InvoiceEntity): void {
-    // Si la factura ya tiene URL de pago, la usamos directamente
+    if (this.payingInvoice) return;
+
+    if (!this.selectedRental) {
+      this.handlePaymentError('Error: No se puede procesar el pago sin contrato seleccionado');
+      return;
+    }
+
+    console.log('=== ANÁLISIS DE FACTURA PARA PAGO ===');
+    console.log(`Factura ID: ${invoice.id} | Contrato ID: ${this.selectedRental.id}`);
+    
+    const monthlyAmount = this.selectedRental.monthlyAmount;
+    const depositAmount = this.selectedRental.depositAmount;
+    const amenitiesTotal = this.getInvoiceAmenitiesTotal(invoice);
+    
+    const totalCalculadoCorrecto = monthlyAmount + depositAmount + amenitiesTotal;
+    const totalEnFacturaBackend = invoice.totalAmount;
+
+    console.log('--- Desglose de Montos ---');
+    console.log(` > Monto Mensual (Contrato): $${monthlyAmount}`);
+    console.log(` > Depósito (Contrato): $${depositAmount}`);
+    console.log(` > Servicios Extras (Factura): $${amenitiesTotal}`);
+    console.log('-----------------------------');
+    console.log(`✅ TOTAL CORRECTO (FE): $${totalCalculadoCorrecto}`);
+    console.log(`   Total en Factura (BE): $${totalEnFacturaBackend}`);
+    
+    if (totalCalculadoCorrecto !== totalEnFacturaBackend) {
+      console.error('🔴 INCONSISTENCIA: Total de factura del backend no coincide con el cálculo del FE.');
+      console.error(`   Diferencia: $${totalEnFacturaBackend - totalCalculadoCorrecto}`);
+      console.warn('💡 ACCIÓN REQUERIDA (Backend): Revisar lógica de creación de facturas. Debe sumar: mensualidad + depósito + servicios extras.');
+    } else {
+      console.log('✅ El total de la factura del backend es consistente.');
+    }
+    console.log('===================================');
+
     if (invoice.paymentUrl && invoice.paymentUrl.trim() !== '') {
+      console.log('Usando URL de pago existente:', invoice.paymentUrl);
       this.openPaymentInNewWindow(invoice.paymentUrl);
       return;
     }
     
-    // Si no tiene URL de pago, pero tiene ID, generamos el enlace de pago
-    if (invoice.id) {
-      this.loading = true;
-      this.rentalService.generateInvoicePaymentLink(invoice.id).subscribe({
-        next: (paymentUrl) => {
-          this.loading = false;
-          if (paymentUrl && paymentUrl.trim() !== '') {
-            // Guardamos la URL de pago para futuras referencias
-            invoice.paymentUrl = paymentUrl;
-            this.openPaymentInNewWindow(paymentUrl);
-          } else {
-            this.snackBar.open('No se pudo obtener un enlace de pago válido', 'Cerrar', {
-              duration: 3000
-            });
-          }
-        },
-        error: (error) => {
-          this.loading = false;
-          console.error('Error al generar enlace de pago:', error);
-          this.snackBar.open('Error al generar el enlace de pago', 'Cerrar', {
-            duration: 3000
-          });
+    console.log('Generando nueva URL de pago...');
+    
+    this.payingInvoice = true;
+    this.rentalService.generateInvoicePaymentLink(this.selectedRental.id, invoice).subscribe({
+      next: (paymentUrl) => {
+        if (paymentUrl) {
+          console.log('URL de pago generada exitosamente.');
+          this.openPaymentInNewWindow(paymentUrl);
+        } else {
+          this.handlePaymentError('No se pudo generar el enlace de pago');
         }
-      });
-    } else {
-      this.snackBar.open('No se puede procesar esta factura', 'Cerrar', {
-        duration: 3000
-      });
-    }
+      },
+      error: (error) => {
+        console.error('Error al generar enlace de pago:', error);
+        this.handlePaymentError('Error al procesar el pago. Inténtalo de nuevo.');
+      },
+      complete: () => {
+        this.payingInvoice = false;
+        console.log('Proceso de pago finalizado.');
+      }
+    });
   }
 
   renewRental(): void {
-    if (!this.selectedRental || !this.isContractActionable(this.selectedRental)) return;
+    if (!this.selectedRental || this.renewingContract) {
+      this.snackBar.open('No hay ningún alquiler seleccionado', 'Cerrar', {
+        duration: 3000
+      });
+      return;
+    }
+
+    if (!this.isContractActionable(this.selectedRental)) {
+      const statusMessage = this.getStatusActionMessage(this.selectedRental.status, this.selectedRental);
+      this.snackBar.open(`No se puede renovar: ${statusMessage}`, 'Cerrar', {
+        duration: 4000
+      });
+      return;
+    }
     
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       data: {
         title: 'Renovar Alquiler',
-        message: `¿Estás seguro que deseas renovar este alquiler por ${this.renewalMonths} meses?`      }
+        message: `¿Estás seguro que deseas renovar este alquiler por ${this.renewalMonths} meses?`
+      }
     });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.loading = true;
+        this.renewingContract = true;
+        this.snackBar.open('Procesando renovación...', '', {
+          duration: 2000
+        });
+        
         this.rentalService.renewContract(this.selectedRental!.id, this.renewalMonths).subscribe({
           next: (paymentUrl) => {
-            this.loading = false;
+            this.renewingContract = false;
             if (paymentUrl && paymentUrl.trim() !== '') {
+              this.snackBar.open('Renovación procesada exitosamente. Redirigiendo al pago...', 'Cerrar', {
+                duration: 4000
+              });
               this.openPaymentInNewWindow(paymentUrl);
-              // Reload rentals after successful renewal
-              this.loadRentals();
+              this.loadRentals(this.currentPage, this.pageSize);
             } else {
               this.snackBar.open('Alquiler renovado exitosamente', 'Cerrar', {
                 duration: 3000
               });
-              this.loadRentals();
+              this.loadRentals(this.currentPage, this.pageSize);
             }
           },
           error: (error) => {
-            this.loading = false;
-            this.snackBar.open('Error al renovar el alquiler', 'Cerrar', {
-              duration: 3000
+            this.renewingContract = false;
+            console.error('Error al renovar el alquiler:', error);
+            this.snackBar.open('Error al renovar el alquiler. Por favor, inténtalo de nuevo.', 'Cerrar', {
+              duration: 4000
             });
           }
         });
@@ -508,9 +631,25 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
   }
 
   saveAutoRenewal(): void {
-    if (!this.selectedRental || !this.isContractActionable(this.selectedRental)) return;
+    if (!this.selectedRental || this.savingAutoRenewal) {
+      this.snackBar.open('No hay ningún alquiler seleccionado', 'Cerrar', {
+        duration: 3000
+      });
+      return;
+    }
+
+    if (!this.isContractActionable(this.selectedRental)) {
+      const statusMessage = this.getStatusActionMessage(this.selectedRental.status, this.selectedRental);
+      this.snackBar.open(`No se puede configurar renovación automática: ${statusMessage}`, 'Cerrar', {
+        duration: 4000
+      });
+      return;
+    }
     
-    this.loading = true;
+    this.savingAutoRenewal = true;
+    this.snackBar.open('Guardando configuración...', '', {
+      duration: 2000
+    });
     
     // Si la renovación automática está desactivada, simplemente actualizamos el estado
     if (!this.autoRenewal.enabled) {
@@ -560,9 +699,14 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
   }
   
   private finishAutoRenewalUpdate(): void {
-    this.loading = false;
-    this.snackBar.open('Configuración de renovación automática guardada', 'Cerrar', {
-      duration: 3000
+    this.savingAutoRenewal = false;
+    const message = this.autoRenewal.enabled 
+      ? `Renovación automática activada por ${this.autoRenewal.months} meses`
+      : 'Renovación automática desactivada';
+    
+    this.snackBar.open(`✓ ${message}`, 'Cerrar', {
+      duration: 4000,
+      panelClass: ['success-snackbar']
     });
     
     // Recargar la configuración desde el backend para asegurar consistencia
@@ -573,10 +717,21 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
   }
   
   private handleAutoRenewalError(error: any): void {
-    this.loading = false;
+    this.savingAutoRenewal = false;
     console.error('Error al guardar configuración de renovación automática:', error);
-    this.snackBar.open('Error al guardar la configuración de renovación automática', 'Cerrar', {
-      duration: 3000
+    
+    let errorMessage = 'Error al guardar la configuración de renovación automática';
+    
+    // Intentar extraer un mensaje más específico del error
+    if (error?.error?.message) {
+      errorMessage = error.error.message;
+    } else if (error?.message) {
+      errorMessage = error.message;
+    }
+    
+    this.snackBar.open(`✗ ${errorMessage}`, 'Cerrar', {
+      duration: 5000,
+      panelClass: ['error-snackbar']
     });
   }
 
@@ -597,8 +752,11 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
       case 'paid':
       case 'pagado':
         return 'var(--color-success)';
+      case 'confirmed':
+      case 'confirmado':
+        return '#4caf50';
       default:
-        return 'var(--color-primary)';
+        return '#2196f3';
     }
   }
 
@@ -634,6 +792,20 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
       'EXPIRED': 'EXPIRADO',
       'CANCELLED': 'CANCELADO',
       'PAID': 'PAGADO'
+    };
+    
+    return translations[status] || status;
+  }
+
+  // Método específico para traducir estados de facturas
+  translateInvoiceStatus(status: string): string {
+    const translations: { [key: string]: string } = {
+      'DRAFT': 'Borrador',
+      'ISSUED': 'Emitida',
+      'PAID': 'Pagada',
+      'CANCELLED': 'Cancelada',
+      'PENDING': 'Pendiente',
+      'OVERDUE': 'Vencida'
     };
     
     return translations[status] || status;
@@ -690,8 +862,40 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
     return value !== null && value !== undefined ? value.toString() : '';
   }
 
+  // Método para mostrar información cuando se intenta hacer una acción no permitida
+  showActionNotAllowedInfo(): void {
+    if (!this.selectedRental) return;
+    
+    const statusMessage = this.getStatusActionMessage(this.selectedRental.status, this.selectedRental);
+    this.snackBar.open(`ℹ️ ${statusMessage}`, 'Entendido', {
+      duration: 5000,
+      panelClass: ['warning-snackbar']
+    });
+  }
+
   // Método para deseleccionar el alquiler (usado por el botón Volver)
   deselectRental(): void {
     this.selectedRental = null;
+  }
+
+  // Método para calcular el total de amenidades de una factura
+  getInvoiceAmenitiesTotal(invoice: InvoiceHistoryDto | InvoiceEntity): number {
+    if (!invoice.amenities || invoice.amenities.length === 0) {
+      return 0;
+    }
+    return invoice.amenities.reduce((total, amenity) => total + amenity.price, 0);
+  }
+
+  // Método para verificar si una factura tiene amenidades
+  hasAmenities(invoice: InvoiceHistoryDto | InvoiceEntity): boolean {
+    return !!(invoice.amenities && invoice.amenities.length > 0);
+  }
+
+  // Método para manejar errores de pago
+  private handlePaymentError(message: string): void {
+    this.snackBar.open(message, 'Cerrar', {
+      duration: 5000,
+      panelClass: ['error-snackbar']
+    });
   }
 } 

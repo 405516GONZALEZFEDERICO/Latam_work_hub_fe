@@ -1,167 +1,341 @@
-
-
+/* Estilos principales */
 .bookings-container {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 1rem;
+  background-color: var(--color-background);
+  color: var(--color-text-dark);
+  font-family: var(--font-family);
 }
 
 .bookings-header {
-  margin-bottom: 1.5rem;
+  padding: var(--spacing-lg);
+  background-color: white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .bookings-header h2 {
   margin: 0;
-  color: #333;
-  font-size: 1.8rem;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
 }
 
 .filter-bar {
-  margin-bottom: 1rem;
+  padding: var(--spacing-sm) var(--spacing-lg);
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: var(--spacing-md);
   align-items: center;
+  background-color: white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .status-filter {
-  width: 220px;
+  min-width: 200px;
+  max-width: 300px;
 }
 
 .bookings-content {
   display: flex;
-  gap: 1.5rem;
-  height: calc(100% - 6rem);
+  height: calc(100% - 60px);
+  padding: var(--spacing-lg);
+  gap: var(--spacing-xl);
   overflow: hidden;
 }
 
+/* Lista de reservas */
 .bookings-list {
-  flex: 1;
-  overflow-y: auto;
-  max-width: 400px;
-  padding-right: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-}
-
-.booking-details-panel {
-  flex: 2;
+  gap: var(--spacing-md);
+  width: 320px;
+  min-width: 320px;
+  height: 100%;
   overflow-y: auto;
-  border-left: 1px solid #e0e0e0;
-  padding: 1.5rem;
+  padding-right: var(--spacing-sm);
 }
 
 .booking-card {
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 0.5rem;
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
+  transition: all 0.2s ease;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow-light);
+  background-color: white;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .booking-card:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
+  box-shadow: var(--box-shadow-medium);
 }
 
 .booking-card.selected {
-  border-color: #3f51b5;
-  box-shadow: 0 2px 10px rgba(63, 81, 181, 0.2);
+  border: 2px solid var(--color-primary);
+  background-color: rgba(var(--color-primary-rgb, 33, 150, 243), 0.05);
 }
 
 .booking-card.cancelled {
   opacity: 0.7;
+  position: relative;
+}
+
+.booking-card.cancelled::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-color: rgba(0, 0, 0, 0.05);
+  pointer-events: none;
+}
+
+.booking-card .booking-header {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.booking-card .booking-details {
+  padding: var(--spacing-md);
+}
+
+.booking-card mat-card-content {
+  padding: 0 !important;
 }
 
 .booking-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.8rem;
+  margin-bottom: var(--spacing-md);
 }
 
 .booking-header h3 {
   margin: 0;
-  font-size: 1.1rem;
-  font-weight: 500;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
 }
 
 .booking-details {
-  display: grid;
-  gap: 0.5rem;
+  font-size: var(--font-size-sm);
 }
 
-.detail-item {
-  display: flex;
-  margin-bottom: 1rem;
-  align-items: flex-start;
-}
-
-.label {
-  font-weight: 500;
-  color: #555;
-  min-width: 140px;
-  flex-shrink: 0;
-}
-
-.panel-header {
+/* Estilos específicos para detail-item en las cards de la lista */
+.booking-card .booking-details .detail-item {
+  margin-bottom: var(--spacing-xs);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
 }
 
-.panel-header h3 {
-  margin: 0;
-  font-size: 1.3rem;
+.booking-card .booking-details .detail-item .label {
+  color: var(--color-text-light);
+  margin-right: var(--spacing-sm);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.panel-actions {
+.booking-card .booking-details .detail-item span:last-child {
+  text-align: right;
+  word-break: break-word;
+  flex: 1;
+}
+
+/* Estilos para detail-item en el panel de detalles */
+.booking-details-panel .detail-item {
+  margin-bottom: var(--spacing-md);
   display: flex;
-  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: flex-start;
 }
 
+.booking-details-panel .detail-item .label {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-light);
+  min-width: 180px;
+  margin-right: var(--spacing-md);
+  padding-top: 4px;
+  flex-shrink: 0;
+}
+
+/* Panel de detalles */
+.booking-details-panel {
+  flex: 1;
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Header específico para el panel de detalles de reservas */
+.booking-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--surface-color);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.booking-panel-header h3 {
+  margin: 0;
+  flex: 1;
+  text-align: left;
+  font-size: 1.25rem !important;
+  font-weight: 500;
+}
+
+.booking-close-button {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* Estilos para los iconos en general */
+.mat-icon {
+  vertical-align: middle;
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+/* Ajustes para dispositivos móviles */
+@media (max-width: 600px) {
+  .booking-details-panel .detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .booking-details-panel .detail-item .label {
+    min-width: auto;
+    margin-bottom: 4px;
+  }
+
+  .booking-card .booking-details .detail-item {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .booking-card .booking-details .detail-item .label {
+    margin-right: var(--spacing-xs);
+  }
+
+  .cancellation-policy-message,
+  .payment-info {
+    padding: 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Estilos específicos para sobrescribir conflictos de rentals-tab.component.css */
+/* Estos estilos tienen mayor especificidad para sobrescribir los estilos problemáticos */
+
+/* Para modales de reserva */
+::ng-deep .reservation-modal .modal-header,
+::ng-deep .reservation-modal .reservation-modal-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+::ng-deep .reservation-modal .modal-header h2,
+::ng-deep .reservation-modal .reservation-modal-header h2 {
+  order: unset !important;
+  text-align: left !important;
+  flex: 1 !important;
+  margin: 0 !important;
+}
+
+::ng-deep .reservation-modal .modal-header .close-button,
+::ng-deep .reservation-modal .reservation-close-button {
+  order: unset !important;
+  align-self: unset !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+
+/* Para modales de alquiler */
+::ng-deep .rental-modal .modal-header,
+::ng-deep .rental-modal .rental-modal-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+::ng-deep .rental-modal .modal-header h2,
+::ng-deep .rental-modal .rental-modal-header h2 {
+  order: unset !important;
+  text-align: left !important;
+  flex: 1 !important;
+  margin: 0 !important;
+}
+
+::ng-deep .rental-modal .modal-header .close-button,
+::ng-deep .rental-modal .rental-close-button {
+  order: unset !important;
+  align-self: unset !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+
+/* Resumen de la reserva */
 .booking-summary {
-  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-md);
+  background-color: white;
+  box-shadow: var(--box-shadow-light);
+  margin-bottom: var(--spacing-md);
 }
 
 .booking-summary-section {
-  margin-bottom: 1.5rem;
-  padding: 1.5rem;
-  border-radius: 8px;
-  background-color: #f9f9f9;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  flex: 1;
+  padding: var(--spacing-md);
 }
 
 .booking-summary-section h4 {
-  margin-top: 0;
-  margin-bottom: 1.5rem;
-  font-size: 1.2rem;
-  color: #333;
-  border-bottom: 1px solid #e0e0e0;
-  padding-bottom: 0.8rem;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-lg);
+  color: var(--color-primary);
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
+/* Mensaje de no reservas */
 .no-bookings {
-  text-align: center;
-  padding: 2rem;
-  color: #757575;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  margin-top: 2rem;
-  flex-grow: 1;
   justify-content: center;
+  padding: var(--spacing-xxl);
+  color: var(--color-text-light);
+  text-align: center;
+  flex-grow: 1;
+  margin-top: 2rem;
 }
 
 .no-bookings mat-icon {
-  font-size: 2.5rem;
-  width: 2.5rem;
-  height: 2.5rem;
-  color: #bdbdbd;
+  font-size: 48px;
+  height: 48px;
+  width: 48px;
+  margin-bottom: var(--spacing-md);
 }
 
 .empty-state {
@@ -222,8 +396,11 @@
   word-break: break-word;
 }
 
+/* Paginación */
 .bookings-paginator {
-  margin-top: 1rem;
+  margin-top: var(--spacing-lg);
+  background-color: transparent;
+  border-radius: var(--border-radius);
 }
 
 .cancellation-section {
@@ -303,60 +480,41 @@
   color: #bdbdbd;
 }
 
-.panel-header .back-button {
-  margin-right: 1rem;
-}
-
-.back-button {
-  margin-right: 1rem;
-}
-
-.back-button mat-icon {
-  font-size: 24px;
-  width: 24px;
-  height: 24px;
-}
-
-@media (min-width: 961px) {
+@media (min-width: 769px) {
   .panel-header .back-button {
-    display: none;
+    display: none; /* Ocultar botón Volver en escritorio */
   }
 }
 
-@media (max-width: 960px) {
+/* Responsive */
+@media (max-width: 768px) {
   .bookings-content {
     flex-direction: column;
-    overflow-y: auto;
   }
 
   .bookings-list {
-    max-width: 100%;
-    padding-right: 0;
+    max-width: none;
   }
 
   .booking-details-panel {
-    border-left: none;
-    border-top: 1px solid #e0e0e0;
-    padding: 1.5rem 0.5rem;
-    margin-top: 1rem;
+    margin-top: 24px;
   }
 }
 
-/* Hiding/removing unused sections */
-.tab-content,
-.additional-details,
-.properties-list,
-.property-item,
-.property-name,
-.property-value {
-  display: none;
+/* Material Design fixes */
+::ng-deep .mat-mdc-tab-body-wrapper {
+  height: 100%;
 }
 
-/* Make the values in detail items wrap properly */
-.detail-item span:last-child {
-  flex: 1;
-  word-break: break-word;
+::ng-deep .mat-mdc-tab-body.mat-mdc-tab-body-active {
+  height: 100%;
 }
+
+::ng-deep .mat-paginator-container {
+  justify-content: center;
+}
+
+/* Make the values in detail items wrap properly - handled above in specific contexts */
 
 /* Styles for payment section */
 .payment-section {
@@ -403,28 +561,45 @@
   color: white;
 }
 
-/* For the mini button in the list */
-.booking-actions {
-  margin-top: 10px;
-  display: flex;
-  justify-content: flex-end;
-}
-
+/* Estilos para los botones de acción */
 .action-button {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
   background-color: white !important;
   color: #1976d2 !important;
   border: 1px solid #1976d2;
+  min-width: 100px;
+  margin: var(--spacing-sm) var(--spacing-md) 0;
+}
+
+.action-button.pending {
+  background-color: white !important;
+  color: #ff9800 !important;
+  border: 1px solid #ff9800;
+}
+
+.action-button.pending mat-icon {
+  color: #ff9800;
 }
 
 .action-button mat-icon {
-  margin: 0;
-  font-size: 20px;
-  width: 20px;
-  height: 20px;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
   color: #1976d2;
+}
+
+.action-button:hover {
+  background-color: rgba(25, 118, 210, 0.04) !important;
+}
+
+.action-button.pending:hover {
+  background-color: rgba(255, 152, 0, 0.04) !important;
 }
 
 /* Estilos para los iconos en general */
@@ -437,14 +612,23 @@
 
 /* Ajustes para dispositivos móviles */
 @media (max-width: 600px) {
-  .detail-item {
+  .booking-details-panel .detail-item {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .detail-item .label {
+  .booking-details-panel .detail-item .label {
     min-width: auto;
     margin-bottom: 4px;
+  }
+
+  .booking-card .booking-details .detail-item {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .booking-card .booking-details .detail-item .label {
+    margin-right: var(--spacing-xs);
   }
 
   .cancellation-policy-message,
@@ -459,3 +643,57 @@
     height: 20px;
   }
 }
+
+/* Estilos específicos para sobrescribir conflictos de rentals-tab.component.css */
+/* Estos estilos tienen mayor especificidad para sobrescribir los estilos problemáticos */
+
+/* Para modales de reserva */
+::ng-deep .reservation-modal .modal-header,
+::ng-deep .reservation-modal .reservation-modal-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+::ng-deep .reservation-modal .modal-header h2,
+::ng-deep .reservation-modal .reservation-modal-header h2 {
+  order: unset !important;
+  text-align: left !important;
+  flex: 1 !important;
+  margin: 0 !important;
+}
+
+::ng-deep .reservation-modal .modal-header .close-button,
+::ng-deep .reservation-modal .reservation-close-button {
+  order: unset !important;
+  align-self: unset !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+
+/* Para modales de alquiler */
+::ng-deep .rental-modal .modal-header,
+::ng-deep .rental-modal .rental-modal-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+::ng-deep .rental-modal .modal-header h2,
+::ng-deep .rental-modal .rental-modal-header h2 {
+  order: unset !important;
+  text-align: left !important;
+  flex: 1 !important;
+  margin: 0 !important;
+}
+
+::ng-deep .rental-modal .modal-header .close-button,
+::ng-deep .rental-modal .rental-close-button {
+  order: unset !important;
+  align-self: unset !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+

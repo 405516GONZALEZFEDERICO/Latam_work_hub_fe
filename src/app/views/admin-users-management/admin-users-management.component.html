@@ -93,20 +93,8 @@
                 </td>
               </ng-container>
 
-              <!-- Cambiar Rol Column for Clients tab -->
-              <ng-container matColumnDef="change-role">
-                <th mat-header-cell *matHeaderCellDef> Cambiar Rol </th>
-                <td mat-cell *matCellDef="let user">
-                  <button mat-icon-button color="accent" 
-                    (click)="openRoleChangeDialog(user)" 
-                    matTooltip="Cambiar Rol de Usuario">
-                    <mat-icon>admin_panel_settings</mat-icon>
-                  </button>
-                </td>
-              </ng-container>
-
-              <tr mat-header-row *matHeaderRowDef="userColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: userColumns;"></tr>
+              <tr mat-header-row *matHeaderRowDef="['name', 'email', 'role', 'lastLoginAt', 'registrationDate', 'enabled', 'actions']"></tr>
+              <tr mat-row *matRowDef="let row; columns: ['name', 'email', 'role', 'lastLoginAt', 'registrationDate', 'enabled', 'actions'];"></tr>
               
               <!-- Fila mostrada cuando no hay datos -->
               <tr class="mat-row" *matNoDataRow>
@@ -211,20 +199,8 @@
                 </td>
               </ng-container>
 
-              <!-- Cambiar Rol Column for Providers tab -->
-              <ng-container matColumnDef="change-role">
-                <th mat-header-cell *matHeaderCellDef> Cambiar Rol </th>
-                <td mat-cell *matCellDef="let user">
-                  <button mat-icon-button color="accent" 
-                    (click)="openRoleChangeDialog(user)" 
-                    matTooltip="Cambiar Rol de Usuario">
-                    <mat-icon>admin_panel_settings</mat-icon>
-                  </button>
-                </td>
-              </ng-container>
-
-              <tr mat-header-row *matHeaderRowDef="userColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: userColumns;"></tr>
+              <tr mat-header-row *matHeaderRowDef="['name', 'email', 'role', 'lastLoginAt', 'registrationDate', 'enabled', 'actions']"></tr>
+              <tr mat-row *matRowDef="let row; columns: ['name', 'email', 'role', 'lastLoginAt', 'registrationDate', 'enabled', 'actions'];"></tr>
               
               <!-- Fila mostrada cuando no hay datos -->
               <tr class="mat-row" *matNoDataRow>

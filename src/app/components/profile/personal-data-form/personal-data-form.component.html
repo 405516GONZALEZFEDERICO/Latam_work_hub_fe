@@ -64,7 +64,8 @@
                     [matDatepicker]="birthDatePicker" 
                     formControlName="birthDate" 
                     placeholder="DD/MM/AAAA"
-                    autocomplete="off">
+                    autocomplete="off"
+                    (input)="onDateInput($event)">
               <mat-hint>Formato: DD/MM/AAAA (ej: 03/09/1997) o DDMMAAAA (ej: 03091997)</mat-hint>
               <mat-datepicker-toggle matSuffix [for]="birthDatePicker"></mat-datepicker-toggle>
               <mat-datepicker #birthDatePicker></mat-datepicker>

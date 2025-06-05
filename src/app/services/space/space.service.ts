@@ -294,7 +294,7 @@ export class SpaceService {
     // Obtener el UID del usuario que está realizando la acción
     const userUid = this.getCurrentUserUid();
     
-    console.log(`Enviando solicitud para ${activate ? 'activar' : 'desactivar'} espacio ${id} con userUid: ${userUid}`);
+    console.log(`Enviando solicitud para ${activate ? 'activar' : 'desactivar'} espacio ${id}`);
     
     return this.http.patch<boolean>(`${this.apiUrl}/${id}/${endpoint}`, {}, {
       params: { userUid }
