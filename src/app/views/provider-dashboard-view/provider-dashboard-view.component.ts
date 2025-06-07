@@ -240,17 +240,16 @@ export class ProviderDashboardViewComponent implements OnInit, OnDestroy {
           this.monthlyRevenue = data || [];
           
           if (data && data.length > 0) {
-            // Usar valor correcto de KPI cards
-            const netRevenue = this.kpiData?.totalNetRevenueLast30Days || 0;
+            // Usar los datos reales mensuales, no el valor fijo de KPI cards
             this.monthlyRevenueData = [{
               name: 'Ingresos Netos',
               series: data.map(item => ({
                 name: item.monthYear || 'Mes',
-                value: netRevenue // Usar valor correcto de KPI cards
+                value: item.revenue || 0 // ✅ Usar el valor real de cada mes
               }))
             }];
             
-            console.log('📈 [DEBUG] Gráfico cargado con ingresos netos de KPI cards:', netRevenue);
+            console.log('📈 [DEBUG] Gráfico cargado con datos mensuales reales:', data);
           } else {
             console.log('📭 [DEBUG] No hay datos mensuales disponibles');
             this.monthlyRevenueData = [{
@@ -266,12 +265,10 @@ export class ProviderDashboardViewComponent implements OnInit, OnDestroy {
           if (this.isExpandedRevenue || this.currentExpandedView === 'monthlyRevenue') {
             this.expandedChartData = [...this.monthlyRevenueData];
           }
-          
-
         },
         error: (err) => {
           console.error('❌ [ERROR] Error al cargar ingresos mensuales:', err);
-          this.error.monthlyRevenue = 'Error al cargar ingresos mensuales. El backend debe corregir el cálculo de ingresos netos.';
+          this.error.monthlyRevenue = 'Error al cargar ingresos mensuales. Inténtalo de nuevo.';
           
           // Mostrar datos vacíos en caso de error
           this.monthlyRevenueData = [{
@@ -313,15 +310,13 @@ export class ProviderDashboardViewComponent implements OnInit, OnDestroy {
   }
 
   private updateRevenueChartData(): void {
-    // Usar valor correcto de KPI cards en lugar del endpoint problemático
-    const netRevenue = this.kpiData?.totalNetRevenueLast30Days || 0;
-    
+    // Usar los datos reales mensuales, no valores fijos de KPI cards
     if (this.monthlyRevenue && this.monthlyRevenue.length > 0) {
       this.revenueChartData = [{
         name: 'Ingresos Netos',
         series: this.monthlyRevenue.map(item => ({
           name: item.monthYear || 'Mes',
-          value: netRevenue // Usar valor correcto de KPI cards
+          value: item.revenue || 0 // ✅ Usar el valor real de cada mes
         }))
       }];
     } else {

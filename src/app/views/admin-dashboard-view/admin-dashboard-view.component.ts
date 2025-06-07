@@ -175,19 +175,16 @@ export class AdminDashboardViewComponent implements OnInit, AfterViewInit {
     this.loading.monthlyRevenue = true;
     this.dashboardService.getMonthlyRevenue(months).subscribe({
       next: (data) => {
-        // Usar valor correcto de KPI cards en lugar del endpoint problemático
-        const netRevenue = this.kpiData?.totalNetRevenueLast30Days || 0;
+        // Usar los datos reales mensuales, no valores fijos de KPI cards
         this.monthlyRevenueData = [{
           name: 'Ingresos Netos',
           series: data.map(item => ({
             name: item.monthYear,
-            value: netRevenue // Usar valor correcto de KPI cards
+            value: item.revenue || 0 // ✅ Usar el valor real de cada mes
           }))
         }];
         
-        console.log('📈 [DEBUG] Gráfico cargado con ingresos netos de KPI cards (Admin):', netRevenue);
-        
-
+        console.log('📈 [DEBUG] Gráfico cargado con datos mensuales reales (Admin):', data);
         
         // Si estamos en vista expandida de ingresos mensuales, actualizar también los datos expandidos
         if (this.currentView === 'monthlyRevenue') {
