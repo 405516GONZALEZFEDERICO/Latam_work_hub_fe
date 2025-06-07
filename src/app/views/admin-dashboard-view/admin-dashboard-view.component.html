@@ -139,10 +139,10 @@
 
     <!-- Grid para gráficos en vista general -->
     <div class="charts-grid">
-      <!-- Gráfico de ingresos mensuales -->
+      <!-- Gráfico de ingresos brutos mensuales -->
       <div class="chart-container interactive-chart" (click)="expandChart('monthlyRevenue')">
         <div class="chart-header">
-          <h2>Ingresos Mensuales</h2>
+          <h2>Ingresos Brutos Mensuales</h2>
           <div class="chart-actions">
             <mat-form-field appearance="outline">
               <mat-label>Meses</mat-label>
@@ -165,8 +165,6 @@
           <mat-icon>error</mat-icon>
           <span>{{ error.monthlyRevenue }}</span>
         </div>
-
-
 
         <div *ngIf="!loading.monthlyRevenue && !error.monthlyRevenue && monthlyRevenueData.length > 0" class="chart">
           <ngx-charts-line-chart
@@ -329,7 +327,7 @@
     </div>
   </div>
 
-  <!-- Vista Expandida: Ingresos Mensuales -->
+  <!-- Vista Expandida: Ingresos Brutos Mensuales -->
   <div *ngIf="isExpandedView('monthlyRevenue')" class="expanded-view">
     <div class="expanded-header">
       <button mat-icon-button (click)="goBackToOverview()" class="back-button" matTooltip="Volver al dashboard">

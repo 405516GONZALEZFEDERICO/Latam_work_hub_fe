@@ -103,7 +103,7 @@ export class ProviderDashboardViewComponent implements OnInit, OnDestroy {
   showXAxisLabel = true;
   showYAxisLabel = true;
   xAxisLabel = 'Mes';
-  yAxisLabel = 'Ingresos Netos';
+  yAxisLabel = 'Ingresos Brutos';
   
   // Expanded view properties
   currentExpandedView: string | null = null;
@@ -242,7 +242,7 @@ export class ProviderDashboardViewComponent implements OnInit, OnDestroy {
           if (data && data.length > 0) {
             // Usar los datos reales mensuales, no el valor fijo de KPI cards
             this.monthlyRevenueData = [{
-              name: 'Ingresos Netos',
+              name: 'Ingresos Brutos',
               series: data.map(item => ({
                 name: item.monthYear || 'Mes',
                 value: item.revenue || 0 // ✅ Usar el valor real de cada mes
@@ -253,7 +253,7 @@ export class ProviderDashboardViewComponent implements OnInit, OnDestroy {
           } else {
             console.log('📭 [DEBUG] No hay datos mensuales disponibles');
             this.monthlyRevenueData = [{
-              name: 'Ingresos Netos',
+              name: 'Ingresos Brutos',
               series: [
                 { name: 'No hay datos', value: 0 }
               ]
@@ -272,7 +272,7 @@ export class ProviderDashboardViewComponent implements OnInit, OnDestroy {
           
           // Mostrar datos vacíos en caso de error
           this.monthlyRevenueData = [{
-            name: 'Ingresos Netos',
+            name: 'Ingresos Brutos',
             series: [{ name: 'Error en backend', value: 0 }]
           }];
         }
@@ -313,7 +313,7 @@ export class ProviderDashboardViewComponent implements OnInit, OnDestroy {
     // Usar los datos reales mensuales, no valores fijos de KPI cards
     if (this.monthlyRevenue && this.monthlyRevenue.length > 0) {
       this.revenueChartData = [{
-        name: 'Ingresos Netos',
+        name: 'Ingresos Brutos',
         series: this.monthlyRevenue.map(item => ({
           name: item.monthYear || 'Mes',
           value: item.revenue || 0 // ✅ Usar el valor real de cada mes
@@ -321,7 +321,7 @@ export class ProviderDashboardViewComponent implements OnInit, OnDestroy {
       }];
     } else {
       this.revenueChartData = [{
-        name: 'Ingresos Netos',
+        name: 'Ingresos Brutos',
         series: [{ name: 'No hay datos', value: 0 }]
       }];
     }
@@ -412,7 +412,7 @@ export class ProviderDashboardViewComponent implements OnInit, OnDestroy {
     
     switch (chartType) {
       case 'monthlyRevenue':
-        this.expandedChartTitle = 'Ingresos Netos Mensuales - Vista Expandida';
+        this.expandedChartTitle = 'Ingresos Brutos Mensuales - Vista Expandida';
         this.expandedChartData = [...this.monthlyRevenueData];
         break;
       case 'spacePerformance':
@@ -430,7 +430,7 @@ export class ProviderDashboardViewComponent implements OnInit, OnDestroy {
   private initializeEmptyData(): void {
     // Initialize with placeholder data for better UX
     this.monthlyRevenueData = [
-      { name: 'Cargando...', series: [{ name: 'Ingresos Netos', value: 0 }] }
+      { name: 'Cargando...', series: [{ name: 'Ingresos Brutos', value: 0 }] }
     ];
   }
 } 

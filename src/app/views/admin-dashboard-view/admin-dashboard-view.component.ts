@@ -123,7 +123,7 @@ export class AdminDashboardViewComponent implements OnInit, AfterViewInit {
   showXAxisLabel = true;
   showYAxisLabel = true;
   xAxisLabel = 'Mes';
-  yAxisLabel = 'Ingresos';
+  yAxisLabel = 'Ingresos Brutos';
   
   // Selector de meses para el gráfico de ingresos
   selectedMonths = 12;
@@ -177,7 +177,7 @@ export class AdminDashboardViewComponent implements OnInit, AfterViewInit {
       next: (data) => {
         // Usar los datos reales mensuales, no valores fijos de KPI cards
         this.monthlyRevenueData = [{
-          name: 'Ingresos Netos',
+          name: 'Ingresos Brutos',
           series: data.map(item => ({
             name: item.monthYear,
             value: item.revenue || 0 // ✅ Usar el valor real de cada mes
@@ -340,8 +340,8 @@ export class AdminDashboardViewComponent implements OnInit, AfterViewInit {
     switch (chartType) {
       case 'monthlyRevenue':
         this.currentView = 'monthlyRevenue';
+        this.expandedChartTitle = 'Ingresos Brutos Mensuales - Vista Expandida';
         this.expandedChartData = this.monthlyRevenueData;
-        this.expandedChartTitle = 'Ingresos Mensuales - Vista Expandida';
         break;
       
       case 'spaceTypes':
