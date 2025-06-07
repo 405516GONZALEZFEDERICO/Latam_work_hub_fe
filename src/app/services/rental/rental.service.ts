@@ -118,54 +118,46 @@ export class RentalService {
     console.log('=== GENERANDO ENLACE DE PAGO ===');
     console.log('Contract ID enviado al backend:', contractId);
     
-    // Calcular el total incluyendo amenidades (SOLO primera mensualidad + amenidades)
     let totalAmount = 0;
-    let amenitiesTotal = 0;
     
     if (invoice) {
-      console.log('🚨 Monto en BD:', invoice.totalAmount);
+      // Usar directamente el total de la factura (ya incluye mensualidad + depósito + amenities)
+      totalAmount = invoice.totalAmount;
       
-      // Calcular total de amenidades
+      console.log('=== DATOS DE LA FACTURA ===');
+      console.log('Factura ID:', invoice.id);
+      console.log('Número de factura:', invoice.invoiceNumber);
+      console.log('Total de la factura:', totalAmount);
+      
+      // Mostrar desglose de amenities para información
       if (invoice.amenities && invoice.amenities.length > 0) {
-        amenitiesTotal = invoice.amenities.reduce((sum, amenity) => sum + amenity.price, 0);
-        console.log('=== DESGLOSE DE AMENIDADES ===');
+        console.log('=== DESGLOSE DE AMENITIES ===');
+        const amenitiesTotal = invoice.amenities.reduce((sum, amenity) => sum + amenity.price, 0);
         invoice.amenities.forEach((amenity, index) => {
           console.log(`${index + 1}. ${amenity.amenityName}: $${amenity.price}`);
         });
-        console.log('Total amenidades:', amenitiesTotal);
-        console.log('==========================');
+        console.log('Total amenities:', amenitiesTotal);
+        console.log('=============================');
       }
       
-      // 🔧 CORRECCIÓN: Solo enviar primera mensualidad + amenidades
-      // El depósito se agrega automáticamente en el backend
-      const expectedMonthlyAmount = 3000; // Primera mensualidad
-      totalAmount = expectedMonthlyAmount + amenitiesTotal; // 3000 + amenidades
-      
-      console.log('=== CÁLCULO CORRECTO ===');
-      console.log('Primera mensualidad:', expectedMonthlyAmount);
-      console.log('Total amenidades:', amenitiesTotal);
-      console.log('TOTAL ENVIADO AL BACKEND:', totalAmount, '(sin depósito)');
-      console.log('ℹ️  El backend agregará el depósito ($3000) automáticamente');
-      console.log('ℹ️  Total final esperado:', totalAmount + 3000, '(mensualidad + amenidades + depósito)');
+      console.log('TOTAL ENVIADO AL BACKEND:', totalAmount);
+      console.log('ℹ️  Este es el total exacto de la factura (incluye todo)');
       console.log('========================');
     } else {
       console.warn('⚠️  No se proporcionó información de la factura');
-      // Si no hay factura, usar solo la primera mensualidad
-      totalAmount = 3000;
+      totalAmount = 500; // Valor por defecto conservador
     }
     
     console.log('URL del endpoint:', `${this.apiUrl}/${contractId}/current-invoice/payment`);
     
-    // Crear el PaymentRequestDto - Solo enviar mensualidad + amenidades
+    // Crear el PaymentRequestDto con el total exacto de la factura
     const paymentRequestDto = {
       totalAmount: totalAmount,
-      description: `Primera mensualidad + servicios extras - Factura ${invoice?.invoiceNumber || 'N/A'}`
+      description: `Pago de factura ${invoice?.invoiceNumber || 'N/A'}`
     };
     
     console.log('=== DATOS ENVIADOS AL BACKEND ===');
     console.log('PaymentRequestDto:', JSON.stringify(paymentRequestDto, null, 2));
-    console.log('⚠️  IMPORTANTE: Este monto NO incluye el depósito');
-    console.log('⚠️  El backend agregará automáticamente $3000 de depósito');
     console.log('================================');
     
     return this.http.post(`${this.apiUrl}/${contractId}/current-invoice/payment`, paymentRequestDto, { 
@@ -175,8 +167,7 @@ export class RentalService {
       map(response => {
         console.log('=== RESPUESTA DEL BACKEND ===');
         console.log('URL de pago recibida:', response);
-        const expectedFinalAmount = totalAmount + 3000; // mensualidad + amenidades + depósito
-        console.log('Monto final esperado en URL:', expectedFinalAmount);
+        console.log('Monto enviado:', totalAmount);
         console.log('============================');
         
         if (response && response.trim() !== '') {
