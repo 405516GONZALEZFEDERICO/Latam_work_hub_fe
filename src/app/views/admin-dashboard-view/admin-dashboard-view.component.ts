@@ -276,14 +276,10 @@ export class AdminDashboardViewComponent implements OnInit, AfterViewInit {
     this.loading.topSpaces = true;
     this.dashboardService.getTop5Spaces().subscribe({
       next: (data) => {
-        // Ordenar por suma total de reservas + alquileres (descendente)
-        this.topSpacesData = data.sort((a, b) => {
-          const totalA = (a.reservationCount || 0) + (a.rentalCount || 0);
-          const totalB = (b.reservationCount || 0) + (b.rentalCount || 0);
-          return totalB - totalA; // Orden descendente
-        });
+        // Mantener el orden original del backend
+        this.topSpacesData = data;
         
-        console.log('🏆 [DEBUG] Top 5 espacios ordenados:', this.topSpacesData.map(space => ({
+        console.log('🏆 [DEBUG] Top 5 espacios (orden del backend):', this.topSpacesData.map(space => ({
           name: space.spaceName,
           reservas: space.reservationCount,
           alquileres: space.rentalCount,
