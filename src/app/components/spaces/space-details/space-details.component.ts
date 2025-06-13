@@ -229,35 +229,82 @@ export class SpaceDetailsComponent implements OnInit {
       return 'No especificado';
     }
     
+    let spaceTypeName = '';
+    
     // Primero intentar con spaceType
     if (this.space.spaceType) {
       // Si es un objeto con name
       if (typeof this.space.spaceType === 'object' && 'name' in this.space.spaceType) {
-        return this.space.spaceType.name as string;
+        spaceTypeName = this.space.spaceType.name as string;
       }
       
       // Si es un string
       if (typeof this.space.spaceType === 'string') {
-        return this.space.spaceType;
+        spaceTypeName = this.space.spaceType;
       }
     }
     
     // Luego intentar con typeObj
-    if (this.space.typeObj) {
+    if (!spaceTypeName && this.space.typeObj) {
       if (typeof this.space.typeObj === 'object' && 'name' in this.space.typeObj) {
-        return this.space.typeObj.name as string;
+        spaceTypeName = this.space.typeObj.name as string;
       }
     }
     
     // Luego intentar con type (de la interfaz Space)
-    if (this.space.type) {
+    if (!spaceTypeName && this.space.type) {
       // Si es un string
       if (typeof this.space.type === 'string') {
-        return this.space.type;
+        spaceTypeName = this.space.type;
       }
     }
     
-    return 'No especificado';
+    if (!spaceTypeName) {
+      return 'No especificado';
+    }
+    
+    // Traducir el tipo de espacio
+    return this.translateSpaceType(spaceTypeName);
+  }
+
+  /**
+   * Traduce tipos de espacios al español
+   */
+  private translateSpaceType(name: string): string {
+    if (!name) return 'No especificado';
+    
+    // Traducciones específicas para tipos de espacios
+    const spaceTypeTranslations: { [key: string]: string } = {
+      'CONTRACT': 'Contrato',
+      'OFFICE': 'Oficina',
+      'MEETING_ROOM': 'Sala de Reuniones',
+      'CONFERENCE_ROOM': 'Sala de Conferencias',
+      'COWORKING': 'Coworking',
+      'PRIVATE_OFFICE': 'Oficina Privada',
+      'SHARED_OFFICE': 'Oficina Compartida',
+      'AUDITORIUM': 'Auditorio',
+      'CLASSROOM': 'Aula',
+      'WORKSHOP': 'Taller',
+      'EVENT_SPACE': 'Espacio para Eventos',
+      'STUDIO': 'Estudio'
+    };
+    
+    // Verificar si existe una traducción específica
+    const upperName = name.toUpperCase();
+    if (spaceTypeTranslations[upperName]) {
+      return spaceTypeTranslations[upperName];
+    }
+    
+    // Si contiene espacios, sólo capitalizar la primera letra de cada palabra
+    if (name.includes(' ')) {
+      return name.split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+    }
+    
+    // Para camelCase, insertar espacios antes de cada letra mayúscula y capitalizar la primera
+    const formatted = name.replace(/([A-Z])/g, ' $1').trim();
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
   }
 
   // Método para obtener la URL de Google Maps para mostrar el mapa estático

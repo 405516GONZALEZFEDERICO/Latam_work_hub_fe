@@ -1227,6 +1227,28 @@ export class SpaceFormComponent implements OnInit, OnDestroy {
     // Convertir camelCase a texto normal con espacios y primera letra mayúscula
     if (!name) return '';
     
+    // Traducciones específicas para tipos de espacios
+    const spaceTypeTranslations: { [key: string]: string } = {
+      'CONTRACT': 'Contrato',
+      'OFFICE': 'Oficina',
+      'MEETING_ROOM': 'Sala de Reuniones',
+      'CONFERENCE_ROOM': 'Sala de Conferencias',
+      'COWORKING': 'Coworking',
+      'PRIVATE_OFFICE': 'Oficina Privada',
+      'SHARED_OFFICE': 'Oficina Compartida',
+      'AUDITORIUM': 'Auditorio',
+      'CLASSROOM': 'Aula',
+      'WORKSHOP': 'Taller',
+      'EVENT_SPACE': 'Espacio para Eventos',
+      'STUDIO': 'Estudio'
+    };
+    
+    // Verificar si existe una traducción específica
+    const upperName = name.toUpperCase();
+    if (spaceTypeTranslations[upperName]) {
+      return spaceTypeTranslations[upperName];
+    }
+    
     // Si contiene espacios, sólo capitalizar la primera letra de cada palabra
     if (name.includes(' ')) {
       return name.split(' ')

@@ -34,7 +34,7 @@
           <div class="invoice-header">
             <div class="invoice-info">
               <span class="invoice-number">#{{invoice.invoiceNumber}}</span>
-              <span class="invoice-type">{{invoice.type}}</span>
+              <span class="invoice-type">{{translateInvoiceType(invoice.type)}}</span>
             </div>
             <mat-chip [style.background-color]="getStatusColor(invoice.status)">
               {{translateInvoiceStatus(invoice.status)}}

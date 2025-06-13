@@ -222,7 +222,7 @@
                     </div>
                     <div class="detail-item">
                       <span class="label">Tipo:</span>
-                      <span>{{invoice.type}}</span>
+                      <span>{{translateInvoiceType(invoice.type)}}</span>
                     </div>
                     
                     <!-- Desglose de amenidades -->
@@ -353,7 +353,26 @@
                 <p>No hay información disponible sobre la política de cancelación</p>
               </div>
 
+              <!-- Monto de Reembolso -->
+              <div class="refund-section" *ngIf="isActiveStatus(selectedRental.status) || isPendingStatus(selectedRental.status)">
+                <mat-divider class="section-divider"></mat-divider>
+                <h4>Información de Reembolso</h4>
+                <div class="refund-info">
+                  <div class="refund-item">
+                    <span class="refund-label">Monto de Reembolso:</span>
+                    <span class="refund-amount" [class.zero-refund]="getRefundAmount(selectedRental) === 0">
+                      ${{getRefundAmount(selectedRental) | number:'1.0-0'}}
+                    </span>
+                  </div>
+                  <div class="refund-explanation" *ngIf="isPendingStatus(selectedRental.status)">
+                    <mat-icon color="accent">info</mat-icon>
+                    <span>Como el contrato está pendiente de pago, no se procesará ningún reembolso.</span>
+                  </div>
+                </div>
+              </div>
+
               <div class="cancellation-action" *ngIf="isActiveStatus(selectedRental.status) || isPendingStatus(selectedRental.status)">
+                <mat-divider class="section-divider"></mat-divider>
                 <p class="warning-text">
                   Cancelar el contrato antes de su fecha de finalización puede incurrir en cargos adicionales según 
                   la política de cancelación. Esta acción no puede deshacerse.

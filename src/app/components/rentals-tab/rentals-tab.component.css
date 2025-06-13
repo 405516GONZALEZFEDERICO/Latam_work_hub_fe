@@ -734,3 +734,66 @@
 .header-spacer {
   flex-grow: 1;
 }
+
+/* Sección de Reembolso */
+.refund-section {
+  margin-top: var(--spacing-lg);
+}
+
+.refund-section h4 {
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-md);
+  font-weight: 600;
+}
+
+.refund-info {
+  background-color: #f8f9fa;
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+  border: 1px solid #e9ecef;
+}
+
+.refund-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.refund-label {
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.refund-amount {
+  font-size: 1.2em;
+  font-weight: 600;
+  color: var(--color-success, #4caf50);
+}
+
+.refund-amount.zero-refund {
+  color: var(--color-text-secondary, #666);
+}
+
+.refund-explanation {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background-color: rgba(255, 193, 7, 0.1);
+  border-radius: var(--border-radius-small);
+  border-left: 3px solid #ffc107;
+}
+
+.refund-explanation mat-icon {
+  color: #ffc107;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.refund-explanation span {
+  font-size: 0.9em;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}

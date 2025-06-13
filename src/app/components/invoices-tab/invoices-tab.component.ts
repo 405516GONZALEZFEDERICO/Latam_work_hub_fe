@@ -247,6 +247,24 @@ export class InvoicesTabComponent implements OnInit, OnDestroy {
     return translations[status] || status;
   }
 
+  // Método para traducir tipos de facturas
+  translateInvoiceType(type: string): string {
+    const translations: { [key: string]: string } = {
+      'CONTRACT': 'Contrato',
+      'RENTAL': 'Alquiler',
+      'DEPOSIT': 'Depósito',
+      'MONTHLY': 'Mensual',
+      'INITIAL': 'Inicial',
+      'RENEWAL': 'Renovación',
+      'CANCELLATION': 'Cancelación',
+      'REFUND': 'Reembolso',
+      'PENALTY': 'Penalización',
+      'AMENITY': 'Servicio Extra'
+    };
+    
+    return translations[type] || type;
+  }
+
   getTotalAmount(): number {
     return this.filteredInvoices.reduce((total, invoice) => 
       total + Number(invoice.totalAmount), 0

@@ -106,10 +106,14 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
   statusFilter = new FormControl('');
   availableStatuses = [
     { value: '', display: 'Todos' },
-    { value: 'ACTIVE', display: 'Activos' },
+    { value: 'DRAFT', display: 'Borradores' },
     { value: 'PENDING', display: 'Pendientes' },
+    { value: 'CONFIRMED', display: 'Confirmados' },
+    { value: 'ACTIVE', display: 'Activos' },
+    { value: 'TERMINATED', display: 'Terminados' },
     { value: 'EXPIRED', display: 'Expirados' },
-    { value: 'CANCELLED', display: 'Cancelados' }
+    { value: 'CANCELLED', display: 'Cancelados' },
+    { value: 'RENEWAL', display: 'En Renovación' }
   ];
 
   // Propiedad para detectar pantalla móvil
@@ -339,13 +343,32 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
     }, 500);
   }
 
+  // Método para calcular el monto de reembolso
+  getRefundAmount(rental: RentalContractResponse): number {
+    if (!rental) return 0;
+    
+    // Si el contrato está pendiente de pago, el monto de reembolso es 0
+    if (this.isPendingStatus(rental.status)) {
+      return 0;
+    }
+    
+    // Para otros estados, calcular el reembolso según la política
+    // Por ahora, retornamos 0 como valor por defecto
+    // Aquí puedes implementar la lógica de cálculo según tu política de cancelación
+    return 0;
+  }
+
   cancelRental(rental: RentalContractResponse): void {
     if (!this.isContractActionable(rental) || this.cancellingContract) return;
+    
+    const refundAmount = this.getRefundAmount(rental);
     
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       data: {
         title: 'Cancelar Alquiler',
-        message: '¿Estás seguro que deseas cancelar este alquiler? Esta acción no se puede deshacer.'
+        message: `¿Estás seguro que deseas cancelar este alquiler? 
+                  ${refundAmount > 0 ? `Se procesará un reembolso de $${refundAmount}.` : 'No se procesará ningún reembolso.'} 
+                  Esta acción no se puede deshacer.`
       }
     });
 
@@ -398,22 +421,44 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Condicional para verificar si un estado es activo, independientemente del idioma
+  // Condicional para verificar si un estado es activo
   isActiveStatus(status: string): boolean {
-    const isActive = status === 'ACTIVE' || status === 'ACTIVO';
-    return isActive;
+    return status === 'ACTIVE';
   }
 
-  // Condicional para verificar si un estado es pendiente, independientemente del idioma
+  // Condicional para verificar si un estado es pendiente
   isPendingStatus(status: string): boolean {
-    return status === 'PENDING' || status === 'PENDIENTE';
+    return status === 'PENDING';
   }
+  
+  // Condicional para verificar si un estado es confirmado
   isConfirmedStatus(status: string): boolean {
-    return status === 'CONFIRMED' || status === 'CONFIRMADO';
+    return status === 'CONFIRMED';
   }
+  
   // Método para verificar si un contrato está cancelado
   isCancelledStatus(status: string): boolean {
-    return status === 'CANCELLED' || status === 'CANCELADO';
+    return status === 'CANCELLED';
+  }
+
+  // Método para verificar si un contrato está terminado
+  isTerminatedStatus(status: string): boolean {
+    return status === 'TERMINATED';
+  }
+
+  // Método para verificar si un contrato está expirado
+  isExpiredStatus(status: string): boolean {
+    return status === 'EXPIRED';
+  }
+
+  // Método para verificar si un contrato está en renovación
+  isRenewalStatus(status: string): boolean {
+    return status === 'RENEWAL';
+  }
+
+  // Método para verificar si un contrato está en borrador
+  isDraftStatus(status: string): boolean {
+    return status === 'DRAFT';
   }
 
   // Método para verificar si un contrato está disponible para acciones (no cancelado, no expirado, sin facturas pendientes)
@@ -442,14 +487,13 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
     }
     
     const statusMessages: { [key: string]: string } = {
+      'DRAFT': 'El contrato está en borrador',
       'CANCELLED': 'El contrato está cancelado',
-      'CANCELADO': 'El contrato está cancelado',
       'EXPIRED': 'El contrato ha expirado',
-      'EXPIRADO': 'El contrato ha expirado',
       'CONFIRMED': 'El contrato está confirmado pero aún no activo',
-      'CONFIRMADO': 'El contrato está confirmado pero aún no activo',
-      'PAID': 'El contrato está pagado pero aún no activo',
-      'PAGADO': 'El contrato está pagado pero aún no activo'
+      'TERMINATED': 'El contrato ha sido terminado',
+      'RENEWAL': 'El contrato está en proceso de renovación',
+      'PAID': 'El contrato está pagado pero aún no activo'
     };
     
     return statusMessages[status] || `El estado actual (${this.translateContractStatus(status)}) no permite esta acción`;
@@ -736,25 +780,25 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
   }
 
   getStatusColor(status: string): string {
-    switch (status.toLowerCase()) {
-      case 'active':
-      case 'activo':
+    switch (status.toUpperCase()) {
+      case 'ACTIVE':
         return 'var(--color-success)';
-      case 'pending':
-      case 'pendiente':
+      case 'PENDING':
         return 'orange';
-      case 'cancelled':
-      case 'cancelado':
+      case 'CANCELLED':
         return 'var(--color-error)';
-      case 'expired':
-      case 'expirado':
+      case 'EXPIRED':
         return 'gray';
-      case 'paid':
-      case 'pagado':
+      case 'TERMINATED':
+        return 'var(--color-error)';
+      case 'PAID':
         return 'var(--color-success)';
-      case 'confirmed':
-      case 'confirmado':
+      case 'CONFIRMED':
         return '#4caf50';
+      case 'DRAFT':
+        return '#9e9e9e';
+      case 'RENEWAL':
+        return '#ff9800';
       default:
         return '#2196f3';
     }
@@ -786,12 +830,15 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
   // Método para traducir los estados del contrato al español
   translateContractStatus(status: string): string {
     const translations: { [key: string]: string } = {
-      'CONFIRMED': 'CONFIRMADO',
-      'ACTIVE': 'ACTIVO',
-      'PENDING': 'PENDIENTE',
-      'EXPIRED': 'EXPIRADO',
-      'CANCELLED': 'CANCELADO',
-      'PAID': 'PAGADO'
+      'DRAFT': 'Borrador',
+      'PENDING': 'Pendiente',
+      'CONFIRMED': 'Confirmado',
+      'ACTIVE': 'Activo',
+      'TERMINATED': 'Terminado',
+      'EXPIRED': 'Expirado',
+      'CANCELLED': 'Cancelado',
+      'RENEWAL': 'En Renovación',
+      'PAID': 'Pagado'
     };
     
     return translations[status] || status;
@@ -809,6 +856,24 @@ export class RentalsTabComponent implements OnInit, OnDestroy {
     };
     
     return translations[status] || status;
+  }
+
+  // Método para traducir tipos de facturas
+  translateInvoiceType(type: string): string {
+    const translations: { [key: string]: string } = {
+      'CONTRACT': 'Contrato',
+      'RENTAL': 'Alquiler',
+      'DEPOSIT': 'Depósito',
+      'MONTHLY': 'Mensual',
+      'INITIAL': 'Inicial',
+      'RENEWAL': 'Renovación',
+      'CANCELLATION': 'Cancelación',
+      'REFUND': 'Reembolso',
+      'PENALTY': 'Penalización',
+      'AMENITY': 'Servicio Extra'
+    };
+    
+    return translations[type] || type;
   }
 
   // Método para formatear los nombres de propiedades en castellano
