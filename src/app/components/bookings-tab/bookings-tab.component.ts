@@ -157,14 +157,7 @@ export class BookingsTabComponent implements OnInit, OnDestroy {
           next: (response) => {
             console.log('BookingsTabComponent: Reservas cargadas', response);
             
-            // Ordenar por fecha de inicio de forma descendente (más recientes primero)
-            if (response.content && response.content.length > 0) {
-              response.content.sort((a, b) => {
-                const dateA = new Date(a.startDate);
-                const dateB = new Date(b.startDate);
-                return dateB.getTime() - dateA.getTime(); // Descendente
-              });
-            }
+
             
             this.bookings = response.content;
             this.totalBookings = response.totalElements;
