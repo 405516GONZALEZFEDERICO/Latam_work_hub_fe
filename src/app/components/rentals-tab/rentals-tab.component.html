@@ -354,7 +354,7 @@
               </div>
 
               <!-- Monto de Reembolso -->
-              <div class="refund-section" *ngIf="isActiveStatus(selectedRental.status) || isPendingStatus(selectedRental.status)">
+              <div class="refund-section" *ngIf="isPendingStatus(selectedRental.status)">
                 <mat-divider class="section-divider"></mat-divider>
                 <h4>Información de Reembolso</h4>
                 <div class="refund-info">
@@ -364,7 +364,7 @@
                       ${{getRefundAmount(selectedRental) | number:'1.0-0'}}
                     </span>
                   </div>
-                  <div class="refund-explanation" *ngIf="isPendingStatus(selectedRental.status)">
+                  <div class="refund-explanation">
                     <mat-icon color="accent">info</mat-icon>
                     <span>Como el contrato está pendiente de pago, no se procesará ningún reembolso.</span>
                   </div>
