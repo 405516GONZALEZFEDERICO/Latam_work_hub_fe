@@ -248,6 +248,8 @@ export class ClientDashboardViewComponent implements OnInit, OnDestroy {
           if (this.isExpandedSpending) {
             this.expandedChartData = [...this.spendingChartData];
           }
+          
+          // Forzar detección de cambios para actualizar el gráfico en vista normal
           this.changeDetectorRef.detectChanges();
         },
         error: (err) => {
@@ -329,6 +331,14 @@ export class ClientDashboardViewComponent implements OnInit, OnDestroy {
         this.loadMonthlySpending(userUid);
       }
     });
+  }
+
+  onMonthsChangeEvent(event: any): void {
+    // event es un MatSelectChange, necesitamos obtener el valor
+    const months = event.value;
+    this.selectedMonths = months;
+    console.log('🔍 [DEBUG] Cliente - Cambiando a:', months, 'meses');
+    this.onMonthsChange();
   }
 
   toggleSpendingExpanded(): void {

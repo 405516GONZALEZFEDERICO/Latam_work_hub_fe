@@ -137,7 +137,7 @@ export class WelcomeComponent implements OnInit, OnDestroy {
     switch (this.currentUser.role) {
       case 'ADMIN':
         actions = [
-          { title: 'Panel de Control', icon: 'dashboard', route: '/home/admin-panel', description: 'Gestionar usuarios y sistema' },
+          { title: 'Panel de Control', icon: 'dashboard', route: '/home/admin-panel', description: 'Gestionar usuarios y espacios' },
           { title: 'Analytics', icon: 'analytics', route: '/home/dashboard', description: 'Ver estadísticas' },
           { title: 'Informes', icon: 'bar_chart', route: '/home/reports', description: 'Generar reportes' },
           { title: 'Configuración', icon: 'settings', route: '/home/settings', description: 'Ajustes del sistema' }

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -49,6 +49,7 @@ export class ProviderDashboardViewComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private dashboardService = inject(ProviderDashboardService);
   private authService = inject(AuthService);
+  private cdr = inject(ChangeDetectorRef);
 
   isLoadingKpis = true;
   isLoadingRevenue = true;
@@ -265,6 +266,9 @@ export class ProviderDashboardViewComponent implements OnInit, OnDestroy {
           if (this.isExpandedRevenue || this.currentExpandedView === 'monthlyRevenue') {
             this.expandedChartData = [...this.monthlyRevenueData];
           }
+          
+          // Forzar detección de cambios para actualizar el gráfico en vista normal
+          this.cdr.detectChanges();
         },
         error: (err) => {
           console.error('❌ [ERROR] Error al cargar ingresos mensuales:', err);
@@ -275,6 +279,8 @@ export class ProviderDashboardViewComponent implements OnInit, OnDestroy {
             name: 'Ingresos Brutos',
             series: [{ name: 'Error en backend', value: 0 }]
           }];
+          
+          this.cdr.detectChanges();
         }
       });
   }
@@ -337,6 +343,14 @@ export class ProviderDashboardViewComponent implements OnInit, OnDestroy {
         this.loadMonthlyRevenue(userUid);
       }
     });
+  }
+
+  onMonthsChangeEvent(event: any): void {
+    // event es un MatSelectChange, necesitamos obtener el valor
+    const months = event.value;
+    this.selectedMonths = months;
+    console.log('🔍 [DEBUG] Proveedor - Cambiando a:', months, 'meses');
+    this.onMonthsChange();
   }
 
   toggleRevenueExpanded(): void {

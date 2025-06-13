@@ -64,7 +64,7 @@
               <mat-icon>event_available</mat-icon>
             </div>
             <div class="kpi-content">
-              <h3>Reservas este mes</h3>
+              <h3>Reservas activas</h3>
               <p class="kpi-value">{{ kpiData.reservationsThisMonth }}</p>
             </div>
           </mat-card-content>
@@ -144,15 +144,17 @@
         <div class="chart-header">
           <h2>Ingresos Brutos Mensuales</h2>
           <div class="chart-actions">
-            <mat-form-field appearance="outline">
+            <mat-form-field appearance="outline" (click)="$event.stopPropagation()">
               <mat-label>Meses</mat-label>
-              <mat-select [(ngModel)]="selectedMonths" (selectionChange)="onMonthsChange()" (click)="$event.stopPropagation()">
+              <mat-select [(ngModel)]="selectedMonths" (selectionChange)="onMonthsChangeEvent($event)" (click)="$event.stopPropagation()">
                 <mat-option *ngFor="let option of monthsOptions" [value]="option">
                   {{ option }} meses
                 </mat-option>
               </mat-select>
             </mat-form-field>
-            <mat-icon class="expand-icon" matTooltip="Click para expandir">fullscreen</mat-icon>
+            <button mat-icon-button matTooltip="Expandir gráfico" class="expand-button">
+              <mat-icon class="expand-icon">fullscreen</mat-icon>
+            </button>
           </div>
         </div>
 
@@ -185,7 +187,9 @@
       <div class="chart-container interactive-chart" (click)="expandChart('spaceTypes')">
         <div class="chart-header">
           <h2>{{ spaceTypeChartTitle }}</h2>
-          <mat-icon class="expand-icon" matTooltip="Click para expandir">fullscreen</mat-icon>
+          <button mat-icon-button matTooltip="Expandir gráfico" class="expand-button">
+            <mat-icon class="expand-icon">fullscreen</mat-icon>
+          </button>
         </div>
 
         <div *ngIf="loading.spaceType" class="loading-container">
@@ -221,7 +225,9 @@
       <div class="chart-container interactive-chart" (click)="expandChart('peakHours')">
         <div class="chart-header">
           <h2>Horarios de Mayor Demanda</h2>
-          <mat-icon class="expand-icon" matTooltip="Click para expandir">fullscreen</mat-icon>
+          <button mat-icon-button matTooltip="Expandir gráfico" class="expand-button">
+            <mat-icon class="expand-icon">fullscreen</mat-icon>
+          </button>
         </div>
 
         <div *ngIf="loading.peakHours" class="loading-container">
@@ -253,7 +259,9 @@
       <div class="chart-container interactive-chart" (click)="expandChart('contractTypes')">
         <div class="chart-header">
           <h2>Contratos por Tipo de Espacio</h2>
-          <mat-icon class="expand-icon" matTooltip="Click para expandir">fullscreen</mat-icon>
+          <button mat-icon-button matTooltip="Expandir gráfico" class="expand-button">
+            <mat-icon class="expand-icon">fullscreen</mat-icon>
+          </button>
         </div>
 
         <div *ngIf="loading.contractsBySpaceType" class="loading-container">
@@ -289,7 +297,9 @@
       <div class="chart-container top-spaces-container interactive-chart" (click)="expandChart('topSpaces')">
         <div class="chart-header">
           <h2>Top 5 Espacios - Reservas y Alquileres</h2>
-          <mat-icon class="expand-icon" matTooltip="Click para expandir">fullscreen</mat-icon>
+          <button mat-icon-button matTooltip="Expandir gráfico" class="expand-button">
+            <mat-icon class="expand-icon">fullscreen</mat-icon>
+          </button>
         </div>
 
         <div *ngIf="loading.topSpaces" class="loading-container">

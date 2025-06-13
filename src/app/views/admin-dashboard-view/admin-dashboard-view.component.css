@@ -32,6 +32,9 @@
 .kpi-card {
   border-radius: 8px;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  height: 120px;
+  display: flex;
+  align-items: center;
 }
 
 .kpi-card:hover {
@@ -43,6 +46,8 @@
   display: flex;
   align-items: center;
   padding: 16px;
+  width: 100%;
+  height: 100%;
 }
 
 .kpi-icon {
@@ -78,7 +83,7 @@
 /* Grid de gráficos */
 .charts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(600px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
   gap: 24px;
   margin-top: 32px;
 }
@@ -144,10 +149,28 @@
   gap: 16px;
 }
 
+.expand-button {
+  color: #1976d2;
+  background: transparent;
+  border: none;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.expand-button:hover {
+  background: rgba(25, 118, 210, 0.1);
+  transform: scale(1.05);
+}
+
 .expand-icon {
   color: #1976d2;
   opacity: 0.7;
   transition: all 0.3s ease;
+  font-size: 20px;
 }
 
 .interactive-chart:hover .expand-icon {
@@ -166,7 +189,43 @@
   align-items: center;
   justify-content: center;
   flex: 1;
-  overflow: hidden;
+  overflow: visible;
+}
+
+/* Fix for chart legends to be visible and responsive */
+::ng-deep .ngx-charts .legend {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: visible !important;
+  max-width: 100%;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 0;
+}
+
+::ng-deep .ngx-charts .legend .legend-labels {
+  flex-wrap: wrap !important;
+  gap: 8px;
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+}
+
+::ng-deep .ngx-charts .legend .legend-label {
+  font-size: 12px !important;
+  line-height: 1.2;
+  max-width: 150px;
+  overflow: visible !important;
+  white-space: normal !important;
+  word-wrap: break-word;
+  text-align: center;
+  margin: 2px 4px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
 }
 
 /* Estilos para vistas expandidas */
@@ -234,22 +293,162 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: visible;
 }
 
-/* Estilos para Top 5 Espacios expandido */
-.top-spaces-expanded {
+/* Legend fixes for expanded view */
+::ng-deep .expanded-chart-container .ngx-charts .legend {
+  max-width: 100%;
+  overflow: visible !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center;
+  padding: 12px 0;
+}
+
+::ng-deep .expanded-chart-container .ngx-charts .legend .legend-label {
+  font-size: 14px !important;
+  max-width: 200px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  margin: 3px 6px;
+}
+
+/* Specific fixes for bar charts legends */
+::ng-deep ngx-charts-bar-vertical .legend {
+  position: relative !important;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  padding: 8px;
+  margin: 8px 0;
+}
+
+/* VERSIÓN SIMPLIFICADA - Top 5 Espacios */
+
+/* Vista general */
+.top-spaces-container {
+  grid-column: span 2;
+}
+
+.top-spaces-list {
+  display: grid;
+  gap: 12px;
+  padding: 16px 0;
+}
+
+.space-card {
+  display: grid;
+  grid-template-columns: 48px 1fr 70px;
+  gap: 16px;
+  align-items: center;
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 16px;
+  height: 80px;
+  transition: all 0.3s ease;
+  border-left: 4px solid #e0e0e0;
+}
+
+.space-card.top-rank {
+  background: linear-gradient(135deg, #fff3e0 0%, #ffcc80 100%);
+  border-left-color: #ff9800;
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.2);
+}
+
+.space-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.rank-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%);
+  color: white;
   display: flex;
-  flex-direction: column;
-  gap: 24px;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.top-rank .rank-badge {
+  background: linear-gradient(135deg, #ff9800 0%, #ffb74d 100%);
+}
+
+.space-info {
+  min-width: 0;
+}
+
+.space-info h3 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.space-stats {
+  display: flex;
+  gap: 12px;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #546e7a;
+}
+
+.stat mat-icon {
+  color: #1976d2;
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.total-activity {
+  background: rgba(25, 118, 210, 0.1);
+  color: #1976d2;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  width: 70px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.top-rank .total-activity {
+  background: rgba(255, 152, 0, 0.2);
+  color: #f57c00;
+}
+
+/* Vista expandida */
+.top-spaces-expanded {
+  display: grid;
+  gap: 16px;
   padding: 24px 0;
 }
 
 .space-card-expanded {
-  display: flex;
+  display: grid;
+  grid-template-columns: 80px 1fr 120px;
+  gap: 24px;
   align-items: center;
   background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
   border-radius: 16px;
-  padding: 32px;
+  padding: 24px;
+  height: 120px;
   transition: all 0.3s ease;
   border-left: 6px solid #e0e0e0;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -262,7 +461,7 @@
 }
 
 .space-card-expanded:hover {
-  transform: translateY(-8px);
+  transform: translateY(-4px);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
 }
 
@@ -277,9 +476,7 @@
   justify-content: center;
   font-size: 32px;
   font-weight: bold;
-  margin-right: 32px;
   box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
-  flex-shrink: 0;
 }
 
 .top-rank .rank-badge-large {
@@ -288,59 +485,53 @@
 }
 
 .space-info-expanded {
-  flex: 1;
-  margin-right: 24px;
+  min-width: 0;
 }
 
 .space-info-expanded h2 {
-  margin: 0 0 16px 0;
-  font-size: 28px;
+  margin: 0 0 12px 0;
+  font-size: 24px;
   font-weight: 600;
   color: #2c3e50;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .space-stats-expanded {
   display: flex;
-  gap: 32px;
-  align-items: center;
+  gap: 24px;
 }
 
 .stat-expanded {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .stat-expanded mat-icon {
   color: #1976d2;
-  font-size: 28px;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0;
-  line-height: 1;
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
 }
 
 .stat-content {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .stat-label {
-  font-size: 14px;
+  font-size: 12px;
   color: #546e7a;
   font-weight: 500;
-  line-height: 1;
 }
 
 .stat-value {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
   color: #2c3e50;
-  line-height: 1;
 }
 
 .total-activity-expanded {
@@ -350,26 +541,24 @@
   justify-content: center;
   background: rgba(25, 118, 210, 0.1);
   border-radius: 12px;
-  padding: 20px;
-  min-width: 120px;
-  flex-shrink: 0;
+  padding: 16px;
+  width: 120px;
+  height: 80px;
 }
 
 .total-label {
-  font-size: 12px;
+  font-size: 11px;
   color: #546e7a;
   text-transform: uppercase;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   text-align: center;
-  line-height: 1;
 }
 
 .total-value {
-  font-size: 36px;
+  font-size: 28px;
   font-weight: 700;
   color: #1976d2;
-  line-height: 1;
   text-align: center;
 }
 
@@ -409,127 +598,6 @@
   margin-right: 8px;
 }
 
-/* Estilos para Top 5 Espacios en vista general */
-.top-spaces-container {
-  grid-column: span 2; /* Ocupa dos columnas en el grid */
-}
-
-.top-spaces-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 16px 0;
-}
-
-.space-card {
-  display: flex;
-  align-items: center;
-  background: #f8f9fa;
-  border-radius: 12px;
-  padding: 20px;
-  transition: all 0.3s ease;
-  border-left: 4px solid #e0e0e0;
-}
-
-.space-card.top-rank {
-  background: linear-gradient(135deg, #fff3e0 0%, #ffcc80 100%);
-  border-left-color: #ff9800;
-  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.2);
-}
-
-.space-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-}
-
-.rank-badge {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  font-weight: bold;
-  margin-right: 20px;
-}
-
-.top-rank .rank-badge {
-  background: linear-gradient(135deg, #ff9800 0%, #ffb74d 100%);
-}
-
-.space-info {
-  flex: 1;
-}
-
-.space-info h3 {
-  margin: 0 0 8px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-.space-stats {
-  display: flex;
-  gap: 16px;
-}
-
-.stat {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.stat mat-icon {
-  color: #1976d2;
-  font-size: 20px;
-  width: 20px;
-  height: 20px;
-}
-
-.total-activity {
-  background: rgba(25, 118, 210, 0.1);
-  color: #1976d2;
-  border-radius: 8px;
-  padding: 12px 16px;
-  font-size: 18px;
-  font-weight: 700;
-  min-width: 60px;
-  text-align: center;
-}
-
-.top-rank .total-activity {
-  background: rgba(255, 152, 0, 0.2);
-  color: #f57c00;
-}
-
-.details-view {
-  padding: 24px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  margin-top: 16px;
-}
-
-.details-view h3 {
-  margin-top: 0;
-  color: #2c3e50;
-}
-
-.details-view p {
-  color: #546e7a;
-  line-height: 1.6;
-}
-
-.chart-header button {
-  margin-left: 8px;
-}
-
-.chart-header button:hover {
-  background-color: #f5f5f5;
-}
-
 /* Responsive */
 @media (max-width: 1200px) {
   .charts-grid {
@@ -560,15 +628,19 @@
     height: 250px;
   }
   
-  .chart-header {
+    .chart-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
   }
-  
+
   .chart-actions {
     width: 100%;
     justify-content: space-between;
+  }
+  
+  .expand-button {
+    align-self: flex-end;
   }
   
   .expanded-chart-container {
@@ -632,26 +704,54 @@
     grid-column: span 1;
   }
 
+  .space-info h3 {
+    font-size: 14px !important;
+    margin: 0 !important;
+    line-height: 1.2;
+  }
+
   .space-stats, .space-stats-expanded {
     flex-direction: column;
     gap: 8px;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+  }
+
+  .stat {
+    font-size: 11px !important;
+  }
+
+  .top-spaces-list {
+    gap: 16px; /* Espaciado entre cards */
+  }
+
+  .top-spaces-expanded {
+    gap: 20px; /* Espaciado entre cards expandidas */
   }
 
   .space-card {
-    flex-direction: column;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr auto;
     text-align: center;
-    padding: 16px;
+    padding: 12px;
+    height: 220px;
+    gap: 6px;
+    overflow: hidden;
   }
   
   .space-card-expanded {
-    flex-direction: column;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr auto;
     text-align: center;
-    padding: 20px;
+    padding: 16px;
+    height: 260px;
+    gap: 8px;
+    overflow: hidden;
   }
 
   .rank-badge, .rank-badge-large {
-    margin-right: 0;
-    margin-bottom: 12px;
+    margin: 0 auto;
   }
   
   .rank-badge {
@@ -706,6 +806,17 @@
   .expanded-chart-container {
     padding: 12px;
     min-height: 280px;
+  }
+  
+  /* Mobile legend fixes */
+  ::ng-deep .ngx-charts .legend .legend-label {
+    font-size: 10px !important;
+    max-width: 100px;
+  }
+  
+  ::ng-deep .expanded-chart-container .ngx-charts .legend .legend-label {
+    font-size: 12px !important;
+    max-width: 120px;
   }
   
   .color-legend {
@@ -766,20 +877,54 @@
     margin-bottom: 12px;
   }
   
-  .chart-header {
+    .chart-header {
     gap: 8px;
   }
-  
+
   .chart-header mat-form-field {
     width: 80px;
   }
-  
+
+  .expand-button {
+    align-self: flex-end;
+    min-width: 40px;
+    min-height: 40px;
+  }
+
   .expand-icon {
     font-size: 18px;
   }
   
+  .top-spaces-list {
+    gap: 12px; /* Espaciado entre cards en móvil pequeño */
+  }
+
+  .top-spaces-expanded {
+    gap: 16px; /* Espaciado entre cards expandidas en móvil pequeño */
+  }
+
+  .space-info h3 {
+    font-size: 12px !important;
+    margin: 0 !important;
+    line-height: 1.1;
+  }
+
+  .stat {
+    font-size: 10px !important;
+  }
+
+  .total-activity {
+    font-size: 14px !important;
+    padding: 6px 8px !important;
+    height: 30px !important;
+  }
+
   .space-card, .space-card-expanded {
-    padding: 12px;
+    padding: 8px;
+    height: 200px;
+    text-align: center;
+    gap: 4px;
+    overflow: hidden;
   }
   
   .rank-badge {
@@ -802,12 +947,20 @@
     font-size: 18px;
   }
   
+    .space-stats, .space-stats-expanded {
+    gap: 6px; /* Espacio entre estadísticas en móvil pequeño */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+  }
+
   .stat mat-icon {
     font-size: 16px;
     width: 16px;
     height: 16px;
   }
-  
+
   .stat-expanded mat-icon {
     font-size: 20px;
     width: 20px;
@@ -839,6 +992,17 @@
   .expanded-chart-container {
     padding: 8px;
     min-height: 250px;
+  }
+  
+  /* Small mobile legend fixes */
+  ::ng-deep .ngx-charts .legend .legend-label {
+    font-size: 9px !important;
+    max-width: 80px;
+  }
+  
+  ::ng-deep .expanded-chart-container .ngx-charts .legend .legend-label {
+    font-size: 11px !important;
+    max-width: 100px;
   }
 }
 

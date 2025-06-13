@@ -125,9 +125,9 @@
         <div class="chart-header">
           <h2>Gastos Mensuales</h2>
           <div class="chart-actions">
-            <mat-form-field appearance="outline">
+            <mat-form-field appearance="outline" (click)="$event.stopPropagation()">
               <mat-label>Meses</mat-label>
-              <mat-select [(value)]="selectedMonths" (selectionChange)="onMonthsChange()">
+              <mat-select [(value)]="selectedMonths" (selectionChange)="onMonthsChangeEvent($event)" (click)="$event.stopPropagation()">
                 <mat-option *ngFor="let option of monthsOptions" [value]="option">
                   {{ option }} meses
                 </mat-option>

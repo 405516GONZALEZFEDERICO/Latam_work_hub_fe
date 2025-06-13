@@ -10,10 +10,8 @@ export class ExportService {
 
   // Exportar datos a Excel (XLSX)
   exportToExcel(data: any[], fileName: string): void {
-    // Clonamos los datos para no modificar los originales
-    const dataForExport = this.prepareDataForExport(data);
-    
-    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(dataForExport);
+    // Usar los datos tal como vienen del componente (ya preparados)
+    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(data);
     
     // Configurar propiedades del libro
     const workbook: XLSX.WorkBook = { 
@@ -30,17 +28,20 @@ export class ExportService {
 
   // Exportar datos a CSV
   exportToCSV(data: any[], fileName: string): void {
-    // Clonamos los datos para no modificar los originales
-    const dataForExport = this.prepareDataForExport(data);
+    // Usar los datos tal como vienen del componente (ya preparados)
+    if (!data || data.length === 0) {
+      alert('No hay datos para exportar');
+      return;
+    }
     
-    const header = Object.keys(dataForExport[0]);
+    const header = Object.keys(data[0]);
     
     // Crear filas de CSV sin usar JSON.stringify para evitar comillas
     const csvRows = [
       // Fila de encabezado
       header.join(','),
       // Filas de datos
-      ...dataForExport.map(row => {
+      ...data.map(row => {
         return header.map(fieldName => {
           const value = row[fieldName];
           // Si el valor contiene comas, comillas o saltos de línea, escaparlo adecuadamente
@@ -240,9 +241,12 @@ export class ExportService {
     const translations: { [key: string]: string } = {
       'spaceId': 'ID Espacio',
       'spaceName': 'Nombre Espacio',
+      'name': 'Nombre',
+      'owner': 'Proveedor',
       'providerName': 'Proveedor',
-      'bookingCount': 'Número de Reservas',
-      'revenueGenerated': 'Ingresos Generados',
+      'bookingCount': 'Reservas',
+      'rentalCount': 'Contratos',
+      'revenueGenerated': 'Ingresos',
       'status': 'Estado',
       'bookingId': 'ID Reserva',
       'clientName': 'Cliente',
@@ -254,9 +258,13 @@ export class ExportService {
       'userName': 'Nombre Usuario',
       'email': 'Correo Electrónico',
       'role': 'Rol',
-      'entityCount': 'Cantidad Entidades',
-      'incomeGenerated': 'Ingresos Generados',
+      'activeContracts': 'Contratos Activos',
+      'totalSpaces': 'Espacios',
+      'totalRevenue': 'Ingresos Totales',
+      'totalBookings': 'Reservas Totales',
+      'totalSpending': 'Gastos Totales',
       'registrationDate': 'Fecha Registro',
+      'lastLoginDate': 'Último Acceso',
       'contractId': 'ID Contrato',
       'tenantName': 'Inquilino',
       'ownerName': 'Propietario',

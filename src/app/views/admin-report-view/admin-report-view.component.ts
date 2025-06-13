@@ -117,7 +117,7 @@ export class AdminReportViewComponent implements OnInit {
   bookingColumns: string[] = ['spaceName', 'clientName', 'providerName', 'startDate', 'endDate', 'durationHours', 'status', 'amount'];
   userColumns: string[] = ['name', 'email', 'role', 'activeContracts', 'registrationDate', 'lastLoginDate', 'status'];
   contractColumns: string[] = ['spaceName', 'tenantName', 'ownerName', 'startDate', 'endDate', 'amount', 'status'];
-  invoiceColumns: string[] = ['clientName', 'issueDate', 'dueDate', 'totalAmount', 'pendingAmount', 'status'];
+  invoiceColumns: string[] = ['clientName', 'issueDate', 'dueDate', 'totalAmount', 'status'];
   expiringContractColumns: string[] = ['spaceName', 'tenantName', 'ownerName', 'endDate', 'daysUntilExpiry'];
   overdueInvoiceColumns: string[] = ['clientName', 'dueDate', 'totalAmount', 'pendingAmount', 'daysOverdue'];
 
@@ -570,10 +570,73 @@ private setDefaultFilterValues(): void {
    */
   prepareDataForExport(data: any[]): any[] {
     return data.map(item => {
-      const result = { ...item };
-      if (result.status) {
-        result.status = this.translateStatus(result.status);
-      }
+      const result: any = {};
+      
+      // Traducir cada campo al español
+      Object.keys(item).forEach(key => {
+        // Saltar campos de ID y campos no deseados que no queremos mostrar
+        if (key.includes('Id') || key.includes('ID') || key === 'id' || key === 'paidAmount') {
+          return;
+        }
+        
+        let translatedKey = key;
+        let value = item[key];
+        
+        // Formatear fechas
+        if (value && typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2})?/)) {
+          value = this.formatDate(value);
+        }
+        
+        // Formatear moneda
+        if (typeof value === 'number' && (key.includes('amount') || key.includes('revenue') || key.includes('Revenue') || key.includes('Spending') || key.includes('Amount') || key.includes('total') || key === 'totalAmount')) {
+          value = this.formatCurrency(value);
+        }
+        
+        // Traducir las claves
+        switch(key) {
+          case 'name': translatedKey = 'Nombre'; break;
+          case 'owner': translatedKey = 'Proveedor'; break;
+          case 'providerName': translatedKey = 'Proveedor'; break;
+          case 'spaceName': translatedKey = 'Espacio'; break;
+          case 'clientName': translatedKey = 'Cliente'; break;
+          case 'bookingCount': translatedKey = 'Reservas'; break;
+          case 'rentalCount': translatedKey = 'Contratos'; break;
+          case 'revenueGenerated': translatedKey = 'Ingresos'; break;
+          case 'status': 
+            translatedKey = 'Estado';
+            value = this.translateStatus(value);
+            break;
+          case 'invoiceType':
+            translatedKey = 'Tipo de Factura';
+            value = this.translateInvoiceType(value);
+            break;
+          case 'startDate': translatedKey = 'Fecha Inicio'; break;
+          case 'endDate': translatedKey = 'Fecha Fin'; break;
+          case 'durationHours': translatedKey = 'Duración (h)'; break;
+          case 'amount': translatedKey = 'Monto'; break;
+          case 'email': translatedKey = 'Email'; break;
+          case 'role': translatedKey = 'Rol'; break;
+          case 'activeContracts': translatedKey = 'Contratos Activos'; break;
+          case 'totalSpaces': translatedKey = 'Espacios'; break;
+          case 'totalRevenue': translatedKey = 'Ingresos Totales'; break;
+          case 'totalBookings': translatedKey = 'Reservas Totales'; break;
+          case 'totalSpending': translatedKey = 'Gastos Totales'; break;
+          case 'registrationDate': translatedKey = 'Fecha Registro'; break;
+          case 'lastLoginDate': translatedKey = 'Último Acceso'; break;
+          case 'tenantName': translatedKey = 'Inquilino'; break;
+          case 'ownerName': translatedKey = 'Propietario'; break;
+          case 'issueDate': translatedKey = 'Fecha Emisión'; break;
+          case 'dueDate': translatedKey = 'Fecha Vencimiento'; break;
+          case 'totalAmount': translatedKey = 'Monto Total'; break;
+          case 'invoiceType': translatedKey = 'Tipo de Factura'; break;
+          case 'daysUntilExpiry': translatedKey = 'Días Restantes'; break;
+          case 'daysOverdue': translatedKey = 'Días Vencidos'; break;
+          default: translatedKey = key; break;
+        }
+        
+        result[translatedKey] = value;
+      });
+      
       return result;
     });
   }
@@ -588,90 +651,85 @@ private setDefaultFilterValues(): void {
         data = this.prepareDataForExport(this.spaceData);
         fileName = 'espacios';
         columns = [
-          { header: 'ID Espacio', dataKey: 'spaceId' },
-          { header: 'Nombre', dataKey: 'spaceName' },
-          { header: 'Proveedor', dataKey: 'owner' },
-          {header:'Contratos', dataKey: 'rentalCount'},
-          { header: 'Reservas', dataKey: 'bookingCount' },
-          { header: 'Ingresos', dataKey: 'revenueGenerated' },
-          { header: 'Estado', dataKey: 'status' }
+          { header: 'Nombre', dataKey: 'Nombre' },
+          { header: 'Proveedor', dataKey: 'Proveedor' },
+          { header: 'Contratos', dataKey: 'Contratos'},
+          { header: 'Reservas', dataKey: 'Reservas' },
+          { header: 'Ingresos', dataKey: 'Ingresos' },
+          { header: 'Estado', dataKey: 'Estado' }
         ];
         break;
       case 'bookings':
         data = this.prepareDataForExport(this.bookingData);
         fileName = 'reservas';
         columns = [
-          { header: 'ID Reserva', dataKey: 'bookingId' },
-          { header: 'Espacio', dataKey: 'spaceName' },
-          { header: 'Cliente', dataKey: 'clientName' },
-          { header: 'Proveedor', dataKey: 'owner' },
-          { header: 'Fecha Inicio', dataKey: 'startDate' },
-          { header: 'Fecha Fin', dataKey: 'endDate' },
-          { header: 'Duración (h)', dataKey: 'durationHours' },
-          { header: 'Estado', dataKey: 'status' },
-          { header: 'Monto', dataKey: 'amount' }
+          { header: 'Espacio', dataKey: 'Espacio' },
+          { header: 'Cliente', dataKey: 'Cliente' },
+          { header: 'Proveedor', dataKey: 'Proveedor' },
+          { header: 'Fecha Inicio', dataKey: 'Fecha Inicio' },
+          { header: 'Fecha Fin', dataKey: 'Fecha Fin' },
+          { header: 'Duración (h)', dataKey: 'Duración (h)' },
+          { header: 'Estado', dataKey: 'Estado' },
+          { header: 'Monto', dataKey: 'Monto' }
         ];
         break;
       case 'users':
         data = this.prepareDataForExport(this.userData);
         fileName = 'usuarios';
         columns = [
-          { header: 'Nombre', dataKey: 'name' },
-          { header: 'Email', dataKey: 'email' },
-          { header: 'Rol', dataKey: 'role' },
-          { header: 'Contratos Activos', dataKey: 'activeContracts' },
-          { header: 'Fecha Registro', dataKey: 'registrationDate' },
-          { header: 'Último Acceso', dataKey: 'lastLoginDate' },
-          { header: 'Estado', dataKey: 'status' }
+          { header: 'Nombre', dataKey: 'Nombre' },
+          { header: 'Email', dataKey: 'Email' },
+          { header: 'Rol', dataKey: 'Rol' },
+          { header: 'Contratos Activos', dataKey: 'Contratos Activos' },
+          { header: 'Fecha Registro', dataKey: 'Fecha Registro' },
+          { header: 'Último Acceso', dataKey: 'Último Acceso' },
+          { header: 'Estado', dataKey: 'Estado' }
         ];
         break;
       case 'contracts':
         data = this.prepareDataForExport(this.contractData);
         fileName = 'contratos';
         columns = [
-          { header: 'ID Contrato', dataKey: 'contractId' },
-          { header: 'Espacio', dataKey: 'spaceName' },
-          { header: 'Inquilino', dataKey: 'tenantName' },
-          { header: 'Propietario', dataKey: 'ownerName' },
-          { header: 'Fecha Inicio', dataKey: 'startDate' },
-          { header: 'Fecha Fin', dataKey: 'endDate' },
-          { header: 'Monto', dataKey: 'amount' },
-          { header: 'Estado', dataKey: 'status' }
+          { header: 'Espacio', dataKey: 'Espacio' },
+          { header: 'Inquilino', dataKey: 'Inquilino' },
+          { header: 'Propietario', dataKey: 'Propietario' },
+          { header: 'Fecha Inicio', dataKey: 'Fecha Inicio' },
+          { header: 'Fecha Fin', dataKey: 'Fecha Fin' },
+          { header: 'Monto', dataKey: 'Monto' },
+          { header: 'Estado', dataKey: 'Estado' }
         ];
         break;
       case 'invoices':
         data = this.prepareDataForExport(this.invoiceData);
         fileName = 'facturas';
         columns = [
-          { header: 'ID Factura', dataKey: 'invoiceId' },
-          { header: 'Cliente', dataKey: 'clientName' },
-          { header: 'Fecha Emisión', dataKey: 'issueDate' },
-          { header: 'Fecha Vencimiento', dataKey: 'dueDate' },
-          { header: 'Monto Total', dataKey: 'totalAmount' },
-          { header: 'Monto Pendiente', dataKey: 'pendingAmount' },
-          { header: 'Estado', dataKey: 'status' }
+          { header: 'Cliente', dataKey: 'Cliente' },
+          { header: 'Fecha Emisión', dataKey: 'Fecha Emisión' },
+          { header: 'Fecha Vencimiento', dataKey: 'Fecha Vencimiento' },
+          { header: 'Monto Total', dataKey: 'Monto Total' },
+          { header: 'Estado', dataKey: 'Estado' }
         ];
         break;
       case 'expiringContracts':
         data = this.prepareDataForExport(this.expiringContractData);
         fileName = 'contratos-por-vencer';
         columns = [
-          { header: 'ID Contrato', dataKey: 'contractId' },
-          { header: 'Espacio', dataKey: 'spaceName' },
-          { header: 'Inquilino', dataKey: 'tenantName' },
-          { header: 'Fecha Vencimiento', dataKey: 'expiryDate' },
-          { header: 'Días Restantes', dataKey: 'daysUntilExpiry' }
+          { header: 'Espacio', dataKey: 'Espacio' },
+          { header: 'Inquilino', dataKey: 'Inquilino' },
+          { header: 'Propietario', dataKey: 'Propietario' },
+          { header: 'Fecha Vencimiento', dataKey: 'Fecha Vencimiento' },
+          { header: 'Días Restantes', dataKey: 'Días Restantes' }
         ];
         break;
       case 'overdueInvoices':
         data = this.prepareDataForExport(this.overdueInvoiceData);
         fileName = 'facturas-vencidas';
         columns = [
-          { header: 'ID Factura', dataKey: 'invoiceId' },
-          { header: 'Cliente', dataKey: 'clientName' },
-          { header: 'Fecha Vencimiento', dataKey: 'dueDate' },
-          { header: 'Días Vencida', dataKey: 'daysOverdue' },
-          { header: 'Monto Pendiente', dataKey: 'overdueAmount' }
+          { header: 'Cliente', dataKey: 'Cliente' },
+          { header: 'Fecha Vencimiento', dataKey: 'Fecha Vencimiento' },
+          { header: 'Monto Total', dataKey: 'Monto Total' },
+          { header: 'Monto Pendiente', dataKey: 'Monto Pendiente' },
+          { header: 'Días Vencidos', dataKey: 'Días Vencidos' }
         ];
         break;
     }
@@ -704,6 +762,22 @@ private setDefaultFilterValues(): void {
    */
   translateStatus(status: string): string {
     return this.statusTranslationService.translateStatus(status);
+  }
+
+  /**
+   * Traduce el tipo de factura a español
+   */
+  translateInvoiceType(type: string): string {
+    const translations: { [key: string]: string } = {
+      'REGULAR': 'Regular',
+      'CONTRACT': 'Contrato',
+      'BOOKING': 'Reserva',
+      'Regular': 'Regular',
+      'Contract': 'Contrato',
+      'Booking': 'Reserva'
+    };
+    
+    return translations[type] || type;
   }
 
   // Método para agregar columnas específicas según el rol del usuario seleccionado

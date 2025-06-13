@@ -188,16 +188,21 @@ export class AdminDashboardViewComponent implements OnInit, AfterViewInit {
         
         // Si estamos en vista expandida de ingresos mensuales, actualizar también los datos expandidos
         if (this.currentView === 'monthlyRevenue') {
-          this.expandedChartData = this.monthlyRevenueData;
+          this.expandedChartData = [...this.monthlyRevenueData];
         }
         
         this.loading.monthlyRevenue = false;
+        
+        // Forzar detección de cambios para actualizar el gráfico en vista normal
+        this.cdr.detectChanges();
+        
         console.log('✅ [DEBUG] Carga de ingresos mensuales finalizada (Admin)');
       },
       error: (err) => {
         console.error('Error cargando ingresos mensuales:', err);
         this.error.monthlyRevenue = 'No se pudo cargar el gráfico de ingresos.';
         this.loading.monthlyRevenue = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -271,7 +276,20 @@ export class AdminDashboardViewComponent implements OnInit, AfterViewInit {
     this.loading.topSpaces = true;
     this.dashboardService.getTop5Spaces().subscribe({
       next: (data) => {
-        this.topSpacesData = data;
+        // Ordenar por suma total de reservas + alquileres (descendente)
+        this.topSpacesData = data.sort((a, b) => {
+          const totalA = (a.reservationCount || 0) + (a.rentalCount || 0);
+          const totalB = (b.reservationCount || 0) + (b.rentalCount || 0);
+          return totalB - totalA; // Orden descendente
+        });
+        
+        console.log('🏆 [DEBUG] Top 5 espacios ordenados:', this.topSpacesData.map(space => ({
+          name: space.spaceName,
+          reservas: space.reservationCount,
+          alquileres: space.rentalCount,
+          total: (space.reservationCount || 0) + (space.rentalCount || 0)
+        })));
+        
         this.loading.topSpaces = false;
       },
       error: (err) => {
@@ -303,6 +321,14 @@ export class AdminDashboardViewComponent implements OnInit, AfterViewInit {
 
   onMonthsChange(): void {
     this.loadMonthlyRevenue(this.selectedMonths);
+  }
+
+  onMonthsChangeEvent(event: any): void {
+    // event es un MatSelectChange, necesitamos obtener el valor
+    const months = event.value;
+    this.selectedMonths = months;
+    console.log('🔍 [DEBUG] Cambiando a:', months, 'meses');
+    this.onMonthsChange();
   }
 
   // Función auxiliar para formatear montos como pesos
